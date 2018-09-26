@@ -1,0 +1,91 @@
+.slip-buttons {
+  background: #fff;
+  border: 1px solid #000;
+  bottom: 40px;
+  padding: 20px;
+  position: fixed;
+  right: 40px;
+  text-align: left;
+  z-index: 1000000000000;
+}
+
+.slip-buttons .info-label {
+  color: #999;
+  display: block;
+  font: bold 12px/20px Helvetica, sans-serif;
+  text-transform: uppercase;
+}
+
+.slip-buttons a {
+  border: 1px solid;
+  color: #000 !important;
+  display: inline-block;
+  font: 14px/20px Helvetica, sans-serif;
+  margin: 10px 5px 0 0;
+  padding: 5px;
+  text-decoration: none;
+}
+
+.slip-buttons a:hover,
+.slip-buttons a:focus {
+  color: blue !important;
+}
+
+.slip-buttons .page-name {
+  display: block;
+  font: bold 18px/20px Helvetica, sans-serif;
+}
+
+.slip-buttons .component-name {
+  display: block;
+  font: bold 16px/20px Helvetica, sans-serif;
+}
+
+.slip-buttons .page-actions {
+  margin: 0 0 10px;
+}
+
+.slip-buttons .component-actions.no-selection .component-name {
+  color: #999;
+}
+
+.slip-buttons .component-actions.no-selection a {
+  display: none;
+}
+
+.slip-buttons:not(.published) .component-unpublished {
+  display: none;
+}
+
+[data-uri].color-0 {
+  outline: 2px solid #dda1a1 !important;
+}
+
+[data-uri].color-1 {
+  outline: 3px dashed #dddda1 !important;
+}
+
+[data-uri].color-2 {
+  outline: 4px dotted #b0dda1 !important;
+}
+
+[data-uri].color-3 {
+  outline: 5px solid #a1dddd !important;
+}
+
+[data-uri].color-4 {
+  outline: 4px dashed #a1a1dd !important;
+}
+
+[data-uri].color-5 {
+  outline: 2px double #dda0dd !important;
+}
+
+[data-uri].slip-selected {
+  outline: 5px solid #e22c2c !important;
+}
+
+.slip-hidden-input {
+  position: fixed;
+  top: -100px;
+}
