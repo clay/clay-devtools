@@ -1,0 +1,1198 @@
+:host,
+:root {
+  all: initial;
+}
+
+* {
+  box-sizing: border-box;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.cs-panel {
+  position: fixed;
+  width: 380px;
+  max-height: calc(100vh - 80px);
+  background: var(--cs-bg);
+  color: var(--cs-text);
+  border: 1px solid var(--cs-border);
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Floating Clay button — the panel's collapsed/idle state. Standard
+   "extension chrome" pattern (Sentry, Hotjar, Crisp, Intercom, etc.):
+   small circular FAB anchored to the user's preferred corner. Click
+   expands it to the full panel; the panel's collapse button shrinks
+   it back here. */
+.cs-fab {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--cs-bg-elevated);
+  border: 1px solid var(--cs-border);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.18),
+    0 10px 28px rgba(0, 0, 0, 0.22);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.cs-fab:hover {
+  transform: scale(1.06);
+  border-color: var(--cs-accent);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.22),
+    0 12px 32px rgba(0, 0, 0, 0.26);
+}
+
+.cs-fab:active {
+  transform: scale(0.97);
+}
+
+.cs-fab:focus-visible {
+  outline: 2px solid var(--cs-accent);
+  outline-offset: 3px;
+}
+
+.cs-fab-logo {
+  width: 36px;
+  height: 36px;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.cs-fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--cs-accent);
+  color: #fff;
+  border: 2px solid var(--cs-bg);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+
+.cs-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--cs-bg-elevated);
+  border-bottom: 1px solid var(--cs-border);
+  cursor: grab;
+}
+
+.cs-header:active {
+  cursor: grabbing;
+}
+
+.cs-logo {
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex: 0 0 auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.cs-title {
+  font-weight: 600;
+  font-size: 13px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cs-title-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--cs-accent-bg);
+  color: var(--cs-accent);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.cs-status {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.cs-status.cs-published {
+  background: var(--cs-success);
+  color: #fff;
+}
+
+.cs-status.cs-draft {
+  background: var(--cs-warning);
+  color: #fff;
+}
+
+.cs-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--cs-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cs-icon-btn:hover {
+  background: var(--cs-bg-hover);
+  color: var(--cs-text);
+}
+
+.cs-icon-btn.cs-icon-btn-off {
+  color: var(--cs-text-subtle);
+}
+
+.cs-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--cs-border);
+  background: var(--cs-bg);
+}
+
+.cs-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--cs-text-muted);
+  padding: 8px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition:
+    color 0.12s,
+    border-color 0.12s;
+}
+
+.cs-tab:hover {
+  color: var(--cs-text);
+}
+
+.cs-tab.cs-active {
+  color: var(--cs-accent);
+  border-bottom-color: var(--cs-accent);
+}
+
+.cs-body {
+  overflow-y: auto;
+  padding: 12px;
+  flex: 1;
+}
+
+.cs-section {
+  margin-bottom: 14px;
+}
+
+.cs-section:last-child {
+  margin-bottom: 0;
+}
+
+.cs-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cs-text-subtle);
+  margin: 0 0 6px;
+}
+
+.cs-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cs-text);
+  margin: 0;
+  word-break: break-word;
+}
+
+.cs-instance {
+  font-family: var(--cs-mono);
+  font-size: 11px;
+  color: var(--cs-text-muted);
+  word-break: break-all;
+}
+
+.cs-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* "View on prod / staging / qa" cross-environment pill row */
+.cs-view-on {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--cs-border);
+}
+
+.cs-view-on-label {
+  font-size: 11px;
+  color: var(--cs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.cs-view-on-pill {
+  background: var(--cs-bg-elevated);
+  color: var(--cs-text);
+  border: 1px solid var(--cs-border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cs-view-on-pill:hover:not(:disabled) {
+  border-color: var(--cs-accent);
+  color: var(--cs-accent);
+}
+
+.cs-view-on-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cs-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--cs-bg-elevated);
+  color: var(--cs-text) !important;
+  border: 1px solid var(--cs-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+
+.cs-link:hover {
+  background: var(--cs-bg-hover);
+  border-color: var(--cs-borderStrong);
+  color: var(--cs-accent) !important;
+}
+
+.cs-link.cs-link-primary {
+  background: var(--cs-accent);
+  color: #fff !important;
+  border-color: var(--cs-accent);
+}
+
+.cs-link.cs-link-primary:hover {
+  filter: brightness(1.05);
+}
+
+.cs-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--cs-text-subtle);
+  font-size: 12px;
+}
+
+.cs-search {
+  width: 100%;
+  background: var(--cs-bg-elevated);
+  color: var(--cs-text);
+  border: 1px solid var(--cs-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  outline: none;
+}
+
+.cs-search:focus {
+  border-color: var(--cs-accent);
+}
+
+.cs-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--cs-mono);
+  font-size: 11px;
+}
+
+.cs-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--cs-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-tree-item:hover {
+  background: var(--cs-bg-hover);
+}
+
+.cs-tree-item.cs-selected {
+  background: var(--cs-accent-bg);
+  color: var(--cs-accent);
+}
+
+.cs-tree-instance {
+  color: var(--cs-text-subtle);
+  font-size: 10px;
+}
+
+.cs-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--cs-text-muted);
+  margin-bottom: 8px;
+}
+
+.cs-breadcrumb-item {
+  background: transparent;
+  border: none;
+  color: var(--cs-text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.cs-breadcrumb-item:hover {
+  background: var(--cs-bg-hover);
+  color: var(--cs-text);
+}
+
+.cs-breadcrumb-sep {
+  color: var(--cs-text-subtle);
+}
+
+.cs-json {
+  background: var(--cs-bg-elevated);
+  color: var(--cs-text);
+  border: 1px solid var(--cs-border);
+  border-radius: 6px;
+  padding: 8px;
+  font-family: var(--cs-mono);
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.cs-json-key {
+  color: var(--cs-accent);
+}
+
+.cs-json-string {
+  color: var(--cs-success);
+}
+
+.cs-json-number {
+  color: var(--cs-warning);
+}
+
+.cs-json-bool {
+  color: var(--cs-warning);
+  font-weight: 600;
+}
+
+.cs-json-null {
+  color: var(--cs-text-subtle);
+  font-style: italic;
+}
+
+.cs-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cs-text-muted);
+  font-size: 12px;
+  padding: 16px;
+  justify-content: center;
+}
+
+.cs-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--cs-border);
+  border-top-color: var(--cs-accent);
+  border-radius: 50%;
+  animation: cs-spin 0.8s linear infinite;
+}
+
+@keyframes cs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cs-shortcut-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.cs-shortcut-card {
+  background: var(--cs-bg);
+  border: 1px solid var(--cs-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  min-width: 360px;
+  max-width: 90vw;
+  color: var(--cs-text);
+}
+
+.cs-shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.cs-kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--cs-bg-elevated);
+  border: 1px solid var(--cs-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--cs-mono);
+  font-size: 11px;
+  color: var(--cs-text);
+}
+
+.cs-toast-stack {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.cs-toast {
+  background: var(--cs-bg);
+  color: var(--cs-text);
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: auto;
+}
+
+.cs-toast.cs-toast-success {
+  border-color: var(--cs-success);
+}
+
+.cs-toast.cs-toast-error {
+  border-color: var(--cs-danger);
+}
+
+.cs-env-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--cs-bg-elevated);
+  border: 1px solid var(--cs-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cs-text-muted);
+  cursor: pointer;
+}
+
+.cs-env-pill:hover {
+  border-color: var(--cs-accent);
+  color: var(--cs-accent);
+}
+
+.cs-env-pill.cs-env-pill-active {
+  background: var(--cs-accent-bg);
+  border-color: var(--cs-accent);
+  color: var(--cs-accent);
+}
+
+.cs-diff-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cs-diff-col-header {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--cs-text-subtle);
+  margin-bottom: 4px;
+}
+
+.cs-diff-removed {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--cs-danger);
+}
+
+.cs-diff-added {
+  background: rgba(22, 163, 74, 0.12);
+  color: var(--cs-success);
+}
+
+/* ============================================================
+   Side-dock variants (left-side / right-side)
+   ============================================================ */
+
+.cs-panel.cs-pos-left-side,
+.cs-panel.cs-pos-right-side {
+  border-radius: 0;
+  max-height: 100vh;
+}
+
+.cs-panel.cs-pos-left-side {
+  border-right: 1px solid var(--cs-border);
+  border-left: none;
+  border-top: none;
+  border-bottom: none;
+}
+
+.cs-panel.cs-pos-right-side {
+  border-left: 1px solid var(--cs-border);
+  border-right: none;
+  border-top: none;
+  border-bottom: none;
+}
+
+/* ============================================================
+   Resize handles — width (vertical strip), height (horizontal
+   strip), and corner (small grabber). All sit just inside the
+   panel edge so they're not clipped by `overflow: hidden`.
+   ============================================================ */
+
+.cs-resize {
+  position: absolute;
+  background: transparent;
+  z-index: 10;
+}
+
+.cs-resize:hover {
+  background: var(--cs-accent-bg);
+}
+
+.cs-resize-width {
+  top: 0;
+  bottom: 0;
+  width: 6px;
+}
+
+.cs-resize-height {
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+
+.cs-resize-left {
+  left: 0;
+}
+
+.cs-resize-right {
+  right: 0;
+}
+
+.cs-resize-top {
+  top: 0;
+}
+
+.cs-resize-bottom {
+  bottom: 0;
+}
+
+.cs-resize-corner {
+  width: 14px;
+  height: 14px;
+  z-index: 11;
+}
+
+.cs-resize-corner:hover {
+  background: var(--cs-accent);
+  opacity: 0.4;
+  border-radius: 2px;
+}
+
+.cs-resize-corner-top-left {
+  top: 0;
+  left: 0;
+}
+
+.cs-resize-corner-top-right {
+  top: 0;
+  right: 0;
+}
+
+.cs-resize-corner-bottom-left {
+  bottom: 0;
+  left: 0;
+}
+
+.cs-resize-corner-bottom-right {
+  bottom: 0;
+  right: 0;
+}
+
+/* ============================================================
+   Tab badge (Notes count, etc.)
+   ============================================================ */
+
+.cs-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--cs-accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ============================================================
+   Find-on-page status row
+   ============================================================ */
+
+.cs-find-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--cs-text-muted);
+}
+
+.cs-find-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.cs-tree-item.cs-current-match {
+  outline: 1px solid var(--cs-accent);
+  background: var(--cs-accent-bg);
+}
+
+/* ============================================================
+   Edit / Share / Screenshot link variants
+   ============================================================ */
+
+.cs-link-edit {
+  border-color: var(--cs-warning);
+  color: var(--cs-warning);
+}
+
+.cs-link-edit:hover {
+  background: rgba(217, 119, 6, 0.1);
+}
+
+/* ============================================================
+   Copy-as details flyout
+   ============================================================ */
+
+.cs-copy-as {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--cs-text-muted);
+}
+
+.cs-copy-as summary {
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+}
+
+.cs-copy-as[open] summary {
+  margin-bottom: 4px;
+}
+
+/* ============================================================
+   Annotation editor
+   ============================================================ */
+
+.cs-annotation {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--cs-border);
+}
+
+.cs-annotation-meta {
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--cs-text-subtle);
+}
+
+.cs-annotation-input {
+  width: 100%;
+  min-height: 60px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 1px solid var(--cs-border);
+  border-radius: 6px;
+  background: var(--cs-bg);
+  color: var(--cs-text);
+}
+
+.cs-annotation-input:focus {
+  outline: none;
+  border-color: var(--cs-accent);
+}
+
+.cs-annotation-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cs-annotation-actions .cs-link[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Notes tab list
+   ============================================================ */
+
+.cs-notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cs-notes-item {
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--cs-bg-elevated);
+}
+
+.cs-notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cs-notes-title {
+  background: transparent;
+  border: none;
+  color: var(--cs-text);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.cs-notes-title:hover {
+  color: var(--cs-accent);
+}
+
+.cs-notes-body {
+  margin: 6px 0 4px;
+  font-size: 12px;
+  color: var(--cs-text);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.cs-notes-meta {
+  margin: 0;
+  font-size: 10px;
+  color: var(--cs-text-subtle);
+}
+
+/* ============================================================
+   Recents section
+   ============================================================ */
+
+.cs-recents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cs-recents-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.cs-recents-item:hover {
+  background: var(--cs-bg-hover);
+}
+
+.cs-recents-name {
+  background: transparent;
+  border: none;
+  color: var(--cs-text);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  text-align: left;
+}
+
+.cs-recents-name:hover {
+  color: var(--cs-accent);
+}
+
+.cs-recents-here {
+  color: var(--cs-success);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.cs-recents-meta {
+  font-size: 10px;
+  color: var(--cs-text-subtle);
+}
+
+/* ============================================================
+   Export menu
+   ============================================================ */
+
+.cs-export {
+  position: relative;
+  display: inline-block;
+}
+
+/* Split share button — main face copies the current page link; the trailing
+   ▾ chip opens a tiny menu of cross-environment share targets. */
+.cs-share-split {
+  display: inline-flex;
+  align-items: stretch;
+  position: relative;
+}
+
+.cs-share-split .cs-share-main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+}
+
+.cs-share-split .cs-share-toggle {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding-left: 6px;
+  padding-right: 6px;
+  font-weight: 700;
+}
+
+.cs-export-menu {
+  position: fixed;
+  min-width: 200px;
+  background: var(--cs-bg-elevated);
+  border: 1px solid var(--cs-border);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 2147483646;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cs-export-item {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  color: var(--cs-text);
+}
+
+.cs-export-item:hover {
+  background: var(--cs-bg-hover);
+}
+
+.cs-export-label {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.cs-export-help {
+  font-size: 10px;
+  color: var(--cs-text-subtle);
+}
+
+/* ============================================================
+   Diff controls
+   ============================================================ */
+
+.cs-diff-controls {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--cs-text-muted);
+}
+
+.cs-diff-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cs-diff-controls select {
+  background: var(--cs-bg);
+  color: var(--cs-text);
+  border: 1px solid var(--cs-border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+/* ============================================================
+   SEO tab
+   ============================================================ */
+
+.cs-seo-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  row-gap: 6px;
+  column-gap: 12px;
+  font-size: 12px;
+}
+
+.cs-seo-list > div {
+  display: contents;
+}
+
+.cs-seo-list dt {
+  color: var(--cs-text-subtle);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  align-self: start;
+  padding-top: 2px;
+}
+
+.cs-seo-list dd {
+  margin: 0;
+  word-break: break-word;
+  color: var(--cs-text);
+}
+
+.cs-seo-len {
+  margin-left: 6px;
+  font-size: 10px;
+  color: var(--cs-text-subtle);
+}
+
+.cs-seo-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--cs-bg-elevated);
+}
+
+.cs-seo-card-image {
+  width: 100%;
+  aspect-ratio: 1.91 / 1;
+  background: var(--cs-bg-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cs-seo-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cs-seo-card-placeholder {
+  font-size: 11px;
+  color: var(--cs-text-subtle);
+}
+
+.cs-seo-card-body {
+  padding: 8px 10px;
+}
+
+.cs-seo-card-host {
+  margin: 0 0 2px;
+  font-size: 10px;
+  color: var(--cs-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cs-seo-card-title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cs-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cs-seo-card-desc {
+  margin: 0;
+  font-size: 11px;
+  color: var(--cs-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cs-seo-issues {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cs-seo-issue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  border-left: 3px solid var(--cs-border);
+  background: var(--cs-bg-elevated);
+}
+
+.cs-seo-issue-tag {
+  font-size: 9px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--cs-bg-hover);
+  color: var(--cs-text-muted);
+}
+
+.cs-seo-issue-error {
+  border-left-color: var(--cs-danger);
+}
+
+.cs-seo-issue-error .cs-seo-issue-tag {
+  background: rgba(220, 38, 38, 0.15);
+  color: var(--cs-danger);
+}
+
+.cs-seo-issue-warn {
+  border-left-color: var(--cs-warning);
+}
+
+.cs-seo-issue-warn .cs-seo-issue-tag {
+  background: rgba(217, 119, 6, 0.15);
+  color: var(--cs-warning);
+}
+
+.cs-seo-issue-info {
+  border-left-color: var(--cs-accent);
+}
+
+.cs-seo-issue-info .cs-seo-issue-tag {
+  background: var(--cs-accent-bg);
+  color: var(--cs-accent);
+}

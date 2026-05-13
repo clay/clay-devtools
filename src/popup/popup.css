@@ -1,0 +1,63 @@
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #ffffff;
+  color: #0f172a;
+  width: 280px;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #0f1115;
+    color: #e6e8ee;
+  }
+}
+
+.popup {
+  padding: 18px 20px;
+  text-align: center;
+}
+
+.popup-logo {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 12px;
+  border-radius: 8px;
+  background: #e22c2c;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.popup-title {
+  font-size: 14px;
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.popup-body {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.75;
+}
+
+.popup-link {
+  display: inline-block;
+  font-size: 12px;
+  color: #e22c2c;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.popup-link:hover {
+  text-decoration: underline;
+}
