@@ -69,21 +69,3 @@ export function formatManifest(manifest: PageManifest, format: ExportFormat): st
     }
   }
 }
-
-export function downloadManifest(manifest: PageManifest, format: ExportFormat): void {
-  const text = formatManifest(manifest, format);
-  const mime =
-    format === 'json' ? 'application/json' : format === 'csv' ? 'text/csv' : 'text/markdown';
-  const ext = format === 'markdown' ? 'md' : format;
-  const blob = new Blob([text], { type: `${mime};charset=utf-8` });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const slug = (manifest.title || 'clay-page').replace(/[^a-z0-9-_]+/gi, '-').slice(0, 60);
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  a.download = `${slug}-manifest-${stamp}.${ext}`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}

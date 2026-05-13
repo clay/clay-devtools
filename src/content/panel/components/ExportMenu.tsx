@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { buildManifest, downloadManifest } from '@/lib/exporter';
+import { buildManifest, formatManifest } from '@/lib/exporter';
+import { copyToClipboard } from '@/lib/clipboard';
 import type { ExportFormat } from '@/lib/types';
 import { useStore } from '../store';
 
@@ -70,11 +71,15 @@ export function ExportMenu() {
     setOpen(true);
   };
 
-  const exportAs = (format: ExportFormat) => {
+  const exportAs = async (format: ExportFormat) => {
     setOpen(false);
     try {
-      downloadManifest(buildManifest(page, components), format);
-      pushToast(`Manifest exported as ${format.toUpperCase()}`, 'success');
+      const text = formatManifest(buildManifest(page, components), format);
+      const ok = await copyToClipboard(text);
+      pushToast(
+        ok ? `${format.toUpperCase()} manifest copied to clipboard` : 'Copy failed',
+        ok ? 'success' : 'error'
+      );
     } catch (err) {
       pushToast(err instanceof Error ? err.message : 'Export failed', 'error');
     }
@@ -101,10 +106,10 @@ export function ExportMenu() {
             <button
               key={opt.format}
               role="menuitem"
-              onClick={() => exportAs(opt.format)}
+              onClick={() => void exportAs(opt.format)}
               className="cs-export-item"
             >
-              <span className="cs-export-label">{opt.label}</span>
+              <span className="cs-export-label">Copy as {opt.label}</span>
               <span className="cs-export-help">{opt.help}</span>
             </button>
           ))}

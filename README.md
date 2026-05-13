@@ -17,7 +17,7 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **Site host mappings** — per-brand hostname config that powers a one-click _View on prod / staging / qa_ pill row and lets the Share button hand out cross-env links without leaving the page
 - **Open in Clay editor** — jump from the page or any component straight into Clay edit mode (always opens the unpublished version)
 - **Sticky-note annotations** pinned to component URIs, surfaced as a dot on the page and a dedicated Notes tab — leave async review notes for teammates
-- **Page audit export** as JSON, CSV, or Markdown — every component on the page, ready to drop into a ticket or QA checklist
+- **Page audit export** to clipboard as JSON, CSV, or Markdown — every component on the page, ready to paste into a ticket or QA checklist
 - **Shareable selection links** — copy a `?clay-slip-select=…` URL that auto-opens the panel and selects the same component on someone else's machine
 - **Component screenshot to clipboard** — one-click PNG of any selected component, panel auto-hides during capture
 - **SEO tab** — title / meta / og / twitter / JSON-LD with a Twitter + Facebook card preview and lints (length, missing image, duplicate `<h1>`, etc.)
@@ -67,7 +67,7 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 | Annotate a component     | **Inspect** tab, scroll to **Note**, type and Save — orange dot appears on the page               |
 | Share a selection        | **Share** button copies for the current env; click **▾** to share for prod / staging / qa instead |
 | Screenshot a component   | **Screenshot** button — PNG copied to clipboard                                                   |
-| Export page manifest     | **Export ▾** button on the Inspect tab → JSON / CSV / Markdown                                    |
+| Export page manifest     | **Export ▾** button on the Inspect tab — copies JSON / CSV / Markdown to your clipboard           |
 | Find on page             | **Tree** tab search box → matches dim non-matches; <kbd>Enter</kbd> cycles, <kbd>Esc</kbd> clears |
 | Resize the panel         | Drag the inner vertical / horizontal edge — or the inner-corner grabber for both at once          |
 | Copy URI                 | Press <kbd>y</kbd> then <kbd>c</kbd> (component) or <kbd>p</kbd> (page)                           |
