@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import clayIconUrl from '@/assets/clay-icon.png';
 import type { PanelPosition } from '@/lib/types';
 import { useStore } from '../store';
 
@@ -44,9 +45,7 @@ export function Fab() {
       title={tooltip}
       aria-label={tooltip}
     >
-      <span className="cs-fab-logo" aria-hidden="true">
-        S
-      </span>
+      <img className="cs-fab-logo" src={clayIconUrl} alt="" aria-hidden="true" />
       {componentCount > 0 && (
         <span className="cs-fab-badge" aria-hidden="true">
           {componentCount > 99 ? '99+' : componentCount}

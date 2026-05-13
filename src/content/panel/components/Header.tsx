@@ -1,4 +1,5 @@
 import type { Ref } from 'react';
+import clayIconUrl from '@/assets/clay-icon.png';
 import type { RuntimeMessage } from '@/lib/types';
 import { Icon } from './Icon';
 import { useStore } from '../store';
@@ -23,9 +24,7 @@ export function Header({ ref }: HeaderProps) {
 
   return (
     <div className="cs-header" ref={ref}>
-      <div className="cs-logo" title="Clay Slip">
-        S
-      </div>
+      <img className="cs-logo" src={clayIconUrl} alt="" title="Clay Slip" />
       <div className="cs-title">
         <span className="cs-title-text">Clay Slip</span>
         <span className="cs-count" title={`${componentCount} components on this page`}>

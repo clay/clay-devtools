@@ -19,9 +19,17 @@ export function useKeyboardShortcuts(): void {
 
     const handle = async (e: KeyboardEvent) => {
       if (!useStore.getState().preferences.enableShortcuts) return;
-      const target = e.target as HTMLElement | null;
-      if (target && /input|textarea|select/i.test(target.tagName)) return;
-      if (target?.isContentEditable) return;
+
+      // Bail when typing into ANY editable element — including those inside
+      // our Shadow DOM panel. Default `e.target` gets retargeted to the shadow
+      // host at document level, hiding the real focused element from us, so
+      // we walk `composedPath()` to find the actual focus surface.
+      const path = e.composedPath();
+      for (const node of path) {
+        if (!(node instanceof HTMLElement)) continue;
+        if (/^(input|textarea|select)$/i.test(node.tagName)) return;
+        if (node.isContentEditable) return;
+      }
 
       const state = useStore.getState();
       const {

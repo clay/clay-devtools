@@ -31,30 +31,32 @@
    expands it to the full panel; the panel's collapse button shrinks
    it back here. */
 .cs-fab {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  background: var(--cs-accent);
-  color: #fff;
-  border: none;
+  background: var(--cs-bg-elevated);
+  border: 1px solid var(--cs-border);
   cursor: pointer;
   font-family: inherit;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.15),
-    0 8px 24px rgba(0, 0, 0, 0.18);
+    0 2px 6px rgba(0, 0, 0, 0.18),
+    0 10px 28px rgba(0, 0, 0, 0.22);
   transition:
     transform 0.12s ease,
-    box-shadow 0.12s ease;
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .cs-fab:hover {
-  transform: scale(1.05);
+  transform: scale(1.06);
+  border-color: var(--cs-accent);
   box-shadow:
-    0 3px 8px rgba(0, 0, 0, 0.2),
-    0 10px 28px rgba(0, 0, 0, 0.22);
+    0 4px 10px rgba(0, 0, 0, 0.22),
+    0 12px 32px rgba(0, 0, 0, 0.26);
 }
 
 .cs-fab:active {
@@ -67,10 +69,12 @@
 }
 
 .cs-fab-logo {
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.02em;
+  width: 36px;
+  height: 36px;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .cs-fab-badge {
@@ -81,10 +85,9 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 9px;
-  background: var(--cs-bg);
-  color: var(--cs-text);
+  background: var(--cs-accent);
+  color: #fff;
   border: 2px solid var(--cs-bg);
-  box-shadow: 0 0 0 1px var(--cs-border);
   font-size: 10px;
   font-weight: 700;
   line-height: 14px;
@@ -106,16 +109,12 @@
 }
 
 .cs-logo {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  background: var(--cs-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 700;
-  font-size: 11px;
+  width: 22px;
+  height: 22px;
+  display: block;
+  flex: 0 0 auto;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .cs-title {
