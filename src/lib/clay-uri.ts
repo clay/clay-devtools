@@ -135,13 +135,16 @@ export function buildCurlCommand(
  * Open the Clay page editor for a given page URI. Standard Amphora Clay
  * accepts `?edit=true` on the page URL to enter edit mode. When a component
  * instance is provided, it's appended as a hash anchor for editor focus.
+ *
+ * Note: the editor only operates on the *unpublished* version of a page, so
+ * we always strip `@published` from the URI before building the URL.
  */
 export function buildEditorUrl(
   pageUri: string,
   hostOverride = '',
   componentInstance: string | null = null
 ): string {
-  const base = buildUrl(pageUri, '.html', hostOverride);
+  const base = buildUrl(unpublishedUri(pageUri), '.html', hostOverride);
   const hash = componentInstance ? `#${componentInstance}` : '';
   return `${base}?edit=true${hash}`;
 }

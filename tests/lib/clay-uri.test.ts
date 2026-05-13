@@ -260,6 +260,15 @@ describe('buildEditorUrl', () => {
       'https://site/_pages/abc.html?edit=true#inst-123'
     );
   });
+
+  it('strips @published from the page URI (editor only operates on the unpublished version)', () => {
+    expect(buildEditorUrl('site/_pages/abc@published')).toBe(
+      'https://site/_pages/abc.html?edit=true'
+    );
+    expect(buildEditorUrl('site/_pages/abc@published', 'staging.example.com', 'inst-1')).toBe(
+      'https://staging.example.com/_pages/abc.html?edit=true#inst-1'
+    );
+  });
 });
 
 describe('buildShareLink + parseShareTarget', () => {
