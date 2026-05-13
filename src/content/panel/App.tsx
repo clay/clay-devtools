@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { loadPreferences, onPreferencesChanged } from '@/lib/storage';
 import { listAnnotations, onAnnotationsChanged } from '@/lib/annotations';
 import { loadRecents, onRecentsChanged, pushRecent } from '@/lib/recents';
-import { setAnnotatedUris, setHighlightingEnabled, setHighlightOpacity } from '../highlighter';
+import { setAnnotatedUris, setHighlightMode, setHighlightOpacity } from '../highlighter';
 import { useStore } from './store';
 import { useDraggable } from './hooks/useDraggable';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -32,7 +32,7 @@ export function App() {
   const panelWidth = useStore((s) => s.preferences.panelWidth);
   const panelHeight = useStore((s) => s.preferences.panelHeight);
   const highlightOpacity = useStore((s) => s.preferences.highlightOpacity);
-  const highlightEnabled = useStore((s) => s.highlightEnabled);
+  const highlightMode = useStore((s) => s.preferences.highlightMode);
   const setPrefs = useStore((s) => s.setPreferences);
   const setRecents = useStore((s) => s.setRecents);
   const setAnnotations = useStore((s) => s.setAnnotations);
@@ -68,8 +68,8 @@ export function App() {
   }, [highlightOpacity]);
 
   useEffect(() => {
-    setHighlightingEnabled(highlightEnabled);
-  }, [highlightEnabled]);
+    setHighlightMode(highlightMode);
+  }, [highlightMode]);
 
   // Sync the annotation dot indicators on the page whenever either set changes.
   useEffect(() => {

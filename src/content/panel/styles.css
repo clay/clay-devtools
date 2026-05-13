@@ -188,6 +188,103 @@
   color: var(--cs-text-subtle);
 }
 
+/* ── Highlight-mode menu (header dropdown) ─────────────────────────────
+   Built on a native <details> for click-outside / keyboard / a11y for free.
+   The summary doubles as an .cs-icon-btn so it visually blends with the
+   sibling header buttons; the popover sits absolutely positioned beneath. */
+.cs-mode-menu {
+  position: relative;
+}
+
+.cs-mode-menu > summary {
+  list-style: none;
+  cursor: pointer;
+  gap: 4px;
+}
+
+.cs-mode-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.cs-mode-trigger-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: inherit;
+  letter-spacing: 0.01em;
+}
+
+.cs-mode-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 240px;
+  background: var(--cs-bg);
+  border: 1px solid var(--cs-border);
+  border-radius: 8px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 6px;
+  z-index: 10;
+}
+
+.cs-mode-popover-header {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cs-text-subtle);
+  padding: 4px 8px 6px;
+}
+
+.cs-mode-option {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--cs-text);
+  font: inherit;
+}
+
+.cs-mode-option:hover {
+  background: var(--cs-bg-hover);
+}
+
+.cs-mode-option-active {
+  background: var(--cs-accent-bg);
+}
+
+.cs-mode-option-bullet {
+  flex: 0 0 auto;
+  width: 12px;
+  text-align: center;
+  color: var(--cs-accent);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.cs-mode-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.cs-mode-option-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.cs-mode-option-help {
+  font-size: 11px;
+  color: var(--cs-text-muted);
+  line-height: 1.35;
+}
+
 .cs-tabs {
   display: flex;
   gap: 0;

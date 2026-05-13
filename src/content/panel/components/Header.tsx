@@ -2,6 +2,7 @@ import type { Ref } from 'react';
 import clayIconUrl from '@/assets/clay-icon.png?inline';
 import type { RuntimeMessage } from '@/lib/types';
 import { Icon } from './Icon';
+import { HighlightModeMenu } from './HighlightModeMenu';
 import { useStore } from '../store';
 
 interface HeaderProps {
@@ -12,8 +13,6 @@ export function Header({ ref }: HeaderProps) {
   const page = useStore((s) => s.page);
   const toggleCollapsed = useStore((s) => s.toggleCollapsed);
   const toggleShortcuts = useStore((s) => s.toggleShortcuts);
-  const toggleHighlights = useStore((s) => s.toggleHighlights);
-  const highlightEnabled = useStore((s) => s.highlightEnabled);
   const componentCount = useStore((s) => s.components.length);
 
   const openOptions = () => {
@@ -36,15 +35,7 @@ export function Header({ ref }: HeaderProps) {
           {page.isPublished ? 'Published' : 'Draft'}
         </span>
       )}
-      <button
-        className={`cs-icon-btn ${highlightEnabled ? '' : 'cs-icon-btn-off'}`}
-        onClick={toggleHighlights}
-        title={highlightEnabled ? 'Hide outlines (h)' : 'Show outlines (h)'}
-        aria-label={highlightEnabled ? 'Hide outlines' : 'Show outlines'}
-        aria-pressed={!highlightEnabled}
-      >
-        <Icon name={highlightEnabled ? 'eye' : 'eyeOff'} />
-      </button>
+      <HighlightModeMenu />
       <button
         className="cs-icon-btn"
         onClick={toggleShortcuts}
