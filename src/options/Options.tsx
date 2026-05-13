@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import clayIconUrl from '@/assets/clay-icon.png?inline';
 import { loadPreferences, savePreferences } from '@/lib/storage';
 import { clearRecents } from '@/lib/recents';
 import { emptyMapping } from '@/lib/site-host';
@@ -83,7 +84,7 @@ export function Options() {
   return (
     <div className="options">
       <header className="options-header">
-        <div className="options-logo">S</div>
+        <img className="options-logo" src={clayIconUrl} alt="" aria-hidden="true" />
         <h1>Clay Slip Settings</h1>
         {saved && <span className="options-saved">Saved</span>}
       </header>
