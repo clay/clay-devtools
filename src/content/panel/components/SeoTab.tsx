@@ -1,11 +1,37 @@
-import { useEffect, useState } from 'react';
-import { extractSeoMeta, lintSeo, type SeoIssue, type SeoMeta } from '@/lib/seo';
+import { useEffect, useMemo, useState } from 'react';
+import { copyToClipboard } from '@/lib/clipboard';
+import { highlightJson } from '@/lib/json-highlight';
+import {
+  extractSeoMeta,
+  lintJsonLd,
+  lintSeo,
+  summarizeJsonLd,
+  type JsonLdIssue,
+  type SeoIssue,
+  type SeoMeta,
+} from '@/lib/seo';
+import { useStore } from '../store';
+import { Icon } from './Icon';
 
 const TONE: Record<SeoIssue['severity'], string> = {
   error: 'cs-seo-issue-error',
   warn: 'cs-seo-issue-warn',
   info: 'cs-seo-issue-info',
 };
+
+const SEVERITY_RANK: Record<SeoIssue['severity'], number> = { error: 0, warn: 1, info: 2 };
+
+/** Pick the most important severity from a list of issues. */
+function worstSeverity(
+  issues: readonly { severity: SeoIssue['severity'] }[]
+): SeoIssue['severity'] | null {
+  if (issues.length === 0) return null;
+  return issues.reduce<SeoIssue['severity']>(
+    (worst, issue) =>
+      SEVERITY_RANK[issue.severity] < SEVERITY_RANK[worst] ? issue.severity : worst,
+    'info'
+  );
+}
 
 function CardPreview({ meta, kind }: { meta: SeoMeta; kind: 'twitter' | 'facebook' }) {
   const title =
@@ -38,6 +64,180 @@ function CardPreview({ meta, kind }: { meta: SeoMeta; kind: 'twitter' | 'faceboo
         <p className="cs-seo-card-desc">{description || 'No description set.'}</p>
       </div>
     </div>
+  );
+}
+
+function JsonLdBlockCard({
+  block,
+  index,
+  issues,
+}: {
+  block: unknown;
+  index: number;
+  issues: readonly JsonLdIssue[];
+}) {
+  const pushToast = useStore((s) => s.pushToast);
+  // Open by default if the block has any errors so the user immediately
+  // sees what's wrong without an extra click.
+  const hasError = issues.some((i) => i.severity === 'error');
+  const [open, setOpen] = useState(hasError);
+  const summary = summarizeJsonLd(block);
+  const headerSeverity = worstSeverity(issues);
+
+  const onCopy = async (e: React.MouseEvent) => {
+    // Prevent the click from toggling the <details> open state.
+    e.preventDefault();
+    e.stopPropagation();
+    const text =
+      summary.invalid && isInvalidBlock(block) ? (block.raw ?? '') : JSON.stringify(block, null, 2);
+    const ok = await copyToClipboard(text);
+    pushToast(ok ? `Copied JSON-LD block #${index + 1}` : 'Copy failed', ok ? 'success' : 'error');
+  };
+
+  const cardClasses = ['cs-jsonld-card'];
+  if (summary.invalid) cardClasses.push('cs-jsonld-card-invalid');
+  if (headerSeverity === 'error') cardClasses.push('cs-jsonld-card-has-error');
+  else if (headerSeverity === 'warn') cardClasses.push('cs-jsonld-card-has-warn');
+
+  return (
+    <details
+      className={cardClasses.join(' ')}
+      open={open}
+      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
+    >
+      <summary className="cs-jsonld-summary">
+        <span className="cs-jsonld-chevron" aria-hidden="true">
+          ▶
+        </span>
+        <span className="cs-jsonld-index">#{index + 1}</span>
+        <span className="cs-jsonld-type" title={summary.typeLabel}>
+          {summary.typeLabel}
+          {summary.itemCount !== null && (
+            <span className="cs-jsonld-count">
+              {' '}
+              · {summary.itemCount} item{summary.itemCount === 1 ? '' : 's'}
+            </span>
+          )}
+        </span>
+        {summary.secondary && (
+          <span className="cs-jsonld-secondary" title={summary.secondary}>
+            {summary.secondary}
+          </span>
+        )}
+        {issues.length > 0 && (
+          <span
+            className={`cs-jsonld-badge cs-jsonld-badge-${headerSeverity}`}
+            title={`${issues.length} ${headerSeverity === 'error' ? 'error' : headerSeverity === 'warn' ? 'warning' : 'note'}${issues.length === 1 ? '' : 's'}`}
+          >
+            {headerSeverity === 'error' ? '✕' : headerSeverity === 'warn' ? '!' : 'i'}{' '}
+            {issues.length}
+          </span>
+        )}
+        <button
+          type="button"
+          className="cs-icon-btn cs-jsonld-copy"
+          onClick={onCopy}
+          aria-label={`Copy JSON-LD block ${index + 1}`}
+          title="Copy JSON to clipboard"
+        >
+          <Icon name="copy" />
+        </button>
+      </summary>
+      {/* Body is only mounted once expanded — saves the syntax-highlight
+          regex pass on big @graph payloads when the user never opens them. */}
+      {open && (
+        <>
+          {issues.length > 0 && (
+            <ul className="cs-jsonld-issues">
+              {issues.map((issue, i) => (
+                <li key={`${issue.code}-${i}`} className={`cs-seo-issue ${TONE[issue.severity]}`}>
+                  <span className="cs-seo-issue-tag">{issue.severity}</span>
+                  <span className="cs-jsonld-issue-body">
+                    {issue.message}
+                    {issue.path && (
+                      <code className="cs-jsonld-issue-path" title={issue.path}>
+                        {issue.path}
+                      </code>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {summary.invalid && isInvalidBlock(block) ? (
+            <div className="cs-jsonld-body">
+              <p className="cs-jsonld-error">
+                This block isn&rsquo;t valid JSON. Showing the raw script contents:
+              </p>
+              <pre className="cs-jsonld-raw">{block.raw ?? '(empty)'}</pre>
+            </div>
+          ) : (
+            <pre
+              className="cs-json cs-jsonld-body"
+              dangerouslySetInnerHTML={{ __html: highlightJson(block) }}
+            />
+          )}
+        </>
+      )}
+    </details>
+  );
+}
+
+function isInvalidBlock(block: unknown): block is { __invalid: true; raw: string | null } {
+  return (
+    typeof block === 'object' &&
+    block !== null &&
+    (block as { __invalid?: unknown }).__invalid === true
+  );
+}
+
+function JsonLdSection({ blocks }: { blocks: readonly unknown[] }) {
+  // Lint once at the section level and group by blockIndex so each card
+  // only re-renders when its own slice of issues changes. Issues for the
+  // duplicate-@id check (which span multiple blocks) attach to the
+  // earliest block by design — see lintJsonLd.
+  const issuesByBlock = useMemo(() => {
+    const all = lintJsonLd(blocks);
+    const map = new Map<number, JsonLdIssue[]>();
+    for (const issue of all) {
+      const list = map.get(issue.blockIndex) ?? [];
+      list.push(issue);
+      map.set(issue.blockIndex, list);
+    }
+    return map;
+  }, [blocks]);
+
+  if (blocks.length === 0) return null;
+
+  const errorCount = [...issuesByBlock.values()]
+    .flat()
+    .filter((i) => i.severity === 'error').length;
+  const warnCount = [...issuesByBlock.values()].flat().filter((i) => i.severity === 'warn').length;
+
+  return (
+    <section className="cs-section">
+      <h4 className="cs-section-title">
+        Structured data (JSON-LD){' '}
+        <span className="cs-section-count">
+          · {blocks.length} block{blocks.length === 1 ? '' : 's'}
+          {errorCount > 0 && (
+            <span className="cs-jsonld-badge cs-jsonld-badge-error cs-jsonld-badge-inline">
+              ✕ {errorCount} error{errorCount === 1 ? '' : 's'}
+            </span>
+          )}
+          {warnCount > 0 && (
+            <span className="cs-jsonld-badge cs-jsonld-badge-warn cs-jsonld-badge-inline">
+              ! {warnCount} warning{warnCount === 1 ? '' : 's'}
+            </span>
+          )}
+        </span>
+      </h4>
+      <div className="cs-jsonld-list">
+        {blocks.map((block, i) => (
+          <JsonLdBlockCard key={i} block={block} index={i} issues={issuesByBlock.get(i) ?? []} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -81,7 +281,16 @@ export function SeoTab() {
           </div>
           <div>
             <dt>JSON-LD</dt>
-            <dd>{meta.jsonLd.length} block(s)</dd>
+            <dd>
+              {meta.jsonLd.length === 0 ? (
+                <em>none</em>
+              ) : (
+                <>
+                  {meta.jsonLd.length} block{meta.jsonLd.length === 1 ? '' : 's'}{' '}
+                  <span className="cs-seo-len">(see below)</span>
+                </>
+              )}
+            </dd>
           </div>
         </dl>
       </section>
@@ -95,6 +304,8 @@ export function SeoTab() {
         <h4 className="cs-section-title">Facebook / Slack preview</h4>
         <CardPreview meta={meta} kind="facebook" />
       </section>
+
+      <JsonLdSection blocks={meta.jsonLd} />
 
       {issues.length > 0 && (
         <section className="cs-section">
