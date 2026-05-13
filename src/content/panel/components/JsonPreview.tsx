@@ -1,0 +1,126 @@
+import { useEffect, useState } from 'react';
+import { buildUrl } from '@/lib/clay-uri';
+import { copyToClipboard } from '@/lib/clipboard';
+import { useStore } from '../store';
+import { Icon } from './Icon';
+
+interface FetchState {
+  readonly status: 'idle' | 'loading' | 'success' | 'error';
+  readonly data?: unknown;
+  readonly error?: string;
+}
+
+const cache = new Map<string, FetchState>();
+
+function highlightJson(value: unknown): string {
+  const json = JSON.stringify(value, null, 2);
+  return json
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(
+      /("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(?=\s*:))|("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")|(\b(?:true|false)\b)|(\bnull\b)|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
+      (match: string) => {
+        if (/^"[^"]+"\s*:?$/.test(match) && match.endsWith(':')) {
+          return `<span class="cs-json-key">${match}</span>`;
+        }
+        if (match.startsWith('"')) {
+          return `<span class="cs-json-string">${match}</span>`;
+        }
+        if (match === 'true' || match === 'false') {
+          return `<span class="cs-json-bool">${match}</span>`;
+        }
+        if (match === 'null') {
+          return `<span class="cs-json-null">${match}</span>`;
+        }
+        return `<span class="cs-json-number">${match}</span>`;
+      }
+    );
+}
+
+export function JsonPreview() {
+  const selected = useStore((s) => s.selected);
+  const page = useStore((s) => s.page);
+  const pushToast = useStore((s) => s.pushToast);
+
+  const targetUri = selected?.uri ?? page?.pageUri ?? null;
+  const [state, setState] = useState<FetchState>({ status: 'idle' });
+
+  useEffect(() => {
+    if (!targetUri) {
+      setState({ status: 'idle' });
+      return;
+    }
+    const cached = cache.get(targetUri);
+    if (cached) {
+      setState(cached);
+      return;
+    }
+
+    let cancelled = false;
+    setState({ status: 'loading' });
+    fetch(buildUrl(targetUri, '.json'), { credentials: 'include' })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        if (cancelled) return;
+        const next: FetchState = { status: 'success', data };
+        cache.set(targetUri, next);
+        setState(next);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : String(err);
+        const next: FetchState = { status: 'error', error: message };
+        cache.set(targetUri, next);
+        setState(next);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [targetUri]);
+
+  if (!targetUri) {
+    return <div className="cs-empty">Select a component to preview its data.</div>;
+  }
+
+  if (state.status === 'loading') {
+    return (
+      <div className="cs-loading">
+        <span className="cs-spinner" /> Fetching {targetUri}…
+      </div>
+    );
+  }
+
+  if (state.status === 'error') {
+    return (
+      <div className="cs-empty">
+        Failed to fetch JSON: <code>{state.error}</code>
+      </div>
+    );
+  }
+
+  if (state.status !== 'success' || state.data === undefined) {
+    return null;
+  }
+
+  const onCopy = async () => {
+    const ok = await copyToClipboard(JSON.stringify(state.data, null, 2));
+    pushToast(ok ? 'JSON copied' : 'Copy failed', ok ? 'success' : 'error');
+  };
+
+  return (
+    <section className="cs-section">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <h4 className="cs-section-title">JSON</h4>
+        <button className="cs-icon-btn" onClick={onCopy} aria-label="Copy JSON">
+          <Icon name="copy" />
+        </button>
+      </div>
+      <pre className="cs-json" dangerouslySetInnerHTML={{ __html: highlightJson(state.data) }} />
+    </section>
+  );
+}
