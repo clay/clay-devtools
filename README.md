@@ -141,19 +141,47 @@ src/
 
 ## Scripts
 
-| Command                 | What it does                            |
-| ----------------------- | --------------------------------------- |
-| `npm run dev`           | Vite dev server with HMR                |
-| `npm run build`         | Typecheck + production build → `dist/`  |
-| `npm run lint`          | ESLint with zero-warning policy         |
-| `npm run lint:fix`      | ESLint auto-fix                         |
-| `npm run format`        | Prettier write                          |
-| `npm run format:check`  | Prettier check (used in CI)             |
-| `npm run test`          | Run Vitest                              |
-| `npm run test:watch`    | Vitest in watch mode                    |
-| `npm run test:coverage` | Vitest with coverage                    |
-| `npm run typecheck`     | `tsc --noEmit`                          |
-| `npm run validate`      | Typecheck + lint + format check + tests |
+| Command                 | What it does                             |
+| ----------------------- | ---------------------------------------- |
+| `npm run dev`           | Vite dev server with HMR                 |
+| `npm run build`         | Typecheck + production build → `dist/`   |
+| `npm run lint`          | ESLint with zero-warning policy          |
+| `npm run lint:fix`      | ESLint auto-fix                          |
+| `npm run format`        | Prettier write                           |
+| `npm run format:check`  | Prettier check (used in CI)              |
+| `npm run test`          | Run Vitest                               |
+| `npm run test:watch`    | Vitest in watch mode                     |
+| `npm run test:coverage` | Vitest with coverage                     |
+| `npm run typecheck`     | `tsc --noEmit`                           |
+| `npm run validate`      | Typecheck + lint + format check + tests  |
+| `npm run zip`           | Pack `dist/` into `clay-slip-vX.Y.Z.zip` |
+| `npm run release:dry`   | Validate + build + zip (mirrors CI)      |
+
+## Releasing
+
+Releases are automated by `.github/workflows/release.yml`. The flow is:
+
+1. Bump the version + create a tag locally:
+
+   ```sh
+   npm version patch         # or `minor` / `major`
+   git push --follow-tags
+   ```
+
+   `npm version` updates `package.json`, commits, and creates an annotated `vX.Y.Z` tag in one shot.
+
+2. The push of the tag triggers the **Release** workflow, which:
+   - Verifies the tag matches `package.json` (fails fast on mismatch).
+   - Runs the full validation suite (typecheck / lint / format / test).
+   - Builds the extension.
+   - Zips `dist/` as `clay-slip-vX.Y.Z.zip`.
+   - Creates a **draft** GitHub release with the zip attached and auto-generated release notes.
+
+3. Open the draft release on GitHub, edit the notes, and **Publish**.
+
+4. Upload the zip to the [Chrome Web Store dashboard](https://chrome.google.com/webstore/devconsole) → _New version_.
+
+You can also kick off the workflow manually from the Actions tab against an existing tag (useful if a release run fails midway). Want to package locally without going through CI? `npm run release:dry` produces an identical `clay-slip-vX.Y.Z.zip` next to the repo.
 
 ## Migration notes (1.0 → 2.0)
 
@@ -164,7 +192,7 @@ This release is a full rewrite. There are no breaking _features_ — every capab
 - **Vanilla JS → TypeScript 6 + React 19**: the panel UI is React inside a Shadow DOM, with strict typing.
 - **Build system**: `npm` + **Vite 8** + `@crxjs/vite-plugin` for HMR-friendly extension development.
 - **State**: **Zustand 5** for the panel store.
-- **Testing**: **Vitest 4** + happy-dom 20; 85 tests.
+- **Testing**: **Vitest 4** + happy-dom 20; 84 tests.
 - **Lint / format**: ESLint 9 flat config + `typescript-eslint@8` + Prettier 3.
 - **CI**: GitHub Actions runs typecheck, lint, format check, tests, and a production build on every push and PR.
 
