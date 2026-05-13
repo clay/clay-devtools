@@ -14,7 +14,8 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **Inline JSON preview** so you don't need to open a new tab to read component data
 - **Diff view** comparing the published version against the unpublished draft, **or** the same URI across two environments
 - **Environment switcher** that rewrites every link and JSON fetch through your configured local / dev / staging / prod host
-- **Open in Clay editor** — jump from the page or any component straight into Clay edit mode
+- **Site host mappings** — per-brand hostname config that powers a one-click _View on prod / staging / qa_ pill row and lets the Share button hand out cross-env links without leaving the page
+- **Open in Clay editor** — jump from the page or any component straight into Clay edit mode (always opens the unpublished version)
 - **Sticky-note annotations** pinned to component URIs, surfaced as a dot on the page and a dedicated Notes tab — leave async review notes for teammates
 - **Page audit export** as JSON, CSV, or Markdown — every component on the page, ready to drop into a ticket or QA checklist
 - **Shareable selection links** — copy a `?clay-slip-select=…` URL that auto-opens the panel and selects the same component on someone else's machine
@@ -55,33 +56,50 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 
 ## Usage
 
-| Action                  | Shortcut / Click                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------- |
-| Toggle the panel        | Click the toolbar icon (on a Clay page)                                                           |
-| Select a component      | Click any outlined element on the page                                                            |
-| Open in Clay editor     | **Edit** button on a page or component — opens the page with `?edit=true`                         |
-| Open component JSON     | Use the **Data** / **.json** / **.html** buttons in the panel                                     |
-| Cross-env diff          | **Diff** tab → `Compare:` select → pick another configured env                                    |
-| Annotate a component    | **Inspect** tab, scroll to **Note**, type and Save — orange dot appears on the page               |
-| Share a selection       | **Share** button → URL is copied; opening it auto-selects the component                           |
-| Screenshot a component  | **Screenshot** button — PNG copied to clipboard                                                   |
-| Export page manifest    | **Export ▾** button on the Inspect tab → JSON / CSV / Markdown                                    |
-| Find on page            | **Tree** tab search box → matches dim non-matches; <kbd>Enter</kbd> cycles, <kbd>Esc</kbd> clears |
-| Resize the panel        | Drag the inner vertical / horizontal edge — or the inner-corner grabber for both at once          |
-| Copy URI                | Press <kbd>y</kbd> then <kbd>c</kbd> (component) or <kbd>p</kbd> (page)                           |
-| Open URI in new tab     | Press <kbd>o</kbd> then <kbd>c</kbd> or <kbd>p</kbd>                                              |
-| Toggle outlines on page | Press <kbd>h</kbd> or click the eye icon in the header                                            |
-| Cycle environment       | Click the `env: …` pill at the bottom of the Inspect tab                                          |
-| Show shortcut overlay   | Press <kbd>?</kbd>                                                                                |
-| Collapse / expand       | Press <kbd>[</kbd> or use the header button                                                       |
-| Switch tabs             | Press <kbd>i</kbd> (Inspect) or <kbd>t</kbd> (Tree)                                               |
-| Open settings           | Click the gear icon in the panel header                                                           |
+| Action                   | Shortcut / Click                                                                                  |
+| ------------------------ | ------------------------------------------------------------------------------------------------- |
+| Toggle the panel         | Click the toolbar icon (on a Clay page)                                                           |
+| Select a component       | Click any outlined element on the page                                                            |
+| Open in Clay editor      | **Edit** button on a page or component — opens the page with `?edit=true`                         |
+| Open component JSON      | Use the **Data** / **.json** / **.html** buttons in the panel                                     |
+| Cross-env diff           | **Diff** tab → `Compare:` select → pick another configured env                                    |
+| View page on another env | **View on:** pill row in PageInfo (one pill per env configured for this site)                     |
+| Annotate a component     | **Inspect** tab, scroll to **Note**, type and Save — orange dot appears on the page               |
+| Share a selection        | **Share** button copies for the current env; click **▾** to share for prod / staging / qa instead |
+| Screenshot a component   | **Screenshot** button — PNG copied to clipboard                                                   |
+| Export page manifest     | **Export ▾** button on the Inspect tab → JSON / CSV / Markdown                                    |
+| Find on page             | **Tree** tab search box → matches dim non-matches; <kbd>Enter</kbd> cycles, <kbd>Esc</kbd> clears |
+| Resize the panel         | Drag the inner vertical / horizontal edge — or the inner-corner grabber for both at once          |
+| Copy URI                 | Press <kbd>y</kbd> then <kbd>c</kbd> (component) or <kbd>p</kbd> (page)                           |
+| Open URI in new tab      | Press <kbd>o</kbd> then <kbd>c</kbd> or <kbd>p</kbd>                                              |
+| Toggle outlines on page  | Press <kbd>h</kbd> or click the eye icon in the header                                            |
+| Cycle environment        | Click the `env: …` pill at the bottom of the Inspect tab                                          |
+| Show shortcut overlay    | Press <kbd>?</kbd>                                                                                |
+| Collapse / expand        | Press <kbd>[</kbd> or use the header button                                                       |
+| Switch tabs              | Press <kbd>i</kbd> (Inspect) or <kbd>t</kbd> (Tree)                                               |
+| Open settings            | Click the gear icon in the panel header                                                           |
 
 ## Screenshots
 
 | Inspect                                  | Tree                               | Options                                  |
 | ---------------------------------------- | ---------------------------------- | ---------------------------------------- |
 | ![Inspect](docs/screenshots/inspect.png) | ![Tree](docs/screenshots/tree.png) | ![Options](docs/screenshots/options.png) |
+
+## Configuration
+
+### Site host mappings
+
+The **Site host mappings** section in the options page is a per-instance lookup table mapping each brand to its hostnames per environment. With it configured, the panel renders a **View on:** pill row on every Clay page so you can jump to the equivalent URL on a different env, and the **Share** button gains a **▾** picker for cross-env share links. Empty by default — every fork populates its own.
+
+Example for a Vox-Media-style multi-brand setup:
+
+| Label   | Production      | Staging         | QA            |
+| ------- | --------------- | --------------- | ------------- |
+| The Cut | www.thecut.com  | stg.thecut.com  | qa.thecut.com |
+| Vulture | www.vulture.com | stg.vulture.com |               |
+| Curbed  | www.curbed.com  | stg.curbed.com  | qa.curbed.com |
+
+Hostnames are matched **exactly** (case-insensitive) — no prefix stripping or wildcards — so the mapping does what you wrote and nothing more. The `dev` and `local` envs are out of scope for site mappings; use the existing **Environments** section for Clay-API hosts.
 
 ## Architecture
 
@@ -113,6 +131,7 @@ src/
     ├── exporter.ts         # Page manifest → JSON / CSV / Markdown
     ├── seo.ts              # Document head extractor + linter
     ├── screenshot.ts       # captureVisibleTab + canvas crop → clipboard PNG
+    ├── site-host.ts        # Per-brand hostname mapping → cross-env URL rewrites
     └── types.ts            # Shared types + DEFAULT_PREFERENCES
 
 ```
@@ -142,7 +161,7 @@ This release is a full rewrite. There are no breaking _features_ — every capab
 - **Vanilla JS → TypeScript 6 + React 19**: the panel UI is React inside a Shadow DOM, with strict typing.
 - **Build system**: `npm` + **Vite 8** + `@crxjs/vite-plugin` for HMR-friendly extension development.
 - **State**: **Zustand 5** for the panel store.
-- **Testing**: **Vitest 4** + happy-dom 20; 71 tests at launch.
+- **Testing**: **Vitest 4** + happy-dom 20; 85 tests.
 - **Lint / format**: ESLint 9 flat config + `typescript-eslint@8` + Prettier 3.
 - **CI**: GitHub Actions runs typecheck, lint, format check, tests, and a production build on every push and PR.
 

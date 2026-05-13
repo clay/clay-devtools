@@ -1,5 +1,6 @@
 import { buildEditorUrl, buildUrl, unpublishedUri } from '@/lib/clay-uri';
-import type { RuntimeMessage } from '@/lib/types';
+import { findMappingForHost, rewriteUrlToEnv } from '@/lib/site-host';
+import { SITE_ENV_LABELS, SITE_ENV_ORDER, type RuntimeMessage } from '@/lib/types';
 import { useEnvHost, useStore } from '../store';
 import { Icon } from './Icon';
 import { ExportMenu } from './ExportMenu';
@@ -7,11 +8,24 @@ import { ExportMenu } from './ExportMenu';
 export function PageInfo() {
   const page = useStore((s) => s.page);
   const envHost = useEnvHost();
+  const siteHosts = useStore((s) => s.preferences.siteHosts);
   if (!page) return null;
 
   const open = (url: string) => {
     chrome.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
   };
+
+  const currentHost = location.hostname;
+  const match = findMappingForHost(currentHost, siteHosts);
+  const viewOnTargets = match
+    ? SITE_ENV_ORDER.filter((env) => env !== match.env && Boolean(match.mapping.hosts[env])).map(
+        (env) => ({
+          env,
+          label: SITE_ENV_LABELS[env],
+          url: rewriteUrlToEnv(location.href, env, siteHosts),
+        })
+      )
+    : [];
 
   return (
     <section className="cs-section">
@@ -60,6 +74,22 @@ export function PageInfo() {
         )}
         <ExportMenu />
       </div>
+      {match && viewOnTargets.length > 0 && (
+        <div className="cs-view-on" title={`This page is on ${match.mapping.label || currentHost}`}>
+          <span className="cs-view-on-label">View on:</span>
+          {viewOnTargets.map(({ env, label, url }) => (
+            <button
+              key={env}
+              className="cs-view-on-pill"
+              disabled={!url}
+              onClick={() => url && open(url)}
+              title={url ?? `No host configured for ${label}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

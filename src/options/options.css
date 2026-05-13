@@ -191,3 +191,72 @@ kbd {
   font-size: 11px;
   font-family: ui-monospace, monospace;
 }
+
+.options-empty {
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.options-mappings {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.options-mappings-header,
+.options-mappings-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1.4fr 1.4fr 1.4fr 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+.options-mappings-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 2px;
+}
+
+.options-mappings-row input[type='text'] {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  min-width: 0;
+  width: 100%;
+  font-family: inherit;
+}
+
+.options-mappings-row input[type='text']:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.options-remove {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.options-remove:hover {
+  color: var(--accent);
+  border-color: var(--border);
+}

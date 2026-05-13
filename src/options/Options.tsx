@@ -1,13 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadPreferences, savePreferences } from '@/lib/storage';
 import { clearRecents } from '@/lib/recents';
+import { emptyMapping } from '@/lib/site-host';
 import {
   DEFAULT_PREFERENCES,
   ENVIRONMENT_LABELS,
   ENVIRONMENT_ORDER,
+  SITE_ENV_LABELS,
+  SITE_ENV_ORDER,
   type Environment,
   type EnvironmentHosts,
   type PanelPosition,
+  type SiteEnv,
+  type SiteHostMapping,
   type UserPreferences,
 } from '@/lib/types';
 
@@ -49,6 +54,31 @@ export function Options() {
     const nextHosts: EnvironmentHosts = { ...prefs.environments, [env]: host };
     update('environments', nextHosts);
   };
+
+  const updateSiteHosts = (next: readonly SiteHostMapping[]) => update('siteHosts', next);
+
+  const addSiteMapping = () => updateSiteHosts([...prefs.siteHosts, emptyMapping()]);
+
+  const removeSiteMapping = (id: string) =>
+    updateSiteHosts(prefs.siteHosts.filter((m) => m.id !== id));
+
+  const editSiteLabel = (id: string, label: string) =>
+    updateSiteHosts(prefs.siteHosts.map((m) => (m.id === id ? { ...m, label } : m)));
+
+  const editSiteHost = (id: string, env: SiteEnv, host: string) =>
+    updateSiteHosts(
+      prefs.siteHosts.map((m) => {
+        if (m.id !== id) return m;
+        const trimmed = host.trim();
+        const nextHosts = { ...m.hosts };
+        if (trimmed) {
+          nextHosts[env] = trimmed;
+        } else {
+          delete nextHosts[env];
+        }
+        return { ...m, hosts: nextHosts };
+      })
+    );
 
   return (
     <div className="options">
@@ -194,6 +224,72 @@ export function Options() {
             />
           </label>
         ))}
+      </section>
+
+      <section className="options-section">
+        <h2>Site host mappings</h2>
+        <p className="options-section-help">
+          Per-brand hostnames for each environment. When configured, the panel shows a{' '}
+          <strong>View on…</strong> pill row on every Clay page so you can jump to the equivalent
+          URL on a different env in one click. Enter bare hostnames (e.g.{' '}
+          <code>www.thecut.com</code>, not <code>https://www.thecut.com</code>). Leave a cell blank
+          if the brand isn&rsquo;t deployed in that env.
+        </p>
+
+        {prefs.siteHosts.length === 0 && (
+          <p className="options-empty">
+            No mappings configured yet. Add one to enable cross-env navigation.
+          </p>
+        )}
+
+        {prefs.siteHosts.length > 0 && (
+          <div className="options-mappings">
+            <div className="options-mappings-header">
+              <span>Label</span>
+              {SITE_ENV_ORDER.map((env) => (
+                <span key={env}>{SITE_ENV_LABELS[env]}</span>
+              ))}
+              <span aria-hidden="true" />
+            </div>
+            {prefs.siteHosts.map((mapping) => (
+              <div key={mapping.id} className="options-mappings-row">
+                <input
+                  type="text"
+                  placeholder="The Cut"
+                  value={mapping.label}
+                  onChange={(e) => editSiteLabel(mapping.id, e.target.value)}
+                />
+                {SITE_ENV_ORDER.map((env) => (
+                  <input
+                    key={env}
+                    type="text"
+                    placeholder={env === 'prod' ? 'www.example.com' : `${env}.example.com`}
+                    value={mapping.hosts[env] ?? ''}
+                    onChange={(e) => editSiteHost(mapping.id, env, e.target.value)}
+                  />
+                ))}
+                <button
+                  className="options-remove"
+                  title="Remove mapping"
+                  aria-label={`Remove ${mapping.label || 'mapping'}`}
+                  onClick={() => removeSiteMapping(mapping.id)}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="options-row">
+          <div className="options-label">
+            <span>Add mapping</span>
+            <span className="options-help">Create a new brand row.</span>
+          </div>
+          <button className="options-secondary" onClick={addSiteMapping}>
+            + Add
+          </button>
+        </div>
       </section>
 
       <section className="options-section">

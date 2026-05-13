@@ -223,6 +223,47 @@
   margin-top: 8px;
 }
 
+/* "View on prod / staging / qa" cross-environment pill row */
+.cs-view-on {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--cs-border);
+}
+
+.cs-view-on-label {
+  font-size: 11px;
+  color: var(--cs-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.cs-view-on-pill {
+  background: var(--cs-bg-elevated);
+  color: var(--cs-text);
+  border: 1px solid var(--cs-border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cs-view-on-pill:hover:not(:disabled) {
+  border-color: var(--cs-accent);
+  color: var(--cs-accent);
+}
+
+.cs-view-on-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .cs-link {
   display: inline-flex;
   align-items: center;
@@ -862,6 +903,28 @@
 .cs-export {
   position: relative;
   display: inline-block;
+}
+
+/* Split share button — main face copies the current page link; the trailing
+   ▾ chip opens a tiny menu of cross-environment share targets. */
+.cs-share-split {
+  display: inline-flex;
+  align-items: stretch;
+  position: relative;
+}
+
+.cs-share-split .cs-share-main {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+}
+
+.cs-share-split .cs-share-toggle {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding-left: 6px;
+  padding-right: 6px;
+  font-weight: 700;
 }
 
 .cs-export-menu {

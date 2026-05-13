@@ -2,7 +2,6 @@ import {
   buildCurlCommand,
   buildEditorUrl,
   buildSchemaUrl,
-  buildShareLink,
   buildUrl,
   copyAsCssSelector,
   copyAsFetchSnippet,
@@ -17,6 +16,7 @@ import { useEnvHost, useStore } from '../store';
 import { Icon } from './Icon';
 import { Breadcrumb } from './Breadcrumb';
 import { AnnotationEditor } from './AnnotationEditor';
+import { ShareMenu } from './ShareMenu';
 
 export function ComponentDetails() {
   const selected = useStore((s) => s.selected);
@@ -56,7 +56,6 @@ export function ComponentDetails() {
   const isPublished = selected.uri.includes('@published');
   const schemaUrl = buildSchemaUrl(selected.uri, envHost);
   const editUrl = page ? buildEditorUrl(page.pageUri, envHost, selected.instance) : null;
-  const shareUrl = buildShareLink(location.href, selected.uri);
 
   return (
     <section className="cs-section">
@@ -99,13 +98,7 @@ export function ComponentDetails() {
             Unpublished
           </button>
         )}
-        <button
-          className="cs-link"
-          onClick={() => copy(shareUrl, 'Share link')}
-          title="Copy a link that auto-selects this component when opened"
-        >
-          <Icon name="share" size={11} /> Share
-        </button>
+        <ShareMenu uri={selected.uri} />
         <button className="cs-link" onClick={screenshot} title="Copy a PNG of this component">
           <Icon name="camera" size={11} /> Screenshot
         </button>

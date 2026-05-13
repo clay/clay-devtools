@@ -42,6 +42,34 @@ export interface UserPreferences {
   readonly highlightOpacity: number;
   readonly enableShortcuts: boolean;
   readonly maxRecentComponents: number;
+  readonly siteHosts: readonly SiteHostMapping[];
+}
+
+/**
+ * Environments supported by the site-host mapping feature. Intentionally
+ * narrower than {@link Environment} (no `local`/`dev`) — site-host mappings
+ * are a per-brand lookup that only makes sense for stable shared envs.
+ */
+export type SiteEnv = 'prod' | 'staging' | 'qa';
+
+export const SITE_ENV_ORDER: readonly SiteEnv[] = ['prod', 'staging', 'qa'];
+
+export const SITE_ENV_LABELS: Readonly<Record<SiteEnv, string>> = {
+  prod: 'Production',
+  staging: 'Staging',
+  qa: 'QA',
+};
+
+/**
+ * One brand/site, with the hostname it serves on under each supported env.
+ * Hostnames are bare (`www.thecut.com`, not a full URL). Missing entries
+ * mean "this site isn't deployed in that env" and the corresponding
+ * "View on…" pill will not appear.
+ */
+export interface SiteHostMapping {
+  readonly id: string;
+  readonly label: string;
+  readonly hosts: Partial<Record<SiteEnv, string>>;
 }
 
 export const DEFAULT_ENVIRONMENT_HOSTS: EnvironmentHosts = {
@@ -61,6 +89,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   highlightOpacity: 0.85,
   enableShortcuts: true,
   maxRecentComponents: 20,
+  siteHosts: [],
 };
 
 export const ENVIRONMENT_ORDER: readonly Environment[] = ['local', 'dev', 'staging', 'prod'];
