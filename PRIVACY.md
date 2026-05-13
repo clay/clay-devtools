@@ -1,6 +1,6 @@
 # Privacy policy — Clay Slip
 
-_Last updated: 2026-05-13_
+_Last updated: 2026-05-13 (per-site permissions model)_
 
 Clay Slip is a developer tool. It runs entirely on your device, in your browser. **It does not collect, transmit, sell, or share any personal data.**
 
@@ -33,7 +33,7 @@ You can clear everything from the extension's **Options** page (Reset preference
 
 ## What the extension reads from the page
 
-To do its job, the content script reads:
+The content script only runs on sites you have explicitly granted access to via Chrome's per-site permission prompt (see "Permissions" below). On those granted sites, it reads:
 
 - The `data-uri` and `data-editable` attributes that Clay sites set on rendered components.
 - Standard `<head>` metadata (`<title>`, `<meta>` tags, `<link rel="canonical">`, JSON-LD) for the SEO tab.
@@ -59,14 +59,25 @@ All of these requests target the Clay site you are already browsing (or another 
 
 ## Permissions and why each is requested
 
+### Required at install (minimum)
+
 | Permission       | Why it's requested                                                                                                                                                                                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `activeTab`      | Used by the Screenshot feature: when you click _Screenshot_ on a selected component, the service worker calls `chrome.tabs.captureVisibleTab` and crops the result to the component's bounding box. The PNG is written to your clipboard and discarded — never uploaded. |
 | `storage`        | Persists the user-controlled state described in the table above. Local-only.                                                                                                                                                                                             |
 | `clipboardWrite` | Implements the panel's _Copy URI_, _Copy as cURL/fetch()/CSS_, _Share_, _Export_, and _Screenshot_ actions. Each clipboard write is initiated by an explicit user click.                                                                                                 |
-| `<all_urls>`     | The content script must run on every page so it can detect Clay-rendered pages by reading the `data-uri` attribute on `<html>`. On non-Clay pages the extension exits immediately without reading or modifying anything else.                                            |
 
-The extension does **not** request `cookies`, `webRequest`, `webNavigation`, `history`, `bookmarks`, `identity`, `notifications`, `geolocation`, or any other sensitive permission.
+The extension declares **zero required `host_permissions`**. On a fresh install it can read or modify nothing on any website until you opt in.
+
+### Granted by you, per-site, at runtime
+
+| Permission                                  | Why it's requested                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `optional_host_permissions: ["<all_urls>"]` | Declares the _upper bound_ of hosts the extension is later allowed to ask for. The extension does **not** auto-grab any host. From **Options → Allowed sites** (or the toolbar popup's _Allow on this site_ button), you can grant access to specific hostnames; Chrome shows its native consent prompt for each one. Revocation is one click away from the same UI, or from `chrome://extensions → Site access`. |
+
+Granted hosts are visible at any time under `chrome://extensions → Clay Slip → Site access`. The content script only ever runs on sites you have explicitly enabled.
+
+The extension does **not** request `cookies`, `webRequest`, `webNavigation`, `history`, `bookmarks`, `identity`, `notifications`, `geolocation`, `tabs`, `scripting`, or any other sensitive permission.
 
 ---
 

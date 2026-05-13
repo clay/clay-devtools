@@ -9,6 +9,7 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 ## Highlights
 
 - **Manifest V3** Chrome extension built with TypeScript, React, Vite, and `@crxjs/vite-plugin`
+- **Zero-broad-permissions install** — ships with no host access; users grant specific Clay deployments per-site through a native Chrome consent prompt (Options → _Allowed sites_, or one click from the toolbar popup)
 - **Shadow-DOM panel** that never collides with host page styles
 - **Component tree + find-on-page** — live filter dims non-matches on the page, <kbd>Enter</kbd> cycles through them, <kbd>Esc</kbd> clears
 - **Inline JSON preview** so you don't need to open a new tab to read component data
@@ -46,6 +47,9 @@ Then in Chrome:
 1. Visit `chrome://extensions`
 2. Enable **Developer mode** (top right)
 3. Click **Load unpacked** and select the `dist/` directory
+4. Open the extension's **Options** page → **Allowed sites** → add the hostnames of the Clay deployments you want to inspect (e.g. `www.thecut.com`). Chrome will show a native consent prompt for each one.
+
+   Clay Slip ships with **no host access by default** — the toolbar icon's popup also has a one-click "Allow on this site" button if you'd rather grant from a Clay tab.
 
 For live development with HMR:
 
@@ -90,6 +94,17 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 
 ## Configuration
 
+### Allowed sites (host permissions)
+
+Clay Slip declares **no required host permissions** in its manifest. On a fresh install it has access to nothing. To enable inspection on a site, add it from one of two places:
+
+- **Options page → Allowed sites**: type the bare hostname (e.g. `www.thecut.com`) and click _Grant access_. Chrome will pop a native consent dialog. Once granted, the content script auto-injects on every page of that origin.
+- **Toolbar popup**: click the Clay Slip icon on any page and click _Allow on this site_. This is the fastest way to onboard a Clay tab you're already on.
+
+Once you start filling out **Site host mappings** (next section) the Options page will show a **Pending** strip listing any mapping hostnames that are not yet granted, with a one-click _Grant all_ button.
+
+Revoke at any time from the same UI, or from Chrome's _Manage extensions → Site access_ panel.
+
 ### Site host mappings
 
 The **Site host mappings** section in the options page is a per-instance lookup table mapping each brand to its hostnames per environment. With it configured, the panel renders a **View on:** pill row on every Clay page so you can jump to the equivalent URL on a different env, and the **Share** button gains a **▾** picker for cross-env share links. Empty by default — every fork populates its own.
@@ -123,11 +138,12 @@ src/
 │       ├── styles.css      # Shadow-scoped styles
 │       ├── components/     # Tabs, tree, JSON viewer, diff, breadcrumb…
 │       └── hooks/          # Drag, theme, shortcuts, selection
-├── popup/                  # "Not a Clay page" popup (active until a page sends CLAY_DETECTED)
-├── options/                # Full options page (env hosts, dock + width, intensity, recents, shortcuts)
+├── popup/                  # Toolbar popup (grant access on this site / not-a-Clay-page state)
+├── options/                # Full options page (allowed sites, env hosts, dock + width, intensity, recents, shortcuts)
 └── lib/                    # Pure utilities
     ├── clay-uri.ts         # URI parsing + buildUrl/buildEditorUrl/buildShareLink + copy-as helpers
     ├── clipboard.ts        # Modern + legacy clipboard
+    ├── permissions.ts      # chrome.permissions wrappers (request / list / remove granted hosts)
     ├── storage.ts          # User preferences in chrome.storage.sync
     ├── annotations.ts      # Sticky notes per component URI
     ├── recents.ts          # Recently viewed components history

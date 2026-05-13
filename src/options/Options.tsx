@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import clayIconUrl from '@/assets/clay-icon.png?inline';
+import {
+  isValidHost,
+  listGrantedHosts,
+  removeHostPermission,
+  requestHostPermission,
+  type Host,
+} from '@/lib/permissions';
 import { loadPreferences, savePreferences } from '@/lib/storage';
 import { clearRecents } from '@/lib/recents';
 import { emptyMapping } from '@/lib/site-host';
@@ -28,12 +36,31 @@ const PANEL_POSITIONS: Array<{ value: PanelPosition; label: string }> = [
 export function Options() {
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [saved, setSaved] = useState(false);
+  const [grantedHosts, setGrantedHosts] = useState<readonly Host[]>([]);
+  const [newHost, setNewHost] = useState('');
+  const [grantBusy, setGrantBusy] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Async version for use in event handlers (where the lint rule about
+  // calling setState inside useEffect doesn't apply). The useEffect below
+  // uses the bare .then() form to mirror the loadPreferences pattern and
+  // keep react-hooks/set-state-in-effect happy.
+  const refreshGrantedHosts = useCallback(async () => {
+    setGrantedHosts(await listGrantedHosts());
+  }, []);
 
   useEffect(() => {
     loadPreferences().then(setPrefs);
+    listGrantedHosts().then(setGrantedHosts);
+    // Keep the list live if the user grants/revokes from the popup or
+    // accepts a Chrome consent prompt while the page is open.
+    const onChange = () => listGrantedHosts().then(setGrantedHosts);
+    chrome.permissions?.onAdded.addListener(onChange);
+    chrome.permissions?.onRemoved.addListener(onChange);
     return () => {
       if (savedTimer.current) clearTimeout(savedTimer.current);
+      chrome.permissions?.onAdded.removeListener(onChange);
+      chrome.permissions?.onRemoved.removeListener(onChange);
     };
   }, []);
 
@@ -80,13 +107,157 @@ export function Options() {
       })
     );
 
+  // Hostnames the user has put into a site mapping but hasn't yet granted
+  // permission for. Surfaced as a "Grant access" suggestion strip so the
+  // two halves of the configuration stay in sync.
+  const pendingMappingHosts = useMemo(() => {
+    const granted = new Set(grantedHosts);
+    const out = new Set<Host>();
+    for (const m of prefs.siteHosts) {
+      for (const env of SITE_ENV_ORDER) {
+        const host = m.hosts[env];
+        if (host && !granted.has(host)) out.add(host);
+      }
+    }
+    return [...out].sort();
+  }, [grantedHosts, prefs.siteHosts]);
+
+  const grantHost = async (host: Host) => {
+    if (!isValidHost(host)) return;
+    setGrantBusy(true);
+    try {
+      const ok = await requestHostPermission(host);
+      if (ok) await refreshGrantedHosts();
+      setNewHost('');
+    } finally {
+      setGrantBusy(false);
+    }
+  };
+
+  const revokeHost = async (host: Host) => {
+    setGrantBusy(true);
+    try {
+      const ok = await removeHostPermission(host);
+      if (ok) await refreshGrantedHosts();
+    } finally {
+      setGrantBusy(false);
+    }
+  };
+
+  const grantAllPending = async () => {
+    setGrantBusy(true);
+    try {
+      // Request one host at a time so the user sees a per-host prompt and
+      // can decline individually. Stop on the first denial.
+      for (const host of pendingMappingHosts) {
+        const granted = await requestHostPermission(host);
+        if (!granted) break;
+      }
+      await refreshGrantedHosts();
+    } finally {
+      setGrantBusy(false);
+    }
+  };
+
   return (
     <div className="options">
       <header className="options-header">
-        <div className="options-logo">S</div>
+        <img className="options-logo" src={clayIconUrl} alt="" aria-hidden="true" />
         <h1>Clay Slip Settings</h1>
         {saved && <span className="options-saved">Saved</span>}
       </header>
+
+      <section className="options-section">
+        <h2>Allowed sites</h2>
+        <p className="options-section-help">
+          Clay Slip ships with <strong>no</strong> site access by default. Add the hostnames of your
+          Clay deployments here — Chrome will show a native permission prompt for each one. The
+          extension only runs on sites you&rsquo;ve explicitly granted.
+        </p>
+
+        {grantedHosts.length === 0 && (
+          <p className="options-empty">
+            No sites granted yet. Add one below or click the toolbar icon on a Clay page and grant
+            access from there.
+          </p>
+        )}
+
+        {grantedHosts.length > 0 && (
+          <ul className="options-host-list">
+            {grantedHosts.map((host) => (
+              <li key={host} className="options-host-row">
+                <code className="options-host-name">{host}</code>
+                <button
+                  type="button"
+                  className="options-secondary"
+                  onClick={() => void revokeHost(host)}
+                  disabled={grantBusy}
+                  title={`Revoke Clay Slip's access to ${host}`}
+                >
+                  Revoke
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="options-row">
+          <div className="options-label">
+            <span>Add a site</span>
+            <span className="options-help">
+              Bare hostname like <code>www.thecut.com</code> (no <code>https://</code>, no path).
+            </span>
+          </div>
+          <form
+            className="options-add-host"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void grantHost(newHost.trim());
+            }}
+          >
+            <input
+              type="text"
+              placeholder="www.example.com"
+              value={newHost}
+              onChange={(e) => setNewHost(e.target.value)}
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="off"
+            />
+            <button
+              type="submit"
+              className="options-secondary"
+              disabled={grantBusy || !isValidHost(newHost.trim())}
+            >
+              {grantBusy ? 'Working…' : 'Grant access'}
+            </button>
+          </form>
+        </div>
+
+        {pendingMappingHosts.length > 0 && (
+          <div className="options-pending">
+            <p className="options-pending-text">
+              <strong>{pendingMappingHosts.length}</strong> host
+              {pendingMappingHosts.length === 1 ? '' : 's'} from your site mappings below
+              {pendingMappingHosts.length === 1 ? ' is' : ' are'} not granted yet:{' '}
+              {pendingMappingHosts.map((h, i) => (
+                <span key={h}>
+                  {i > 0 && ', '}
+                  <code>{h}</code>
+                </span>
+              ))}
+            </p>
+            <button
+              type="button"
+              className="options-secondary"
+              onClick={() => void grantAllPending()}
+              disabled={grantBusy}
+            >
+              Grant all
+            </button>
+          </div>
+        )}
+      </section>
 
       <section className="options-section">
         <h2>Appearance</h2>
