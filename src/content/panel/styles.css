@@ -257,6 +257,36 @@
   word-break: break-all;
 }
 
+/* URI row: a single horizontal line with the URI on the left and a small
+   copy-icon button anchored on the right. The button stays muted at rest
+   so it doesn't compete with the URI text, then brightens on row-hover or
+   keyboard focus. */
+.cs-uri-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+}
+
+.cs-uri-row-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.cs-uri-row-copy {
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: opacity 0.12s ease;
+  margin-top: -2px;
+}
+
+.cs-uri-row:hover .cs-uri-row-copy,
+.cs-uri-row-copy:hover,
+.cs-uri-row-copy:focus-visible {
+  opacity: 1;
+}
+
 .cs-link-row {
   display: flex;
   flex-wrap: wrap;

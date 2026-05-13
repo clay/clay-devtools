@@ -11,6 +11,7 @@ import { captureElementToClipboard } from '@/lib/screenshot';
 import type { RuntimeMessage } from '@/lib/types';
 import { getPanelHost } from '../../shadow-host';
 import { useEnvHost, useStore } from '../store';
+import { CopyableUri } from './CopyableUri';
 import { Icon } from './Icon';
 import { Breadcrumb } from './Breadcrumb';
 import { AnnotationEditor } from './AnnotationEditor';
@@ -58,7 +59,15 @@ export function ComponentDetails() {
       <h4 className="cs-section-title">Component</h4>
       <Breadcrumb />
       <p className="cs-name">{selected.displayName}</p>
-      {selected.instance && <p className="cs-instance">{selected.instance}</p>}
+      {/* Copy yields the *full* URI even though the displayed text is the
+          shorter instance id — most consumers (Clay tools, fetch URLs, etc.)
+          want the URI, not just the suffix. The full URI surfaces in the
+          tooltip on hover so it's still discoverable. */}
+      <CopyableUri
+        uri={selected.uri}
+        displayText={selected.instance ?? selected.uri}
+        label="Component URI"
+      />
       <div className="cs-link-row">
         <button
           className="cs-link cs-link-primary"

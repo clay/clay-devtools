@@ -2,6 +2,7 @@ import { buildEditorUrl, buildUrl, unpublishedUri } from '@/lib/clay-uri';
 import { findMappingForHost, rewriteUrlToEnv } from '@/lib/site-host';
 import { SITE_ENV_LABELS, SITE_ENV_ORDER, type RuntimeMessage } from '@/lib/types';
 import { useEnvHost, useStore } from '../store';
+import { CopyableUri } from './CopyableUri';
 import { Icon } from './Icon';
 import { ExportMenu } from './ExportMenu';
 
@@ -31,7 +32,7 @@ export function PageInfo() {
     <section className="cs-section">
       <h4 className="cs-section-title">Page</h4>
       <p className="cs-name">{page.pageInstance ?? 'Unknown page'}</p>
-      <p className="cs-instance">{page.pageUri}</p>
+      <CopyableUri uri={page.pageUri} label="Page URI" />
       <div className="cs-link-row">
         <button
           className="cs-link cs-link-primary"
