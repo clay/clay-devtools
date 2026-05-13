@@ -178,11 +178,6 @@ export function copyAsFetchSnippet(uri: string, hostOverride = ''): string {
   return `await fetch(${JSON.stringify(url)}, { credentials: 'include' }).then((r) => r.json());`;
 }
 
-export function copyAsPlaywrightLocator(uri: string): string {
-  const safe = uri.replace(/'/g, "\\'");
-  return `page.locator('[data-uri="${safe}"]')`;
-}
-
 export function copyAsCssSelector(uri: string): string {
   const safe = uri.replace(/"/g, '\\"');
   return `[data-uri="${safe}"]`;

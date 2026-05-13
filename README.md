@@ -31,7 +31,7 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **Smart popup**: friendly "Not a Clay page" popup on non-Clay pages; on Clay pages the toolbar icon mounts/unmounts the entire extension as an escape hatch
 - **Toolbar badge** shows the count of Clay components on the current page (cleared on navigation)
 - **Click-through-aware selection**: the panel selects the component you clicked but lets real interactive elements (links, buttons, inputs) keep working
-- **Copy-as menu**: URI / cURL / `fetch()` snippet / Playwright locator / CSS selector — all env-host aware
+- **Copy-as menu**: URI / cURL / `fetch()` snippet / CSS selector — all env-host aware
 - **Vitest** unit tests and **GitHub Actions** CI on every PR
 
 ## Install (development)

@@ -4,7 +4,6 @@ import {
   buildUrl,
   copyAsCssSelector,
   copyAsFetchSnippet,
-  copyAsPlaywrightLocator,
   unpublishedUri,
 } from '@/lib/clay-uri';
 import { copyToClipboard } from '@/lib/clipboard';
@@ -109,12 +108,6 @@ export function ComponentDetails() {
             onClick={() => copy(copyAsFetchSnippet(selected.uri, envHost), 'fetch() snippet')}
           >
             fetch()
-          </button>
-          <button
-            className="cs-link"
-            onClick={() => copy(copyAsPlaywrightLocator(selected.uri), 'Playwright locator')}
-          >
-            Playwright
           </button>
           <button
             className="cs-link"

@@ -7,7 +7,6 @@ import {
   buildUrl,
   copyAsCssSelector,
   copyAsFetchSnippet,
-  copyAsPlaywrightLocator,
   getComponentName,
   getDisplayName,
   getInstance,
@@ -298,12 +297,6 @@ describe('copy helpers', () => {
     expect(snip).toContain('await fetch(');
     expect(snip).toContain('staging.example.com');
     expect(snip).toContain('.json');
-  });
-
-  it('builds a Playwright locator', () => {
-    expect(copyAsPlaywrightLocator('site/_components/x')).toBe(
-      'page.locator(\'[data-uri="site/_components/x"]\')'
-    );
   });
 
   it('builds a CSS selector with quote escaping', () => {
