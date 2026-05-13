@@ -1,7 +1,8 @@
-import { buildUrl, unpublishedUri } from '@/lib/clay-uri';
+import { buildEditorUrl, buildUrl, unpublishedUri } from '@/lib/clay-uri';
 import type { RuntimeMessage } from '@/lib/types';
 import { useEnvHost, useStore } from '../store';
 import { Icon } from './Icon';
+import { ExportMenu } from './ExportMenu';
 
 export function PageInfo() {
   const page = useStore((s) => s.page);
@@ -23,6 +24,13 @@ export function PageInfo() {
           onClick={() => open(buildUrl(page.pageUri, '', envHost))}
         >
           <Icon name="external" size={11} /> Page
+        </button>
+        <button
+          className="cs-link cs-link-edit"
+          onClick={() => open(buildEditorUrl(page.pageUri, envHost))}
+          title="Open this page in Clay edit mode"
+        >
+          <Icon name="edit" size={11} /> Edit
         </button>
         <button className="cs-link" onClick={() => open(buildUrl(page.pageUri, '/meta', envHost))}>
           Metadata
@@ -50,6 +58,7 @@ export function PageInfo() {
             )}
           </>
         )}
+        <ExportMenu />
       </div>
     </section>
   );

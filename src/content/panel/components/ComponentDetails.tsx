@@ -1,12 +1,26 @@
-import { buildCurlCommand, buildSchemaUrl, buildUrl, unpublishedUri } from '@/lib/clay-uri';
+import {
+  buildCurlCommand,
+  buildEditorUrl,
+  buildSchemaUrl,
+  buildShareLink,
+  buildUrl,
+  copyAsCssSelector,
+  copyAsFetchSnippet,
+  copyAsPlaywrightLocator,
+  unpublishedUri,
+} from '@/lib/clay-uri';
 import { copyToClipboard } from '@/lib/clipboard';
+import { captureElementToClipboard } from '@/lib/screenshot';
 import type { RuntimeMessage } from '@/lib/types';
+import { getPanelHost } from '../../shadow-host';
 import { useEnvHost, useStore } from '../store';
 import { Icon } from './Icon';
 import { Breadcrumb } from './Breadcrumb';
+import { AnnotationEditor } from './AnnotationEditor';
 
 export function ComponentDetails() {
   const selected = useStore((s) => s.selected);
+  const page = useStore((s) => s.page);
   const pushToast = useStore((s) => s.pushToast);
   const envHost = useEnvHost();
 
@@ -27,8 +41,22 @@ export function ComponentDetails() {
     pushToast(ok ? `${label} copied` : 'Copy failed', ok ? 'success' : 'error');
   };
 
+  const screenshot = async () => {
+    try {
+      const ok = await captureElementToClipboard(selected.element, getPanelHost());
+      pushToast(
+        ok ? 'Screenshot copied to clipboard' : 'Screenshot failed',
+        ok ? 'success' : 'error'
+      );
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : 'Screenshot failed', 'error');
+    }
+  };
+
   const isPublished = selected.uri.includes('@published');
   const schemaUrl = buildSchemaUrl(selected.uri, envHost);
+  const editUrl = page ? buildEditorUrl(page.pageUri, envHost, selected.instance) : null;
+  const shareUrl = buildShareLink(location.href, selected.uri);
 
   return (
     <section className="cs-section">
@@ -43,6 +71,15 @@ export function ComponentDetails() {
         >
           <Icon name="external" size={11} /> Data
         </button>
+        {editUrl && (
+          <button
+            className="cs-link cs-link-edit"
+            onClick={() => open(editUrl)}
+            title="Open the parent page in Clay edit mode, focused on this component"
+          >
+            <Icon name="edit" size={11} /> Edit
+          </button>
+        )}
         <button className="cs-link" onClick={() => open(buildUrl(selected.uri, '.json', envHost))}>
           .json
         </button>
@@ -62,17 +99,52 @@ export function ComponentDetails() {
             Unpublished
           </button>
         )}
-        <button className="cs-link" onClick={() => copy(selected.uri, 'URI')} title="Copy URI">
-          <Icon name="copy" size={11} /> Copy URI
-        </button>
         <button
           className="cs-link"
-          onClick={() => copy(buildCurlCommand(selected.uri, '.json', envHost), 'cURL command')}
-          title="Copy as cURL"
+          onClick={() => copy(shareUrl, 'Share link')}
+          title="Copy a link that auto-selects this component when opened"
         >
-          cURL
+          <Icon name="share" size={11} /> Share
+        </button>
+        <button className="cs-link" onClick={screenshot} title="Copy a PNG of this component">
+          <Icon name="camera" size={11} /> Screenshot
         </button>
       </div>
+
+      <details className="cs-copy-as">
+        <summary>Copy as…</summary>
+        <div className="cs-link-row">
+          <button className="cs-link" onClick={() => copy(selected.uri, 'URI')}>
+            <Icon name="copy" size={11} /> URI
+          </button>
+          <button
+            className="cs-link"
+            onClick={() => copy(buildCurlCommand(selected.uri, '.json', envHost), 'cURL command')}
+          >
+            cURL
+          </button>
+          <button
+            className="cs-link"
+            onClick={() => copy(copyAsFetchSnippet(selected.uri, envHost), 'fetch() snippet')}
+          >
+            fetch()
+          </button>
+          <button
+            className="cs-link"
+            onClick={() => copy(copyAsPlaywrightLocator(selected.uri), 'Playwright locator')}
+          >
+            Playwright
+          </button>
+          <button
+            className="cs-link"
+            onClick={() => copy(copyAsCssSelector(selected.uri), 'CSS selector')}
+          >
+            CSS
+          </button>
+        </div>
+      </details>
+
+      <AnnotationEditor uri={selected.uri} displayName={selected.displayName} />
     </section>
   );
 }

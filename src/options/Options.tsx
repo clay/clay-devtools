@@ -1,13 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadPreferences, savePreferences } from '@/lib/storage';
+import { clearRecents } from '@/lib/recents';
 import {
   DEFAULT_PREFERENCES,
   ENVIRONMENT_LABELS,
   ENVIRONMENT_ORDER,
   type Environment,
   type EnvironmentHosts,
+  type PanelPosition,
   type UserPreferences,
 } from '@/lib/types';
+
+const PANEL_POSITIONS: Array<{ value: PanelPosition; label: string }> = [
+  { value: 'bottom-right', label: 'Bottom right (corner)' },
+  { value: 'bottom-left', label: 'Bottom left (corner)' },
+  { value: 'top-right', label: 'Top right (corner)' },
+  { value: 'top-left', label: 'Top left (corner)' },
+  { value: 'left-side', label: 'Left side (full height)' },
+  { value: 'right-side', label: 'Right side (full height)' },
+];
 
 export function Options() {
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
@@ -67,22 +78,39 @@ export function Options() {
 
         <label className="options-row">
           <div className="options-label">
-            <span>Default panel position</span>
+            <span>Panel position</span>
             <span className="options-help">
-              Where the panel appears when you open it. You can drag it from there.
+              Where the panel docks. Side modes go full-height like a sidebar; corner modes are
+              draggable.
             </span>
           </div>
           <select
             value={prefs.panelPosition}
-            onChange={(e) =>
-              update('panelPosition', e.target.value as UserPreferences['panelPosition'])
-            }
+            onChange={(e) => update('panelPosition', e.target.value as PanelPosition)}
           >
-            <option value="bottom-right">Bottom right</option>
-            <option value="bottom-left">Bottom left</option>
-            <option value="top-right">Top right</option>
-            <option value="top-left">Top left</option>
+            {PANEL_POSITIONS.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
           </select>
+        </label>
+
+        <label className="options-row">
+          <div className="options-label">
+            <span>Panel width</span>
+            <span className="options-help">
+              Default starting width — drag the inner edge of the panel to resize live.
+            </span>
+          </div>
+          <input
+            type="range"
+            min={280}
+            max={720}
+            step={20}
+            value={prefs.panelWidth}
+            onChange={(e) => update('panelWidth', Number(e.target.value))}
+          />
         </label>
 
         <label className="options-row">
@@ -108,7 +136,7 @@ export function Options() {
         <p className="options-section-help">
           Configure each environment&rsquo;s host (e.g. <code>https://prod.example.com</code>).
           Leave blank to keep using the page&rsquo;s existing host. The env switcher pill in the
-          panel cycles through these.
+          panel cycles through these, and the Diff tab can compare any two configured envs.
         </p>
 
         <label className="options-row">
@@ -166,6 +194,39 @@ export function Options() {
             onChange={(e) => update('enableShortcuts', e.target.checked)}
           />
         </label>
+
+        <label className="options-row">
+          <div className="options-label">
+            <span>Recent components history</span>
+            <span className="options-help">
+              How many of your most recently inspected components Slip remembers across sessions.
+            </span>
+          </div>
+          <input
+            type="number"
+            min={5}
+            max={100}
+            step={5}
+            value={prefs.maxRecentComponents}
+            onChange={(e) => update('maxRecentComponents', Number(e.target.value))}
+          />
+        </label>
+
+        <div className="options-row">
+          <div className="options-label">
+            <span>Clear recents</span>
+            <span className="options-help">Wipe the recent components list.</span>
+          </div>
+          <button
+            className="options-secondary"
+            onClick={async () => {
+              await clearRecents();
+              flashSaved();
+            }}
+          >
+            Clear
+          </button>
+        </div>
       </section>
 
       <footer className="options-footer">

@@ -6,11 +6,14 @@ const TABS: ReadonlyArray<{ id: PanelTab; label: string }> = [
   { id: 'tree', label: 'Tree' },
   { id: 'json', label: 'JSON' },
   { id: 'diff', label: 'Diff' },
+  { id: 'seo', label: 'SEO' },
+  { id: 'notes', label: 'Notes' },
 ];
 
 export function Tabs() {
   const activeTab = useStore((s) => s.activeTab);
   const setActiveTab = useStore((s) => s.setActiveTab);
+  const annotationCount = useStore((s) => s.annotations.length);
 
   return (
     <div className="cs-tabs" role="tablist">
@@ -23,6 +26,9 @@ export function Tabs() {
           onClick={() => setActiveTab(tab.id)}
         >
           {tab.label}
+          {tab.id === 'notes' && annotationCount > 0 && (
+            <span className="cs-tab-badge">{annotationCount}</span>
+          )}
         </button>
       ))}
     </div>

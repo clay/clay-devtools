@@ -44,3 +44,7 @@ export function unmountPanel(): void {
 export function isPanelMounted(): boolean {
   return host !== null;
 }
+
+export function getPanelHost(): HTMLElement | null {
+  return host;
+}

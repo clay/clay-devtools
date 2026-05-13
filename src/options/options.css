@@ -108,7 +108,8 @@ body {
 
 .options-row select,
 .options-row input[type='range'],
-.options-row input[type='text'] {
+.options-row input[type='text'],
+.options-row input[type='number'] {
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);
@@ -117,6 +118,26 @@ body {
   font-size: 13px;
   min-width: 220px;
   font-family: inherit;
+}
+
+.options-row input[type='number'] {
+  min-width: 80px;
+}
+
+.options-secondary {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.options-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .options-row input[type='text']:focus {

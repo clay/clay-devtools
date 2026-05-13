@@ -110,6 +110,55 @@ const ICONS = {
       <path d="M2 2l12 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </>
   ),
+  edit: (
+    <>
+      <path
+        d="M2 14h12M3 11l8-8 2 2-8 8H3v-2z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        fill="none"
+        strokeLinejoin="round"
+      />
+    </>
+  ),
+  share: (
+    <>
+      <circle cx="12" cy="3.5" r="1.8" stroke="currentColor" strokeWidth="1.3" fill="none" />
+      <circle cx="4" cy="8" r="1.8" stroke="currentColor" strokeWidth="1.3" fill="none" />
+      <circle cx="12" cy="12.5" r="1.8" stroke="currentColor" strokeWidth="1.3" fill="none" />
+      <path
+        d="M5.6 7l4.8-2.7M5.6 9l4.8 2.7"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        fill="none"
+        strokeLinecap="round"
+      />
+    </>
+  ),
+  camera: (
+    <>
+      <path
+        d="M2 5h2.5l1-1.5h5l1 1.5H14v8H2V5z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        fill="none"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.4" fill="none" />
+    </>
+  ),
+  note: (
+    <>
+      <path
+        d="M3 2h7l3 3v9H3V2z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        fill="none"
+        strokeLinejoin="round"
+      />
+      <path d="M10 2v3h3" stroke="currentColor" strokeWidth="1.4" fill="none" />
+    </>
+  ),
 } as const;
 
 export type IconName = keyof typeof ICONS;

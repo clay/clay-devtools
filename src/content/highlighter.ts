@@ -7,6 +7,9 @@ const STYLE_ID = 'clay-slip-highlight-styles';
 const HIGHLIGHT_ATTR = 'data-clay-slip-color';
 const SELECTED_ATTR = 'data-clay-slip-selected';
 const HOVER_ATTR = 'data-clay-slip-hover';
+const ANNOTATED_ATTR = 'data-clay-slip-annotated';
+const MATCH_ATTR = 'data-clay-slip-match';
+const FILTER_MODE_ATTR = 'data-clay-slip-filtering';
 const OPACITY_VAR = '--clay-slip-outline-opacity';
 const DEFAULT_OPACITY = 0.85;
 
@@ -46,6 +49,14 @@ function buildStyleSheet(): string {
     ${colorRules}
     [${HOVER_ATTR}]{outline:3px solid rgba(255,175,58,var(${OPACITY_VAR},${DEFAULT_OPACITY})) !important;outline-offset:-3px !important;}
     [${SELECTED_ATTR}]{outline:5px solid rgba(226,44,44,var(${OPACITY_VAR},${DEFAULT_OPACITY})) !important;outline-offset:-5px !important;}
+    [${ANNOTATED_ATTR}]{position:relative;}
+    [${ANNOTATED_ATTR}]::before{
+      content:"";position:absolute;top:4px;right:4px;width:10px;height:10px;border-radius:50%;
+      background:rgba(245,158,11,0.95);box-shadow:0 0 0 2px rgba(255,255,255,0.85);
+      pointer-events:none;z-index:2147483646;
+    }
+    html[${FILTER_MODE_ATTR}] [data-uri]:not([${MATCH_ATTR}]){opacity:0.25 !important;transition:opacity 0.12s;}
+    [${MATCH_ATTR}]{outline:3px solid rgba(34,197,94,var(${OPACITY_VAR},${DEFAULT_OPACITY})) !important;outline-offset:-3px !important;}
   `;
 }
 
@@ -66,7 +77,10 @@ export function clearHighlights(elements: HTMLElement[]): void {
     el.removeAttribute(HIGHLIGHT_ATTR);
     el.removeAttribute(SELECTED_ATTR);
     el.removeAttribute(HOVER_ATTR);
+    el.removeAttribute(ANNOTATED_ATTR);
+    el.removeAttribute(MATCH_ATTR);
   }
+  document.documentElement.removeAttribute(FILTER_MODE_ATTR);
 }
 
 export function setSelected(prev: HTMLElement | null, next: HTMLElement | null): void {
@@ -88,4 +102,28 @@ export function setHighlightingEnabled(enabled: boolean): void {
 export function setHighlightOpacity(opacity: number): void {
   const clamped = Math.max(0, Math.min(1, opacity));
   document.documentElement.style.setProperty(OPACITY_VAR, String(clamped));
+}
+
+export function setAnnotatedUris(allElements: HTMLElement[], annotatedUris: Set<string>): void {
+  for (const el of allElements) {
+    const uri = el.getAttribute('data-uri');
+    if (uri && annotatedUris.has(uri)) el.setAttribute(ANNOTATED_ATTR, '');
+    else el.removeAttribute(ANNOTATED_ATTR);
+  }
+}
+
+export function setFindMatches(
+  allElements: HTMLElement[],
+  matchSet: Set<HTMLElement> | null
+): void {
+  if (!matchSet || matchSet.size === 0) {
+    document.documentElement.removeAttribute(FILTER_MODE_ATTR);
+    for (const el of allElements) el.removeAttribute(MATCH_ATTR);
+    return;
+  }
+  document.documentElement.setAttribute(FILTER_MODE_ATTR, '');
+  for (const el of allElements) {
+    if (matchSet.has(el)) el.setAttribute(MATCH_ATTR, '');
+    else el.removeAttribute(MATCH_ATTR);
+  }
 }

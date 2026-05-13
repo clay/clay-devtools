@@ -1,4 +1,4 @@
-import type { RuntimeMessage } from '@/lib/types';
+import type { CaptureResponse, RuntimeMessage } from '@/lib/types';
 
 const BADGE_BG = '#e22c2c';
 const POPUP_PATH = 'src/popup/index.html';
@@ -59,6 +59,23 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       }
       sendResponse({ ok: true });
       break;
+    }
+    case 'CAPTURE_TAB': {
+      const windowId = sender.tab?.windowId;
+      if (typeof windowId !== 'number') {
+        sendResponse({ ok: false, error: 'No window id' } satisfies CaptureResponse);
+        break;
+      }
+      chrome.tabs
+        .captureVisibleTab(windowId, { format: 'png' })
+        .then((dataUrl) => sendResponse({ ok: true, dataUrl } satisfies CaptureResponse))
+        .catch((err: unknown) =>
+          sendResponse({
+            ok: false,
+            error: err instanceof Error ? err.message : String(err),
+          } satisfies CaptureResponse)
+        );
+      return true;
     }
     default:
       break;

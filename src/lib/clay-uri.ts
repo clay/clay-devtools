@@ -130,3 +130,57 @@ export function buildCurlCommand(
   const url = buildUrl(uri, suffix, hostOverride);
   return `curl -X GET "${url}" -H "Accept: application/json"`;
 }
+
+/**
+ * Open the Clay page editor for a given page URI. Standard Amphora Clay
+ * accepts `?edit=true` on the page URL to enter edit mode. When a component
+ * instance is provided, it's appended as a hash anchor for editor focus.
+ */
+export function buildEditorUrl(
+  pageUri: string,
+  hostOverride = '',
+  componentInstance: string | null = null
+): string {
+  const base = buildUrl(pageUri, '.html', hostOverride);
+  const hash = componentInstance ? `#${componentInstance}` : '';
+  return `${base}?edit=true${hash}`;
+}
+
+/**
+ * Build a Clay-Slip deep link that, when opened, auto-selects the given
+ * component URI on page load.
+ */
+export function buildShareLink(currentUrl: string, uri: string): string {
+  try {
+    const url = new URL(currentUrl);
+    url.searchParams.set('clay-slip-select', uri);
+    return url.toString();
+  } catch {
+    const sep = currentUrl.includes('?') ? '&' : '?';
+    return `${currentUrl}${sep}clay-slip-select=${encodeURIComponent(uri)}`;
+  }
+}
+
+export function parseShareTarget(currentUrl: string): string | null {
+  try {
+    const url = new URL(currentUrl);
+    return url.searchParams.get('clay-slip-select');
+  } catch {
+    return null;
+  }
+}
+
+export function copyAsFetchSnippet(uri: string, hostOverride = ''): string {
+  const url = buildUrl(uri, '.json', hostOverride);
+  return `await fetch(${JSON.stringify(url)}, { credentials: 'include' }).then((r) => r.json());`;
+}
+
+export function copyAsPlaywrightLocator(uri: string): string {
+  const safe = uri.replace(/'/g, "\\'");
+  return `page.locator('[data-uri="${safe}"]')`;
+}
+
+export function copyAsCssSelector(uri: string): string {
+  const safe = uri.replace(/"/g, '\\"');
+  return `[data-uri="${safe}"]`;
+}

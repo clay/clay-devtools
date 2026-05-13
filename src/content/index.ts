@@ -1,6 +1,11 @@
-import { isClayDocument } from '@/lib/clay-uri';
+import { isClayDocument, parseShareTarget } from '@/lib/clay-uri';
 import type { RuntimeMessage } from '@/lib/types';
-import { applyHighlights, clearHighlights, installHighlightStyles } from './highlighter';
+import {
+  applyHighlights,
+  clearHighlights,
+  installHighlightStyles,
+  setSelected,
+} from './highlighter';
 import { readComponents } from './page-info';
 import { isPanelMounted, mountPanel, unmountPanel } from './shadow-host';
 import { useStore } from './panel/store';
@@ -17,6 +22,17 @@ function paintAndSync(): number {
   return components.length;
 }
 
+function handleDeepLink(): void {
+  const target = parseShareTarget(location.href);
+  if (!target) return;
+  const components = useStore.getState().components;
+  const match = components.find((c) => c.uri === target);
+  if (!match) return;
+  setSelected(null, match.element);
+  useStore.getState().setSelected(match);
+  match.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function bootstrap(): void {
   if (!isClayDocument()) {
     send({ type: 'UPDATE_BADGE', count: 0 });
@@ -25,6 +41,12 @@ function bootstrap(): void {
   send({ type: 'CLAY_DETECTED' });
   const count = paintAndSync();
   send({ type: 'UPDATE_BADGE', count });
+
+  // If the user landed via a Slip share link, auto-open the panel and select.
+  if (parseShareTarget(location.href)) {
+    if (!isPanelMounted()) mountPanel();
+    setTimeout(handleDeepLink, 50);
+  }
 }
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {

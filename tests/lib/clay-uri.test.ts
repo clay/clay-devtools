@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildCurlCommand,
+  buildEditorUrl,
   buildSchemaUrl,
+  buildShareLink,
   buildUrl,
+  copyAsCssSelector,
+  copyAsFetchSnippet,
+  copyAsPlaywrightLocator,
   getComponentName,
   getDisplayName,
   getInstance,
@@ -10,6 +15,7 @@ import {
   isClayDocument,
   isPublished,
   normalizeHost,
+  parseShareTarget,
   splitHostAndPath,
   toTitleCase,
   unpublishedUri,
@@ -235,6 +241,64 @@ describe('normalizeHost', () => {
   it('strips trailing slashes', () => {
     expect(normalizeHost('https://example.com/')).toBe('https://example.com');
     expect(normalizeHost('https://example.com///')).toBe('https://example.com');
+  });
+});
+
+describe('buildEditorUrl', () => {
+  it('appends ?edit=true to the page URL', () => {
+    expect(buildEditorUrl('site/_pages/abc')).toBe('https://site/_pages/abc.html?edit=true');
+  });
+
+  it('respects host override', () => {
+    expect(buildEditorUrl('prod.example.com/_pages/abc', 'staging.example.com')).toBe(
+      'https://staging.example.com/_pages/abc.html?edit=true'
+    );
+  });
+
+  it('appends instance hash when given', () => {
+    expect(buildEditorUrl('site/_pages/abc', '', 'inst-123')).toBe(
+      'https://site/_pages/abc.html?edit=true#inst-123'
+    );
+  });
+});
+
+describe('buildShareLink + parseShareTarget', () => {
+  it('appends the clay-slip-select param to a URL', () => {
+    const link = buildShareLink('https://example.com/page', 'site/_components/byline/instances/x');
+    expect(link).toContain('clay-slip-select=site');
+    expect(parseShareTarget(link)).toBe('site/_components/byline/instances/x');
+  });
+
+  it('replaces an existing clay-slip-select param rather than duplicating', () => {
+    const link = buildShareLink('https://example.com/page?clay-slip-select=old', 'new');
+    const url = new URL(link);
+    expect(url.searchParams.getAll('clay-slip-select')).toEqual(['new']);
+  });
+
+  it('returns null when no param is present', () => {
+    expect(parseShareTarget('https://example.com')).toBeNull();
+  });
+});
+
+describe('copy helpers', () => {
+  it('builds a fetch snippet against the env host', () => {
+    const snip = copyAsFetchSnippet(
+      'prod.example.com/_components/byline/instances/x',
+      'staging.example.com'
+    );
+    expect(snip).toContain('await fetch(');
+    expect(snip).toContain('staging.example.com');
+    expect(snip).toContain('.json');
+  });
+
+  it('builds a Playwright locator', () => {
+    expect(copyAsPlaywrightLocator('site/_components/x')).toBe(
+      'page.locator(\'[data-uri="site/_components/x"]\')'
+    );
+  });
+
+  it('builds a CSS selector with quote escaping', () => {
+    expect(copyAsCssSelector('site/_components/x"y')).toBe('[data-uri="site/_components/x\\"y"]');
   });
 });
 
