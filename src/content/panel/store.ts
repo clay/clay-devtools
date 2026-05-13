@@ -62,7 +62,10 @@ export const useStore = create<StoreState>()((set) => ({
   components: [],
   selected: null,
   hovered: null,
-  collapsed: false,
+  // Mount in collapsed state — the panel renders as a small floating "Clay"
+  // button (FAB) until the user clicks it. Matches the standard pattern used
+  // by Sentry, Hotjar, Crisp, Intercom etc. See {@link Fab}.
+  collapsed: true,
   search: '',
   find: { query: '', index: 0 },
   activeTab: 'inspect',

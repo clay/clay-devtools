@@ -42,9 +42,14 @@ function bootstrap(): void {
   const count = paintAndSync();
   send({ type: 'UPDATE_BADGE', count });
 
-  // If the user landed via a Slip share link, auto-open the panel and select.
+  // Auto-mount on every Clay page. The panel boots into its collapsed state
+  // (the floating Clay button); the user clicks the FAB to expand. This is
+  // the standard pattern for in-page extension chrome (Sentry/Hotjar/Crisp).
+  if (!isPanelMounted()) mountPanel();
+
+  // If the user landed via a Slip share link, also auto-expand + select.
   if (parseShareTarget(location.href)) {
-    if (!isPanelMounted()) mountPanel();
+    useStore.getState().toggleCollapsed();
     setTimeout(handleDeepLink, 50);
   }
 }

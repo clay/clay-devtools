@@ -8,6 +8,7 @@ import { useDraggable } from './hooks/useDraggable';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useThemedRoot } from './hooks/useThemedRoot';
 import { useElementSelection } from './hooks/useElementSelection';
+import { Fab } from './components/Fab';
 import { Header } from './components/Header';
 import { Tabs } from './components/Tabs';
 import { PageInfo } from './components/PageInfo';
@@ -94,41 +95,39 @@ export function App() {
     );
   }, [selected, maxRecent]);
 
+  if (collapsed) {
+    return (
+      <div className="cs-root" style={themeStyle}>
+        <Fab />
+        <Toasts />
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`cs-panel cs-pos-${corner} ${collapsed ? 'cs-collapsed' : ''}`}
-      style={{ ...themeStyle, ...positionStyle }}
-    >
+    <div className={`cs-panel cs-pos-${corner}`} style={{ ...themeStyle, ...positionStyle }}>
       <Header ref={headerRef} />
-      {!collapsed && (
-        <>
-          <Tabs />
-          <div className="cs-body">
-            {activeTab === 'inspect' && (
-              <>
-                <PageInfo />
-                <ComponentDetails />
-                <RecentList />
-                <div style={{ marginTop: 12 }}>
-                  <EnvironmentSwitcher />
-                </div>
-              </>
-            )}
-            {activeTab === 'tree' && <ComponentTree />}
-            {activeTab === 'json' && <JsonPreview />}
-            {activeTab === 'diff' && <DiffView />}
-            {activeTab === 'seo' && <SeoTab />}
-            {activeTab === 'notes' && <NotesTab />}
-          </div>
-        </>
-      )}
-      {!collapsed && (
-        <>
-          <ResizeHandle mode="width" />
-          {!isSideDock && <ResizeHandle mode="height" />}
-          {!isSideDock && <ResizeHandle mode="corner" />}
-        </>
-      )}
+      <Tabs />
+      <div className="cs-body">
+        {activeTab === 'inspect' && (
+          <>
+            <PageInfo />
+            <ComponentDetails />
+            <RecentList />
+            <div style={{ marginTop: 12 }}>
+              <EnvironmentSwitcher />
+            </div>
+          </>
+        )}
+        {activeTab === 'tree' && <ComponentTree />}
+        {activeTab === 'json' && <JsonPreview />}
+        {activeTab === 'diff' && <DiffView />}
+        {activeTab === 'seo' && <SeoTab />}
+        {activeTab === 'notes' && <NotesTab />}
+      </div>
+      <ResizeHandle mode="width" />
+      {!isSideDock && <ResizeHandle mode="height" />}
+      {!isSideDock && <ResizeHandle mode="corner" />}
       <ShortcutOverlay />
       <Toasts />
     </div>

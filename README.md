@@ -27,7 +27,8 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **Auto / light / dark themes** that respond to OS theme changes live
 - **Keyboard shortcuts** with a <kbd>?</kbd> overlay listing every binding
 - **Options page** for theme, dock side + width, environment hosts, highlight intensity, shortcut toggle, and recents history size
-- **Smart popup**: friendly "Not a Clay page" popup on non-Clay pages, gets out of the way on Clay pages so the icon click toggles the panel
+- **Floating Clay button (FAB)** on every Clay page — collapsed/idle state of the panel is a small circular button anchored to the user's preferred corner, with a live component-count badge. Click it to expand the full panel. The standard browser-extension chrome pattern (Sentry / Hotjar / Crisp / Intercom).
+- **Smart popup**: friendly "Not a Clay page" popup on non-Clay pages; on Clay pages the toolbar icon mounts/unmounts the entire extension as an escape hatch
 - **Toolbar badge** shows the count of Clay components on the current page (cleared on navigation)
 - **Click-through-aware selection**: the panel selects the component you clicked but lets real interactive elements (links, buttons, inputs) keep working
 - **Copy-as menu**: URI / cURL / `fetch()` snippet / Playwright locator / CSS selector — all env-host aware
@@ -58,7 +59,9 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 
 | Action                   | Shortcut / Click                                                                                  |
 | ------------------------ | ------------------------------------------------------------------------------------------------- |
-| Toggle the panel         | Click the toolbar icon (on a Clay page)                                                           |
+| Open the panel           | Click the floating **Clay** button (FAB) anchored at your preferred corner                        |
+| Collapse to FAB          | Click the collapse button in the panel header (or press <kbd>[</kbd>)                             |
+| Hide the extension       | Click the toolbar icon (toggles mount on/off for the current tab)                                 |
 | Select a component       | Click any outlined element on the page                                                            |
 | Open in Clay editor      | **Edit** button on a page or component — opens the page with `?edit=true`                         |
 | Open component JSON      | Use the **Data** / **.json** / **.html** buttons in the panel                                     |
@@ -75,7 +78,7 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 | Toggle outlines on page  | Press <kbd>h</kbd> or click the eye icon in the header                                            |
 | Cycle environment        | Click the `env: …` pill at the bottom of the Inspect tab                                          |
 | Show shortcut overlay    | Press <kbd>?</kbd>                                                                                |
-| Collapse / expand        | Press <kbd>[</kbd> or use the header button                                                       |
+| Toggle FAB ↔ panel       | Press <kbd>[</kbd> or click the collapse button / the FAB                                         |
 | Switch tabs              | Press <kbd>i</kbd> (Inspect) or <kbd>t</kbd> (Tree)                                               |
 | Open settings            | Click the gear icon in the panel header                                                           |
 

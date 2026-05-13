@@ -9,7 +9,6 @@ interface HeaderProps {
 
 export function Header({ ref }: HeaderProps) {
   const page = useStore((s) => s.page);
-  const collapsed = useStore((s) => s.collapsed);
   const toggleCollapsed = useStore((s) => s.toggleCollapsed);
   const toggleShortcuts = useStore((s) => s.toggleShortcuts);
   const toggleHighlights = useStore((s) => s.toggleHighlights);
@@ -34,9 +33,7 @@ export function Header({ ref }: HeaderProps) {
         </span>
       </div>
       {page && (
-        <span
-          className={`cs-status ${page.isPublished ? 'cs-published' : 'cs-draft'} cs-collapsed-hide`}
-        >
+        <span className={`cs-status ${page.isPublished ? 'cs-published' : 'cs-draft'}`}>
           {page.isPublished ? 'Published' : 'Draft'}
         </span>
       )}
@@ -50,28 +47,23 @@ export function Header({ ref }: HeaderProps) {
         <Icon name={highlightEnabled ? 'eye' : 'eyeOff'} />
       </button>
       <button
-        className="cs-icon-btn cs-collapsed-hide"
+        className="cs-icon-btn"
         onClick={toggleShortcuts}
         title="Keyboard shortcuts (?)"
         aria-label="Keyboard shortcuts"
       >
         <Icon name="question" />
       </button>
-      <button
-        className="cs-icon-btn cs-collapsed-hide"
-        onClick={openOptions}
-        title="Settings"
-        aria-label="Settings"
-      >
+      <button className="cs-icon-btn" onClick={openOptions} title="Settings" aria-label="Settings">
         <Icon name="settings" />
       </button>
       <button
         className="cs-icon-btn"
         onClick={toggleCollapsed}
-        title={collapsed ? 'Expand panel ([)' : 'Collapse panel ([)'}
-        aria-label={collapsed ? 'Expand panel' : 'Collapse panel'}
+        title="Collapse to floating button ([)"
+        aria-label="Collapse to floating button"
       >
-        <Icon name={collapsed ? 'expand' : 'collapse'} />
+        <Icon name="collapse" />
       </button>
     </div>
   );

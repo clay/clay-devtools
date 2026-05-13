@@ -25,28 +25,70 @@
   user-select: none;
 }
 
-.cs-panel.cs-collapsed {
-  width: auto;
-  min-width: 0;
-  max-width: 240px;
+/* Floating Clay button — the panel's collapsed/idle state. Standard
+   "extension chrome" pattern (Sentry, Hotjar, Crisp, Intercom, etc.):
+   small circular FAB anchored to the user's preferred corner. Click
+   expands it to the full panel; the panel's collapse button shrinks
+   it back here. */
+.cs-fab {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--cs-accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.18);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
-.cs-panel.cs-collapsed .cs-header {
-  padding: 6px 8px;
-  gap: 6px;
-  border-bottom: none;
+.cs-fab:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.2),
+    0 10px 28px rgba(0, 0, 0, 0.22);
 }
 
-.cs-panel.cs-collapsed .cs-collapsed-hide {
-  display: none;
+.cs-fab:active {
+  transform: scale(0.97);
 }
 
-.cs-panel.cs-collapsed .cs-title-text {
-  display: none;
+.cs-fab:focus-visible {
+  outline: 2px solid var(--cs-accent);
+  outline-offset: 3px;
 }
 
-.cs-panel.cs-collapsed .cs-title {
-  flex: 0 0 auto;
+.cs-fab-logo {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.cs-fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--cs-bg);
+  color: var(--cs-text);
+  border: 2px solid var(--cs-bg);
+  box-shadow: 0 0 0 1px var(--cs-border);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
 }
 
 .cs-header {
