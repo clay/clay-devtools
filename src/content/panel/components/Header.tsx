@@ -1,5 +1,5 @@
 import type { Ref } from 'react';
-import clayIconUrl from '@/assets/clay-icon.png';
+import clayIconUrl from '@/assets/clay-icon.png?inline';
 import type { RuntimeMessage } from '@/lib/types';
 import { Icon } from './Icon';
 import { useStore } from '../store';

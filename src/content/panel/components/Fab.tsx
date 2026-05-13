@@ -1,5 +1,8 @@
 import type { CSSProperties } from 'react';
-import clayIconUrl from '@/assets/clay-icon.png';
+// Inline as a data URL so we don't depend on chrome.runtime.getURL() and
+// avoid a network fetch from the host page's origin (which would 404 — the
+// asset lives under the extension's origin, not the page's).
+import clayIconUrl from '@/assets/clay-icon.png?inline';
 import type { PanelPosition } from '@/lib/types';
 import { useStore } from '../store';
 
