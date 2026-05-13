@@ -33,19 +33,28 @@ function diffLines(
   return result;
 }
 
+function initialStateFor(uri: string | null): DualState {
+  if (!uri || !isPublished(uri)) return { status: 'idle' };
+  return { status: 'loading' };
+}
+
 export function DiffView() {
   const selected = useStore((s) => s.selected);
   const page = useStore((s) => s.page);
   const targetUri = selected?.uri ?? page?.pageUri ?? null;
-  const [state, setState] = useState<DualState>({ status: 'idle' });
+
+  const [state, setState] = useState<DualState>(() => initialStateFor(targetUri));
+  const [prevUri, setPrevUri] = useState(targetUri);
+
+  if (prevUri !== targetUri) {
+    setPrevUri(targetUri);
+    setState(initialStateFor(targetUri));
+  }
 
   useEffect(() => {
-    if (!targetUri || !isPublished(targetUri)) {
-      setState({ status: 'idle' });
-      return;
-    }
+    if (!targetUri || !isPublished(targetUri)) return;
+
     let cancelled = false;
-    setState({ status: 'loading' });
 
     Promise.all([
       fetch(buildUrl(targetUri, '.json'), { credentials: 'include' }).then((r) => r.json()),

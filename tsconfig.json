@@ -19,11 +19,10 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "types": ["chrome", "node", "vite/client", "vitest/globals"],
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "tests", "vite.config.ts"],
+  "include": ["src", "tests", "vite.config.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

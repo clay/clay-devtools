@@ -1,5 +1,5 @@
 // One-shot helper to render the SVG icon at extension sizes.
-// Run with:  npx --yes -p sharp@0.33 node scripts/build-icons.mjs
+// Run with:  npx --yes -p sharp@0.34 node scripts/build-icons.mjs
 import sharp from 'sharp';
 import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';

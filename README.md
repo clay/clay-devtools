@@ -104,11 +104,13 @@ src/
 
 This release is a full rewrite. There are no breaking _features_ — every capability of 1.0 is still present, plus a much larger set of new ones — but every implementation file changed:
 
+- **Node 24 LTS** (`.nvmrc` pinned, `engines.node = ">=24"`).
 - **Manifest V2 → V3**: replaces `browserAction` and the persistent background page with `action` and a service worker.
-- **Vanilla JS → TypeScript + React**: the panel UI is now React 18 inside a Shadow DOM.
-- **Build system**: `npm` + Vite + `@crxjs/vite-plugin` for HMR-friendly extension development.
-- **Testing**: Vitest + happy-dom; 33 tests at launch.
-- **Lint / format**: ESLint 9 flat config + Prettier.
+- **Vanilla JS → TypeScript 6 + React 19**: the panel UI is React inside a Shadow DOM, with strict typing.
+- **Build system**: `npm` + **Vite 8** + `@crxjs/vite-plugin` for HMR-friendly extension development.
+- **State**: **Zustand 5** for the panel store.
+- **Testing**: **Vitest 4** + happy-dom 20; 33 tests at launch.
+- **Lint / format**: ESLint 9 flat config + `typescript-eslint@8` + Prettier 3.
 - **CI**: GitHub Actions runs typecheck, lint, format check, tests, and a production build on every push and PR.
 
 ## License

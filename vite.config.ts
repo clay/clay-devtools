@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react(), crx({ manifest })],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      '@': path.resolve(import.meta.dirname, 'src'),
     },
   },
   build: {
@@ -25,15 +25,5 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     hmr: { port: 5173 },
-  },
-  test: {
-    environment: 'happy-dom',
-    globals: true,
-    setupFiles: ['./tests/setup.ts'],
-    coverage: {
-      reporter: ['text', 'html'],
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.d.ts', 'src/manifest.ts', 'src/**/index.ts'],
-    },
   },
 });

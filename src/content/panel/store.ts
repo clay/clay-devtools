@@ -37,7 +37,7 @@ interface StoreState {
 
 let toastSeq = 0;
 
-export const useStore = create<StoreState>((set) => ({
+export const useStore = create<StoreState>()((set) => ({
   page: readPageInfo(),
   components: [],
   selected: null,

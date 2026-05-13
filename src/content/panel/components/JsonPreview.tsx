@@ -38,27 +38,31 @@ function highlightJson(value: unknown): string {
     );
 }
 
+function initialStateFor(uri: string | null): FetchState {
+  if (!uri) return { status: 'idle' };
+  return cache.get(uri) ?? { status: 'loading' };
+}
+
 export function JsonPreview() {
   const selected = useStore((s) => s.selected);
   const page = useStore((s) => s.page);
   const pushToast = useStore((s) => s.pushToast);
 
   const targetUri = selected?.uri ?? page?.pageUri ?? null;
-  const [state, setState] = useState<FetchState>({ status: 'idle' });
+  const [state, setState] = useState<FetchState>(() => initialStateFor(targetUri));
+  const [prevUri, setPrevUri] = useState(targetUri);
+
+  if (prevUri !== targetUri) {
+    setPrevUri(targetUri);
+    setState(initialStateFor(targetUri));
+  }
 
   useEffect(() => {
-    if (!targetUri) {
-      setState({ status: 'idle' });
-      return;
-    }
+    if (!targetUri) return;
     const cached = cache.get(targetUri);
-    if (cached) {
-      setState(cached);
-      return;
-    }
+    if (cached && cached.status !== 'loading') return;
 
     let cancelled = false;
-    setState({ status: 'loading' });
     fetch(buildUrl(targetUri, '.json'), { credentials: 'include' })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);

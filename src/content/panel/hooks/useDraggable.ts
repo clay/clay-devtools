@@ -24,15 +24,17 @@ function defaultPositionFor(corner: UserPreferences['panelPosition']): Position 
 }
 
 export function useDraggable(
-  handleRef: React.RefObject<HTMLElement>,
+  handleRef: React.RefObject<HTMLElement | null>,
   corner: UserPreferences['panelPosition']
 ): { position: Position; style: CSSProperties } {
   const [position, setPosition] = useState<Position>(() => defaultPositionFor(corner));
+  const [prevCorner, setPrevCorner] = useState(corner);
   const dragOffset = useRef<Position | null>(null);
 
-  useEffect(() => {
+  if (prevCorner !== corner) {
+    setPrevCorner(corner);
     setPosition(defaultPositionFor(corner));
-  }, [corner]);
+  }
 
   useEffect(() => {
     const handle = handleRef.current;
