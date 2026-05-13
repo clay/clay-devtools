@@ -7,3 +7,4 @@ coverage
 .env
 .env.local
 .eslintcache
+clay-slip-v*.zip

@@ -1,0 +1,94 @@
+name: Release
+
+# Triggered when a `vX.Y.Z` tag is pushed (the standard `npm version` flow),
+# or manually via the Actions tab against an existing tag.
+#
+# What it does:
+#   1. Verifies the tag matches `package.json`'s version (fails fast otherwise).
+#   2. Runs the full validation suite (typecheck / lint / format / test).
+#   3. Builds the extension into `dist/`.
+#   4. Zips `dist/` as `clay-slip-vX.Y.Z.zip` (Chrome Web Store-ready).
+#   5. Creates a *draft* GitHub release with the zip attached and auto-
+#      generated release notes. A human reviews and publishes it.
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v2.1.0). Must already exist on the repo.'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build, package, and draft release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (at the release tag)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Resolve tag and version
+        id: meta
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "::error title=Version mismatch::Tag $TAG does not match package.json version $PKG_VERSION. Bump package.json and re-tag."
+            exit 1
+          fi
+          ZIP="clay-slip-${TAG}.zip"
+          echo "tag=$TAG"          >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"  >> "$GITHUB_OUTPUT"
+          echo "zip=$ZIP"          >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate (typecheck / lint / format / test)
+        run: npm run validate
+
+      - name: Build
+        run: npm run build
+
+      - name: Package extension
+        run: |
+          cd dist
+          zip -r "../${{ steps.meta.outputs.zip }}" .
+          cd ..
+          ls -lh "${{ steps.meta.outputs.zip }}"
+
+      - name: Upload zip as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.zip }}
+          path: ${{ steps.meta.outputs.zip }}
+          retention-days: 30
+
+      - name: Create draft GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.meta.outputs.tag }}" \
+            "${{ steps.meta.outputs.zip }}" \
+            --draft \
+            --generate-notes \
+            --title "Clay Slip ${{ steps.meta.outputs.tag }}"
