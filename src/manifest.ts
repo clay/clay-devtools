@@ -47,6 +47,13 @@ export default defineManifest({
     type: 'module',
   },
 
+  // The static content_scripts entry below declares the *maximum* scope
+  // (`<all_urls>`), but Chrome only auto-injects on origins where the user
+  // has granted host access. Because we declare zero required
+  // `host_permissions` and the broad pattern lives in
+  // `optional_host_permissions`, on a fresh install the script runs
+  // nowhere. Once the user grants `https://example.com/*` from the Options
+  // page, Chrome auto-injects on that host from then on.
   content_scripts: [
     {
       matches: ['<all_urls>'],
@@ -57,9 +64,16 @@ export default defineManifest({
 
   // Permissions are deliberately minimal — see PRIVACY.md for the
   // per-permission justification used in the Chrome Web Store listing:
-  //   activeTab     → captureVisibleTab for the Screenshot feature
-  //   storage       → user prefs (sync) + annotations/recents (local)
+  //   activeTab      → captureVisibleTab for the Screenshot feature
+  //   storage        → user prefs (sync) + annotations/recents (local)
   //   clipboardWrite → all "Copy to clipboard" panel actions
   permissions: ['activeTab', 'storage', 'clipboardWrite'],
-  host_permissions: ['<all_urls>'],
+
+  // Required host access at install time: NONE.
+  // The user grants specific origins from the Options page; Chrome shows
+  // a native consent prompt on each addition. This keeps Clay Slip out of
+  // the "Broad Host Permissions" review queue while still letting the
+  // tool work on any Clay deployment the user chooses to point it at.
+  host_permissions: [],
+  optional_host_permissions: ['<all_urls>'],
 });
