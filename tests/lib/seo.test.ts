@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { extractSeoMeta, lintSeo, summarizeJsonLd } from '@/lib/seo';
+import { extractSeoMeta, lintJsonLd, lintSeo, summarizeJsonLd } from '@/lib/seo';
 
 function setMeta(name: string, content: string, attr: 'name' | 'property' = 'name') {
   const el = document.createElement('meta');
@@ -156,5 +156,219 @@ describe('summarizeJsonLd', () => {
     ]);
     expect(summary.typeLabel).toBe('Array (Person)');
     expect(summary.itemCount).toBe(2);
+  });
+});
+
+describe('lintJsonLd', () => {
+  /** Build a "perfect" NewsArticle that should produce zero issues. */
+  function goodArticle(overrides: Record<string, unknown> = {}) {
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'NewsArticle',
+      headline: 'A perfectly normal headline',
+      image: 'https://example.com/img.jpg',
+      datePublished: '2026-05-13T10:00:00Z',
+      dateModified: '2026-05-13T11:00:00Z',
+      author: { '@type': 'Person', name: 'Alice' },
+      publisher: { '@type': 'Organization', name: 'NY Mag' },
+      ...overrides,
+    };
+  }
+
+  function codes(blocks: readonly unknown[]): string[] {
+    return lintJsonLd(blocks).map((i) => i.code);
+  }
+
+  it('returns no issues for a healthy NewsArticle block', () => {
+    expect(lintJsonLd([goodArticle()])).toEqual([]);
+  });
+
+  it('flags missing @context as an error', () => {
+    const block = goodArticle();
+    delete (block as { '@context'?: unknown })['@context'];
+    expect(codes([block])).toContain('missing-context');
+  });
+
+  it('flags an @context that is not a schema.org URL', () => {
+    const block = goodArticle({ '@context': 'https://shema.org' });
+    const issues = lintJsonLd([block]);
+    const ctx = issues.find((i) => i.code === 'invalid-context');
+    expect(ctx?.severity).toBe('error');
+    expect(ctx?.path).toBe('@context');
+  });
+
+  it('accepts http:// and trailing-slash variants of schema.org', () => {
+    expect(codes([goodArticle({ '@context': 'http://schema.org' })])).not.toContain(
+      'invalid-context'
+    );
+    expect(codes([goodArticle({ '@context': 'https://schema.org/' })])).not.toContain(
+      'invalid-context'
+    );
+  });
+
+  it('flags missing @type with a warning', () => {
+    expect(codes([{ '@context': 'https://schema.org', name: 'Untyped' }])).toContain(
+      'missing-type'
+    );
+  });
+
+  it('reports every required Article field that is missing', () => {
+    const block: Record<string, unknown> = { '@context': 'https://schema.org', '@type': 'Article' };
+    const issues = codes([block]);
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        'article-missing-headline',
+        'article-missing-image',
+        'article-missing-date-published',
+        'article-missing-author',
+        'article-missing-publisher',
+      ])
+    );
+  });
+
+  it('warns when the headline exceeds the Google rich-result limit', () => {
+    const block = goodArticle({ headline: 'a'.repeat(120) });
+    const issues = lintJsonLd([block]);
+    const long = issues.find((i) => i.code === 'article-headline-long');
+    expect(long?.severity).toBe('warn');
+    expect(long?.path).toBe('headline');
+  });
+
+  it('flags relative image URLs (string form and ImageObject form)', () => {
+    const stringForm = lintJsonLd([goodArticle({ image: '/img.jpg' })]);
+    expect(stringForm.map((i) => i.code)).toContain('article-image-relative');
+    expect(stringForm.find((i) => i.code === 'article-image-relative')?.path).toBe('image');
+
+    const objectForm = lintJsonLd([
+      goodArticle({ image: { '@type': 'ImageObject', url: 'images/x.jpg' } }),
+    ]);
+    expect(objectForm.find((i) => i.code === 'article-image-relative')?.path).toBe('image.url');
+
+    const arrayForm = lintJsonLd([
+      goodArticle({
+        image: ['https://example.com/ok.jpg', '/relative.jpg'],
+      }),
+    ]);
+    const arrayIssue = arrayForm.find((i) => i.code === 'article-image-relative');
+    expect(arrayIssue?.path).toBe('image[1]');
+  });
+
+  it('flags non-ISO datePublished and dateModified strings', () => {
+    const block = goodArticle({ datePublished: 'May 13 2026', dateModified: 'tomorrow' });
+    const issues = codes([block]);
+    expect(issues).toContain('article-bad-date-published');
+    expect(issues).toContain('article-bad-date-modified');
+  });
+
+  it('warns when dateModified is earlier than datePublished', () => {
+    const block = goodArticle({
+      datePublished: '2026-05-13T10:00:00Z',
+      dateModified: '2026-05-12T10:00:00Z',
+    });
+    expect(codes([block])).toContain('article-modified-before-published');
+  });
+
+  it('walks into @graph and lints each inner entity', () => {
+    const issues = lintJsonLd([
+      {
+        '@context': 'https://schema.org',
+        '@graph': [
+          { '@type': 'WebSite', name: 'Site' }, // OK (not Article-family)
+          { '@type': 'Article', name: 'Inner' }, // missing required Article fields
+        ],
+      },
+    ]);
+    const articleIssues = issues.filter((i) => i.path.startsWith('@graph[1]'));
+    expect(articleIssues.map((i) => i.code)).toEqual(
+      expect.arrayContaining(['article-missing-headline', 'article-missing-image'])
+    );
+  });
+
+  it('flags BreadcrumbList items missing required fields', () => {
+    const block = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://example.com/' },
+        { '@type': 'ListItem', name: 'Section' }, // missing position + item
+      ],
+    };
+    expect(codes([block])).toEqual(
+      expect.arrayContaining(['breadcrumb-missing-position', 'breadcrumb-missing-item'])
+    );
+  });
+
+  it('flags BreadcrumbList positions that are not 1, 2, … N', () => {
+    const block = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://example.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Section', item: 'https://example.com/s' },
+        { '@type': 'ListItem', position: 5, name: 'Page', item: 'https://example.com/x' }, // bad
+      ],
+    };
+    expect(codes([block])).toContain('breadcrumb-bad-positions');
+  });
+
+  it('skips position contiguity check when any item is missing a position', () => {
+    // We can't reliably tell if positions are contiguous if some are
+    // missing — a single "breadcrumb-missing-position" warning is enough.
+    const block = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://example.com/' },
+        { '@type': 'ListItem', name: 'Gap', item: 'https://example.com/g' }, // no position
+        { '@type': 'ListItem', position: 3, name: 'End', item: 'https://example.com/e' },
+      ],
+    };
+    expect(codes([block])).not.toContain('breadcrumb-bad-positions');
+  });
+
+  it('flags an empty BreadcrumbList', () => {
+    expect(
+      codes([{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [] }])
+    ).toContain('breadcrumb-empty');
+  });
+
+  it('detects duplicate @id values across blocks (not within a single block)', () => {
+    // Same @id in two separate blocks → flagged.
+    const dup = lintJsonLd([
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        '@id': 'https://example.com/x',
+        headline: 'h',
+        image: 'i',
+        datePublished: '2026-01-01',
+        author: 'a',
+        publisher: 'p',
+      },
+      { '@context': 'https://schema.org', '@type': 'WebSite', '@id': 'https://example.com/x' },
+    ]);
+    expect(dup.map((i) => i.code)).toContain('duplicate-id');
+
+    // Same @id appearing twice in one block (graph self-reference) → not flagged.
+    const single = lintJsonLd([
+      {
+        '@context': 'https://schema.org',
+        '@id': 'https://example.com/x',
+        '@graph': [{ '@type': 'WebSite', '@id': 'https://example.com/x' }],
+      },
+    ]);
+    expect(single.map((i) => i.code)).not.toContain('duplicate-id');
+  });
+
+  it('skips blocks the extractor flagged as invalid', () => {
+    expect(lintJsonLd([{ __invalid: true, raw: 'broken json' }])).toEqual([]);
+  });
+
+  it('attaches blockIndex so callers can group issues per card', () => {
+    const issues = lintJsonLd([
+      goodArticle(), // index 0 — clean
+      { '@type': 'Article' }, // index 1 — many issues
+    ]);
+    expect(issues.every((i) => i.blockIndex === 1)).toBe(true);
   });
 });

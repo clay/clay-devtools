@@ -1224,8 +1224,13 @@
   border-color: var(--cs-accent);
 }
 
-.cs-jsonld-card-invalid {
+.cs-jsonld-card-invalid,
+.cs-jsonld-card-has-error {
   border-color: var(--cs-danger);
+}
+
+.cs-jsonld-card-has-warn {
+  border-color: var(--cs-warning);
 }
 
 .cs-jsonld-summary {
@@ -1339,4 +1344,82 @@
   white-space: pre-wrap;
   word-break: break-all;
   color: var(--cs-text-muted);
+}
+
+/* Severity badge in the card summary + section-level aggregate counters. */
+
+.cs-jsonld-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  font-family: var(--cs-mono);
+  letter-spacing: 0.02em;
+}
+
+.cs-jsonld-badge-inline {
+  margin-left: 8px;
+}
+
+.cs-jsonld-badge-error {
+  background: rgba(220, 38, 38, 0.15);
+  color: var(--cs-danger);
+}
+
+.cs-jsonld-badge-warn {
+  background: rgba(217, 119, 6, 0.15);
+  color: var(--cs-warning);
+}
+
+.cs-jsonld-badge-info {
+  background: var(--cs-accent-bg);
+  color: var(--cs-accent);
+}
+
+/* Issues list rendered above the JSON pre when a card is expanded.
+   Reuses the existing .cs-seo-issue tone classes for visual consistency
+   with the page-level Issues section, but styled tighter for inline use. */
+
+.cs-jsonld-issues {
+  list-style: none;
+  margin: 0;
+  padding: 6px 8px;
+  border-top: 1px solid var(--cs-border);
+  background: var(--cs-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cs-jsonld-issues .cs-seo-issue {
+  padding: 5px 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  align-items: flex-start;
+}
+
+.cs-jsonld-issue-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cs-jsonld-issue-path {
+  font-family: var(--cs-mono);
+  font-size: 10px;
+  color: var(--cs-text-subtle);
+  background: var(--cs-bg-elevated);
+  padding: 1px 4px;
+  border-radius: 3px;
+  align-self: flex-start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
