@@ -4,12 +4,13 @@ import {
   buildUrl,
   copyAsCssSelector,
   copyAsFetchSnippet,
+  ensureProtocol,
   unpublishedUri,
 } from '@/lib/clay-uri';
-import { copyToClipboard } from '@/lib/clipboard';
 import { captureElementToClipboard } from '@/lib/screenshot';
 import type { RuntimeMessage } from '@/lib/types';
 import { getPanelHost } from '../../shadow-host';
+import { useCopyAction } from '../hooks/useCopyAction';
 import { useEnvHost, useStore } from '../store';
 import { CopyableUri } from './CopyableUri';
 import { Icon } from './Icon';
@@ -21,6 +22,10 @@ export function ComponentDetails() {
   const selected = useStore((s) => s.selected);
   const pushToast = useStore((s) => s.pushToast);
   const envHost = useEnvHost();
+  // Each "Copy as…" button needs its own inline-feedback signal so a click
+  // on cURL doesn't make every button flash "Copied". The hook tracks the
+  // most-recently-used key; siblings compare against it.
+  const { copy, copiedKey } = useCopyAction();
 
   if (!selected) {
     return (
@@ -32,11 +37,6 @@ export function ComponentDetails() {
 
   const open = (url: string) => {
     chrome.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
-  };
-
-  const copy = async (text: string, label: string) => {
-    const ok = await copyToClipboard(text);
-    pushToast(ok ? `${label} copied` : 'Copy failed', ok ? 'success' : 'error');
   };
 
   const screenshot = async () => {
@@ -103,26 +103,52 @@ export function ComponentDetails() {
       <details className="cs-copy-as">
         <summary>Copy as…</summary>
         <div className="cs-link-row">
-          <button className="cs-link" onClick={() => copy(selected.uri, 'URI')}>
-            <Icon name="copy" size={11} /> URI
+          <button
+            className={`cs-link ${copiedKey === 'uri' ? 'cs-link-copied' : ''}`}
+            onClick={() => copy(ensureProtocol(selected.uri), 'URI', 'uri')}
+          >
+            <Icon name={copiedKey === 'uri' ? 'check' : 'copy'} size={11} />{' '}
+            {copiedKey === 'uri' ? 'Copied' : 'URI'}
           </button>
           <button
-            className="cs-link"
-            onClick={() => copy(buildCurlCommand(selected.uri, '.json', envHost), 'cURL command')}
+            className={`cs-link ${copiedKey === 'curl' ? 'cs-link-copied' : ''}`}
+            onClick={() =>
+              copy(buildCurlCommand(selected.uri, '.json', envHost), 'cURL command', 'curl')
+            }
           >
-            cURL
+            {copiedKey === 'curl' ? (
+              <>
+                <Icon name="check" size={11} /> Copied
+              </>
+            ) : (
+              'cURL'
+            )}
           </button>
           <button
-            className="cs-link"
-            onClick={() => copy(copyAsFetchSnippet(selected.uri, envHost), 'fetch() snippet')}
+            className={`cs-link ${copiedKey === 'fetch' ? 'cs-link-copied' : ''}`}
+            onClick={() =>
+              copy(copyAsFetchSnippet(selected.uri, envHost), 'fetch() snippet', 'fetch')
+            }
           >
-            fetch()
+            {copiedKey === 'fetch' ? (
+              <>
+                <Icon name="check" size={11} /> Copied
+              </>
+            ) : (
+              'fetch()'
+            )}
           </button>
           <button
-            className="cs-link"
-            onClick={() => copy(copyAsCssSelector(selected.uri), 'CSS selector')}
+            className={`cs-link ${copiedKey === 'css' ? 'cs-link-copied' : ''}`}
+            onClick={() => copy(copyAsCssSelector(selected.uri), 'CSS selector', 'css')}
           >
-            CSS
+            {copiedKey === 'css' ? (
+              <>
+                <Icon name="check" size={11} /> Copied
+              </>
+            ) : (
+              'CSS'
+            )}
           </button>
         </div>
       </details>

@@ -369,6 +369,33 @@
   filter: brightness(1.05);
 }
 
+/* ── "Copied" inline confirmation state ────────────────────────────────
+   Applied to copy-action buttons for ~1.5s after a successful copy.
+   Picks up the success color so the affordance is unambiguous; pointer
+   stays as default-cursor since clicking again just re-copies. */
+.cs-link.cs-link-copied {
+  background: var(--cs-success);
+  border-color: var(--cs-success);
+  color: #fff !important;
+  cursor: default;
+}
+
+.cs-link.cs-link-copied:hover {
+  background: var(--cs-success);
+  border-color: var(--cs-success);
+  color: #fff !important;
+  filter: brightness(1.05);
+}
+
+/* Smaller variant for the icon-only buttons (CopyableUri row + JSON tab
+   header + JSON-LD card header). The icon is already swapped to a check
+   mark in JSX; the green tint provides the secondary signal. */
+.cs-icon-btn.cs-icon-btn-copied,
+.cs-uri-row-copy.cs-uri-row-copy-copied {
+  color: var(--cs-success);
+  opacity: 1;
+}
+
 .cs-empty {
   text-align: center;
   padding: 32px 16px;
@@ -1026,6 +1053,19 @@
 
 .cs-export-item:hover {
   background: var(--cs-bg-hover);
+}
+
+.cs-export-item.cs-export-item-copied,
+.cs-export-item.cs-export-item-copied:hover {
+  background: rgba(22, 163, 74, 0.12);
+  cursor: default;
+}
+
+.cs-export-item.cs-export-item-copied .cs-export-label {
+  color: var(--cs-success);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .cs-export-label {

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildShareLink } from '@/lib/clay-uri';
-import { copyToClipboard } from '@/lib/clipboard';
 import { availableEnvsFor, findMappingForHost, rewriteUrlToEnv } from '@/lib/site-host';
 import { SITE_ENV_LABELS, SITE_ENV_ORDER, type SiteEnv } from '@/lib/types';
+import { useCopyAction } from '../hooks/useCopyAction';
 import { useStore } from '../store';
 import { Icon } from './Icon';
 
@@ -39,6 +39,10 @@ export function ShareMenu({ uri }: Props) {
 
   const siteHosts = useStore((s) => s.preferences.siteHosts);
   const pushToast = useStore((s) => s.pushToast);
+  // Two visible buttons can each be the trigger ("Share" main + per-env
+  // menu items), so we use the keyed form of the hook.
+  const { copy, copiedKey } = useCopyAction();
+  const mainCopied = copiedKey === 'main';
 
   // Cross-env targets are derived from configuration only — the URL itself
   // is computed at click time so SPA navigation can never produce a stale
@@ -85,32 +89,33 @@ export function ShareMenu({ uri }: Props) {
     };
   }, [open]);
 
-  const copyShare = useCallback(
-    async (targetUrl: string, label: string) => {
-      const ok = await copyToClipboard(targetUrl);
-      pushToast(ok ? `Share link copied (${label})` : 'Copy failed', ok ? 'success' : 'error');
-    },
-    [pushToast]
-  );
-
   const onShareClick = useCallback(() => {
-    setOpen(false);
     const currentMatch = findMappingForHost(location.hostname, siteHosts);
-    const label = currentMatch ? `Current — ${SITE_ENV_LABELS[currentMatch.env]}` : 'Current page';
-    void copyShare(buildShareLink(location.href, uri), label);
-  }, [copyShare, siteHosts, uri]);
+    const label = currentMatch ? `Share link (${SITE_ENV_LABELS[currentMatch.env]})` : 'Share link';
+    void copy(buildShareLink(location.href, uri), label, 'main');
+  }, [copy, siteHosts, uri]);
 
   const onMenuClick = useCallback(
-    (target: MenuTarget) => {
-      setOpen(false);
+    async (target: MenuTarget) => {
       const rewritten = rewriteUrlToEnv(location.href, target.env, siteHosts);
       if (!rewritten) {
         pushToast(`No ${target.label} host configured for this site`, 'error');
+        setOpen(false);
         return;
       }
-      void copyShare(buildShareLink(rewritten, uri), target.label);
+      const ok = await copy(
+        buildShareLink(rewritten, uri),
+        `Share link (${target.label})`,
+        target.key
+      );
+      if (ok) {
+        // Hold the menu open briefly so the inline "Copied" affordance is visible.
+        setTimeout(() => setOpen(false), 900);
+      } else {
+        setOpen(false);
+      }
     },
-    [copyShare, pushToast, siteHosts, uri]
+    [copy, pushToast, siteHosts, uri]
   );
 
   const toggle = useCallback(() => {
@@ -134,11 +139,11 @@ export function ShareMenu({ uri }: Props) {
     return (
       <button
         type="button"
-        className="cs-link"
+        className={`cs-link ${mainCopied ? 'cs-link-copied' : ''}`}
         onClick={onShareClick}
-        title="Copy a link that auto-selects this component when opened"
+        title={mainCopied ? 'Copied!' : 'Copy a link that auto-selects this component when opened'}
       >
-        <Icon name="share" size={11} /> Share
+        <Icon name={mainCopied ? 'check' : 'share'} size={11} /> {mainCopied ? 'Copied' : 'Share'}
       </button>
     );
   }
@@ -147,11 +152,11 @@ export function ShareMenu({ uri }: Props) {
     <div className="cs-share-split" ref={wrapperRef}>
       <button
         type="button"
-        className="cs-link cs-share-main"
+        className={`cs-link cs-share-main ${mainCopied ? 'cs-link-copied' : ''}`}
         onClick={onShareClick}
-        title="Copy a link that auto-selects this component when opened"
+        title={mainCopied ? 'Copied!' : 'Copy a link that auto-selects this component when opened'}
       >
-        <Icon name="share" size={11} /> Share
+        <Icon name={mainCopied ? 'check' : 'share'} size={11} /> {mainCopied ? 'Copied' : 'Share'}
       </button>
       <button
         type="button"
@@ -170,18 +175,29 @@ export function ShareMenu({ uri }: Props) {
           role="menu"
           style={{ top: coords.top, right: coords.right }}
         >
-          {menuTargets.map((t) => (
-            <button
-              type="button"
-              key={t.key}
-              role="menuitem"
-              className="cs-export-item"
-              onClick={() => onMenuClick(t)}
-            >
-              <span className="cs-export-label">Open on {t.label}</span>
-              <span className="cs-export-help">Rewrites the host for {t.label}</span>
-            </button>
-          ))}
+          {menuTargets.map((t) => {
+            const copied = copiedKey === t.key;
+            return (
+              <button
+                type="button"
+                key={t.key}
+                role="menuitem"
+                className={`cs-export-item ${copied ? 'cs-export-item-copied' : ''}`}
+                onClick={() => void onMenuClick(t)}
+              >
+                <span className="cs-export-label">
+                  {copied ? (
+                    <>
+                      <Icon name="check" size={12} /> Copied
+                    </>
+                  ) : (
+                    <>Copy share link · {t.label}</>
+                  )}
+                </span>
+                <span className="cs-export-help">Rewrites the host for {t.label}</span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

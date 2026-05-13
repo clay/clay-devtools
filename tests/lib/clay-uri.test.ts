@@ -7,6 +7,7 @@ import {
   buildUrl,
   copyAsCssSelector,
   copyAsFetchSnippet,
+  ensureProtocol,
   getComponentName,
   getDisplayName,
   getInstance,
@@ -285,6 +286,40 @@ describe('buildShareLink + parseShareTarget', () => {
 
   it('returns null when no param is present', () => {
     expect(parseShareTarget('https://example.com')).toBeNull();
+  });
+});
+
+describe('ensureProtocol', () => {
+  it('prepends https:// to a bare Clay URI', () => {
+    expect(ensureProtocol('example.com/_components/x/instances/y')).toBe(
+      'https://example.com/_components/x/instances/y'
+    );
+  });
+
+  it('preserves an existing https:// scheme', () => {
+    expect(ensureProtocol('https://example.com/_pages/foo')).toBe('https://example.com/_pages/foo');
+  });
+
+  it('preserves an existing http:// scheme (does not silently upgrade)', () => {
+    // Caller may be working against a local http://localhost:3001 dev server;
+    // we must not rewrite to https:// or curl/fetch will fail TLS handshakes.
+    expect(ensureProtocol('http://localhost:3001/_pages/x')).toBe('http://localhost:3001/_pages/x');
+  });
+
+  it('handles protocol-relative URIs by collapsing the leading //', () => {
+    expect(ensureProtocol('//example.com/_pages/foo')).toBe('https://example.com/_pages/foo');
+  });
+
+  it('returns empty string for nullish or whitespace-only input', () => {
+    expect(ensureProtocol(undefined)).toBe('');
+    expect(ensureProtocol(null)).toBe('');
+    expect(ensureProtocol('')).toBe('');
+    expect(ensureProtocol('   ')).toBe('');
+  });
+
+  it('trims surrounding whitespace before deciding whether to prepend', () => {
+    expect(ensureProtocol('  example.com/_pages/x  ')).toBe('https://example.com/_pages/x');
+    expect(ensureProtocol('  https://example.com  ')).toBe('https://example.com');
   });
 });
 
