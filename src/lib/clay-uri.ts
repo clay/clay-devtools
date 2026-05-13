@@ -79,6 +79,24 @@ export function splitHostAndPath(uri: string): { host: string; path: string } {
 }
 
 /**
+ * Prepend `https://` to a Clay URI when no protocol is present, so the
+ * resulting string is paste-able into a browser, curl, or any other URL
+ * consumer. URIs already carrying `http://` or `https://` are returned
+ * unchanged so we never silently rewrite an explicitly-http reference.
+ *
+ * Empty / nullish input returns an empty string. Any leading `//` is
+ * collapsed to keep the resulting URL well-formed in case a caller passes
+ * a protocol-relative URI.
+ */
+export function ensureProtocol(uri: string | null | undefined): string {
+  if (!uri) return '';
+  const trimmed = uri.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed.replace(/^\/+/, '')}`;
+}
+
+/**
  * Normalizes a user-provided host string into a `protocol://hostname` form
  * with no trailing slash. Returns an empty string when no host is set.
  */

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { copyToClipboard } from '@/lib/clipboard';
 import { highlightJson } from '@/lib/json-highlight';
 import {
   extractSeoMeta,
@@ -10,7 +9,7 @@ import {
   type SeoIssue,
   type SeoMeta,
 } from '@/lib/seo';
-import { useStore } from '../store';
+import { useCopyAction } from '../hooks/useCopyAction';
 import { Icon } from './Icon';
 
 const TONE: Record<SeoIssue['severity'], string> = {
@@ -76,22 +75,22 @@ function JsonLdBlockCard({
   index: number;
   issues: readonly JsonLdIssue[];
 }) {
-  const pushToast = useStore((s) => s.pushToast);
   // Open by default if the block has any errors so the user immediately
   // sees what's wrong without an extra click.
   const hasError = issues.some((i) => i.severity === 'error');
   const [open, setOpen] = useState(hasError);
   const summary = summarizeJsonLd(block);
   const headerSeverity = worstSeverity(issues);
+  const { copy, copiedKey } = useCopyAction();
+  const copied = copiedKey === 'default';
 
-  const onCopy = async (e: React.MouseEvent) => {
+  const onCopy = (e: React.MouseEvent) => {
     // Prevent the click from toggling the <details> open state.
     e.preventDefault();
     e.stopPropagation();
     const text =
       summary.invalid && isInvalidBlock(block) ? (block.raw ?? '') : JSON.stringify(block, null, 2);
-    const ok = await copyToClipboard(text);
-    pushToast(ok ? `Copied JSON-LD block #${index + 1}` : 'Copy failed', ok ? 'success' : 'error');
+    void copy(text, `JSON-LD block #${index + 1}`);
   };
 
   const cardClasses = ['cs-jsonld-card'];
@@ -135,12 +134,14 @@ function JsonLdBlockCard({
         )}
         <button
           type="button"
-          className="cs-icon-btn cs-jsonld-copy"
+          className={`cs-icon-btn cs-jsonld-copy ${copied ? 'cs-icon-btn-copied' : ''}`}
           onClick={onCopy}
-          aria-label={`Copy JSON-LD block ${index + 1}`}
-          title="Copy JSON to clipboard"
+          aria-label={
+            copied ? `JSON-LD block ${index + 1} copied` : `Copy JSON-LD block ${index + 1}`
+          }
+          title={copied ? 'Copied!' : 'Copy JSON to clipboard'}
         >
-          <Icon name="copy" />
+          <Icon name={copied ? 'check' : 'copy'} />
         </button>
       </summary>
       {/* Body is only mounted once expanded — saves the syntax-highlight

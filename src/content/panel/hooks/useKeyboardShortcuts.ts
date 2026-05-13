@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { copyToClipboard } from '@/lib/clipboard';
-import { buildUrl } from '@/lib/clay-uri';
+import { buildUrl, ensureProtocol } from '@/lib/clay-uri';
 import type { RuntimeMessage } from '@/lib/types';
 import { useStore } from '../store';
 
@@ -80,10 +80,12 @@ export function useKeyboardShortcuts(): void {
         clearPending();
 
         if (combo === 'yp' && page) {
-          const ok = await copyToClipboard(page.pageUri);
+          // Always copy a fully-qualified URL so the keyboard shortcut
+          // matches what the in-panel copy button writes.
+          const ok = await copyToClipboard(ensureProtocol(page.pageUri));
           pushToast(ok ? 'Page URI copied' : 'Copy failed', ok ? 'success' : 'error');
         } else if (combo === 'yc' && selected) {
-          const ok = await copyToClipboard(selected.uri);
+          const ok = await copyToClipboard(ensureProtocol(selected.uri));
           pushToast(ok ? 'Component URI copied' : 'Copy failed', ok ? 'success' : 'error');
         } else if (combo === 'op' && page) {
           chrome.runtime.sendMessage({

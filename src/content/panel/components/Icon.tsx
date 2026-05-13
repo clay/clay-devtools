@@ -159,6 +159,16 @@ const ICONS = {
       <path d="M10 2v3h3" stroke="currentColor" strokeWidth="1.4" fill="none" />
     </>
   ),
+  check: (
+    <path
+      d="M3 8.5l3 3 7-7"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  ),
 } as const;
 
 export type IconName = keyof typeof ICONS;

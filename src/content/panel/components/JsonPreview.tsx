@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { buildUrl } from '@/lib/clay-uri';
-import { copyToClipboard } from '@/lib/clipboard';
 import { highlightJson } from '@/lib/json-highlight';
+import { useCopyAction } from '../hooks/useCopyAction';
 import { useEnvHost, useStore } from '../store';
 import { Icon } from './Icon';
 
@@ -25,8 +25,9 @@ function initialStateFor(uri: string | null, host: string): FetchState {
 export function JsonPreview() {
   const selected = useStore((s) => s.selected);
   const page = useStore((s) => s.page);
-  const pushToast = useStore((s) => s.pushToast);
   const envHost = useEnvHost();
+  const { copy, copiedKey } = useCopyAction();
+  const copied = copiedKey === 'default';
 
   const targetUri = selected?.uri ?? page?.pageUri ?? null;
   const fetchUrl = targetUri ? buildUrl(targetUri, '.json', envHost) : null;
@@ -95,17 +96,21 @@ export function JsonPreview() {
     return null;
   }
 
-  const onCopy = async () => {
-    const ok = await copyToClipboard(JSON.stringify(state.data, null, 2));
-    pushToast(ok ? 'JSON copied' : 'Copy failed', ok ? 'success' : 'error');
+  const onCopy = () => {
+    void copy(JSON.stringify(state.data, null, 2), 'JSON');
   };
 
   return (
     <section className="cs-section">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h4 className="cs-section-title">JSON</h4>
-        <button className="cs-icon-btn" onClick={onCopy} aria-label="Copy JSON">
-          <Icon name="copy" />
+        <button
+          className={`cs-icon-btn ${copied ? 'cs-icon-btn-copied' : ''}`}
+          onClick={onCopy}
+          aria-label={copied ? 'JSON copied' : 'Copy JSON'}
+          title={copied ? 'Copied!' : 'Copy JSON to clipboard'}
+        >
+          <Icon name={copied ? 'check' : 'copy'} />
         </button>
       </div>
       <pre className="cs-json" dangerouslySetInnerHTML={{ __html: highlightJson(state.data) }} />
