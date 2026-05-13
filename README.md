@@ -23,10 +23,10 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **SEO tab** — title / meta / og / twitter / JSON-LD with a Twitter + Facebook card preview and lints (length, missing image, duplicate `<h1>`, etc.)
 - **Recently viewed components** persisted across sessions, with one-click jump back
 - **Resizable + dockable panel** — drag the inner edges (or the inner-corner grabber) to resize width _and_ height; choose any of four corners or a full-height left/right side dock
-- **Toggleable component outlines** (button in the header, <kbd>h</kbd> shortcut) with a configurable opacity
+- **Refined highlight modes** — _Off_, _Selection only_ (default, like Chrome DevTools' element inspector), _Editable only_, or _All components_. Single accent color with state-based opacity instead of the old multi-color dashed rainbow. Selected component carries a labelled top-left badge. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
 - **Auto / light / dark themes** that respond to OS theme changes live
 - **Keyboard shortcuts** with a <kbd>?</kbd> overlay listing every binding
-- **Options page** for theme, dock side + width, environment hosts, highlight intensity, shortcut toggle, and recents history size
+- **Options page** for theme, dock side + width, environment hosts, highlight mode + intensity, shortcut toggle, and recents history size
 - **Floating Clay button (FAB)** on every Clay page — collapsed/idle state of the panel is a small circular button anchored to the user's preferred corner, with a live component-count badge. Click it to expand the full panel. The standard browser-extension chrome pattern (Sentry / Hotjar / Crisp / Intercom).
 - **Smart popup**: friendly "Not a Clay page" popup on non-Clay pages; on Clay pages the toolbar icon mounts/unmounts the entire extension as an escape hatch
 - **Toolbar badge** shows the count of Clay components on the current page (cleared on navigation)
@@ -75,7 +75,7 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 | Resize the panel         | Drag the inner vertical / horizontal edge — or the inner-corner grabber for both at once          |
 | Copy URI                 | Press <kbd>y</kbd> then <kbd>c</kbd> (component) or <kbd>p</kbd> (page)                           |
 | Open URI in new tab      | Press <kbd>o</kbd> then <kbd>c</kbd> or <kbd>p</kbd>                                              |
-| Toggle outlines on page  | Press <kbd>h</kbd> or click the eye icon in the header                                            |
+| Cycle highlight mode     | Press <kbd>h</kbd> (off → selection → editable → all) or pick from the eye-icon dropdown          |
 | Cycle environment        | Click the `env: …` pill at the bottom of the Inspect tab                                          |
 | Show shortcut overlay    | Press <kbd>?</kbd>                                                                                |
 | Toggle FAB ↔ panel       | Press <kbd>[</kbd> or click the collapse button / the FAB                                         |
@@ -124,7 +124,7 @@ src/
 │       ├── components/     # Tabs, tree, JSON viewer, diff, breadcrumb…
 │       └── hooks/          # Drag, theme, shortcuts, selection
 ├── popup/                  # "Not a Clay page" popup (active until a page sends CLAY_DETECTED)
-├── options/                # Full options page (env hosts, dock + width, intensity, recents, shortcuts)
+├── options/                # Full options page (env hosts, dock + width, highlight mode + intensity, recents, shortcuts)
 └── lib/                    # Pure utilities
     ├── clay-uri.ts         # URI parsing + buildUrl/buildEditorUrl/buildShareLink + copy-as helpers
     ├── clipboard.ts        # Modern + legacy clipboard

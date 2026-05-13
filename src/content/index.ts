@@ -17,7 +17,13 @@ function send(message: RuntimeMessage): void {
 function paintAndSync(): number {
   installHighlightStyles();
   const components = readComponents();
-  applyHighlights(components.map((c) => c.element));
+  applyHighlights(
+    components.map((c) => c.element),
+    // Selection badge label — passed down so the CSS pseudo-element can
+    // surface it via attr(). Falling back to component name keeps the
+    // badge useful when an instance ID isn't present.
+    components.map((c) => c.displayName || c.name)
+  );
   useStore.getState().setComponents(components);
   return components.length;
 }

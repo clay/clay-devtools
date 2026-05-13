@@ -7,10 +7,14 @@ import {
   DEFAULT_PREFERENCES,
   ENVIRONMENT_LABELS,
   ENVIRONMENT_ORDER,
+  HIGHLIGHT_MODE_DESCRIPTIONS,
+  HIGHLIGHT_MODE_LABELS,
+  HIGHLIGHT_MODE_ORDER,
   SITE_ENV_LABELS,
   SITE_ENV_ORDER,
   type Environment,
   type EnvironmentHosts,
+  type HighlightMode,
   type PanelPosition,
   type SiteEnv,
   type SiteHostMapping,
@@ -164,9 +168,30 @@ export function Options() {
 
         <label className="options-row">
           <div className="options-label">
+            <span>Highlight mode</span>
+            <span className="options-help">
+              {HIGHLIGHT_MODE_DESCRIPTIONS[prefs.highlightMode]} You can also press <kbd>h</kbd> on
+              any Clay page to cycle through modes.
+            </span>
+          </div>
+          <select
+            value={prefs.highlightMode}
+            onChange={(e) => update('highlightMode', e.target.value as HighlightMode)}
+          >
+            {HIGHLIGHT_MODE_ORDER.map((m) => (
+              <option key={m} value={m}>
+                {HIGHLIGHT_MODE_LABELS[m]}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="options-row">
+          <div className="options-label">
             <span>Highlight intensity</span>
             <span className="options-help">
-              Outline opacity for component boundaries on the page.
+              Master opacity multiplier for every outline. Useful for taming the &ldquo;all
+              components&rdquo; mode on dense pages without changing the mode itself.
             </span>
           </div>
           <input

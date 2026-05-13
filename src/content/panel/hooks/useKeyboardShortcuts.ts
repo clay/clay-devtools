@@ -37,7 +37,7 @@ export function useKeyboardShortcuts(): void {
         selected,
         toggleShortcuts,
         toggleCollapsed,
-        toggleHighlights,
+        cycleHighlightMode,
         pushToast,
         setActiveTab,
       } = state;
@@ -61,7 +61,7 @@ export function useKeyboardShortcuts(): void {
       }
       if ((e.key === 'h' || e.key === 'H') && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
-        toggleHighlights();
+        cycleHighlightMode();
         return;
       }
       if ((e.key === 't' || e.key === 'T') && !e.metaKey && !e.ctrlKey) {
@@ -119,7 +119,7 @@ export function useKeyboardShortcuts(): void {
 export const SHORTCUTS = [
   { keys: ['?'], description: 'Show this shortcut overlay' },
   { keys: ['['], description: 'Collapse / expand the panel' },
-  { keys: ['h'], description: 'Toggle component outlines' },
+  { keys: ['h'], description: 'Cycle highlight mode (off → selection → editable → all)' },
   { keys: ['i'], description: 'Switch to Inspect tab' },
   { keys: ['t'], description: 'Switch to Tree tab' },
   { keys: ['y', 'p'], description: 'Copy current page URI' },

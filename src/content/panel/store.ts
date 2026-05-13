@@ -3,10 +3,12 @@ import type {
   Annotation,
   ClayComponentInfo,
   ClayPageInfo,
+  HighlightMode,
   RecentComponent,
   UserPreferences,
 } from '@/lib/types';
-import { DEFAULT_PREFERENCES } from '@/lib/types';
+import { DEFAULT_PREFERENCES, HIGHLIGHT_MODE_ORDER } from '@/lib/types';
+import { savePreferences } from '@/lib/storage';
 import { readPageInfo } from '../page-info';
 
 export type PanelTab = 'inspect' | 'tree' | 'json' | 'diff' | 'seo' | 'notes';
@@ -32,7 +34,6 @@ interface StoreState {
   find: FindState;
   activeTab: PanelTab;
   showShortcuts: boolean;
-  highlightEnabled: boolean;
   preferences: UserPreferences;
   toasts: ToastMessage[];
   recents: RecentComponent[];
@@ -47,7 +48,17 @@ interface StoreState {
   setFind: (next: FindState) => void;
   setActiveTab: (tab: PanelTab) => void;
   toggleShortcuts: () => void;
-  toggleHighlights: () => void;
+  /**
+   * Update the ambient-outline mode. Persists to chrome.storage.sync so
+   * the choice survives reloads and propagates to other tabs.
+   */
+  setHighlightMode: (mode: HighlightMode) => void;
+  /**
+   * Cycle through the four modes in `HIGHLIGHT_MODE_ORDER`. Bound to the
+   * `h` keyboard shortcut for muscle memory with the old "toggle outlines"
+   * behavior.
+   */
+  cycleHighlightMode: () => void;
   setPreferences: (next: Partial<UserPreferences>) => void;
   setRecents: (next: RecentComponent[]) => void;
   setAnnotations: (next: Annotation[]) => void;
@@ -70,7 +81,6 @@ export const useStore = create<StoreState>()((set) => ({
   find: { query: '', index: 0 },
   activeTab: 'inspect',
   showShortcuts: false,
-  highlightEnabled: true,
   preferences: DEFAULT_PREFERENCES,
   toasts: [],
   recents: [],
@@ -85,7 +95,16 @@ export const useStore = create<StoreState>()((set) => ({
   setFind: (find) => set({ find }),
   setActiveTab: (activeTab) => set({ activeTab }),
   toggleShortcuts: () => set((s) => ({ showShortcuts: !s.showShortcuts })),
-  toggleHighlights: () => set((s) => ({ highlightEnabled: !s.highlightEnabled })),
+  setHighlightMode: (mode) => {
+    set((s) => ({ preferences: { ...s.preferences, highlightMode: mode } }));
+    void savePreferences({ highlightMode: mode });
+  },
+  cycleHighlightMode: () => {
+    const current = useStore.getState().preferences.highlightMode;
+    const idx = HIGHLIGHT_MODE_ORDER.indexOf(current);
+    const next = HIGHLIGHT_MODE_ORDER[(idx + 1) % HIGHLIGHT_MODE_ORDER.length] ?? 'selection';
+    useStore.getState().setHighlightMode(next);
+  },
   setPreferences: (prefs) => set((s) => ({ preferences: { ...s.preferences, ...prefs } })),
   setRecents: (recents) => set({ recents }),
   setAnnotations: (annotations) =>

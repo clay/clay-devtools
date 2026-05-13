@@ -32,6 +32,42 @@ export type PanelPosition =
   | 'left-side'
   | 'right-side';
 
+/**
+ * Controls *which* components show an ambient outline on the page.
+ * Hover and selection always render their own highlight regardless of mode
+ * (otherwise click-to-inspect would be invisible).
+ *
+ * - `off`        – no ambient outlines at all. Hover + selection still highlight.
+ * - `selection`  – ambient is off; only the hovered/selected element is outlined.
+ *                  This is the new default — feels closest to Chrome DevTools.
+ * - `editable`   – ambient outlines on `[data-editable]` components only.
+ *                  Useful for editorial / PM workflows.
+ * - `all`        – ambient outlines on every component.
+ *                  The "give me the bird's-eye view of structure" mode.
+ */
+export type HighlightMode = 'off' | 'selection' | 'editable' | 'all';
+
+export const HIGHLIGHT_MODE_ORDER: readonly HighlightMode[] = [
+  'off',
+  'selection',
+  'editable',
+  'all',
+];
+
+export const HIGHLIGHT_MODE_LABELS: Readonly<Record<HighlightMode, string>> = {
+  off: 'Off',
+  selection: 'Selection only',
+  editable: 'Editable only',
+  all: 'All components',
+};
+
+export const HIGHLIGHT_MODE_DESCRIPTIONS: Readonly<Record<HighlightMode, string>> = {
+  off: 'No outlines anywhere. The panel still works for inspection.',
+  selection: 'Only the component you hover or click gets an outline.',
+  editable: 'Subtle outlines on every editable component.',
+  all: 'Subtle outlines on every Clay component.',
+};
+
 export interface UserPreferences {
   readonly theme: 'auto' | 'light' | 'dark';
   readonly panelPosition: PanelPosition;
@@ -39,6 +75,7 @@ export interface UserPreferences {
   readonly panelHeight: number;
   readonly defaultEnvironment: Environment;
   readonly environments: EnvironmentHosts;
+  readonly highlightMode: HighlightMode;
   readonly highlightOpacity: number;
   readonly enableShortcuts: boolean;
   readonly maxRecentComponents: number;
@@ -86,6 +123,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   panelHeight: 540,
   defaultEnvironment: 'prod',
   environments: DEFAULT_ENVIRONMENT_HOSTS,
+  highlightMode: 'selection',
   highlightOpacity: 0.85,
   enableShortcuts: true,
   maxRecentComponents: 20,
