@@ -60,6 +60,7 @@ export const ENVIRONMENT_LABELS: Readonly<Record<Environment, string>> = {
 
 export type RuntimeMessage =
   | { type: 'OPEN_TAB'; url: string }
+  | { type: 'OPEN_OPTIONS' }
   | { type: 'UPDATE_BADGE'; count: number; tabId?: number }
   | { type: 'CLAY_DETECTED' }
   | { type: 'PANEL_TOGGLE' };

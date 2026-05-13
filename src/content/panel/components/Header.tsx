@@ -1,4 +1,5 @@
 import type { Ref } from 'react';
+import type { RuntimeMessage } from '@/lib/types';
 import { Icon } from './Icon';
 import { useStore } from '../store';
 
@@ -16,47 +17,58 @@ export function Header({ ref }: HeaderProps) {
   const componentCount = useStore((s) => s.components.length);
 
   const openOptions = () => {
-    chrome.runtime.openOptionsPage?.();
+    chrome.runtime
+      .sendMessage({ type: 'OPEN_OPTIONS' } satisfies RuntimeMessage)
+      .catch(() => undefined);
   };
 
   return (
     <div className="cs-header" ref={ref}>
-      <div className="cs-logo">S</div>
+      <div className="cs-logo" title="Clay Slip">
+        S
+      </div>
       <div className="cs-title">
-        Clay Slip{' '}
-        <span style={{ color: 'var(--cs-text-subtle)', fontWeight: 400, fontSize: 11 }}>
-          · {componentCount}
+        <span className="cs-title-text">Clay Slip</span>
+        <span className="cs-count" title={`${componentCount} components on this page`}>
+          {componentCount}
         </span>
       </div>
       {page && (
-        <span className={`cs-status ${page.isPublished ? 'cs-published' : 'cs-draft'}`}>
+        <span
+          className={`cs-status ${page.isPublished ? 'cs-published' : 'cs-draft'} cs-collapsed-hide`}
+        >
           {page.isPublished ? 'Published' : 'Draft'}
         </span>
       )}
       <button
         className={`cs-icon-btn ${highlightEnabled ? '' : 'cs-icon-btn-off'}`}
         onClick={toggleHighlights}
-        title={highlightEnabled ? 'Hide outlines' : 'Show outlines'}
+        title={highlightEnabled ? 'Hide outlines (h)' : 'Show outlines (h)'}
         aria-label={highlightEnabled ? 'Hide outlines' : 'Show outlines'}
         aria-pressed={!highlightEnabled}
       >
         <Icon name={highlightEnabled ? 'eye' : 'eyeOff'} />
       </button>
       <button
-        className="cs-icon-btn"
+        className="cs-icon-btn cs-collapsed-hide"
         onClick={toggleShortcuts}
         title="Keyboard shortcuts (?)"
         aria-label="Keyboard shortcuts"
       >
         <Icon name="question" />
       </button>
-      <button className="cs-icon-btn" onClick={openOptions} title="Settings" aria-label="Settings">
+      <button
+        className="cs-icon-btn cs-collapsed-hide"
+        onClick={openOptions}
+        title="Settings"
+        aria-label="Settings"
+      >
         <Icon name="settings" />
       </button>
       <button
         className="cs-icon-btn"
         onClick={toggleCollapsed}
-        title={collapsed ? 'Expand' : 'Collapse'}
+        title={collapsed ? 'Expand panel ([)' : 'Collapse panel ([)'}
         aria-label={collapsed ? 'Expand panel' : 'Collapse panel'}
       >
         <Icon name={collapsed ? 'expand' : 'collapse'} />

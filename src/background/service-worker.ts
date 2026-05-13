@@ -38,6 +38,11 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       sendResponse({ ok: true });
       break;
     }
+    case 'OPEN_OPTIONS': {
+      chrome.runtime.openOptionsPage().catch(() => undefined);
+      sendResponse({ ok: true });
+      break;
+    }
     case 'UPDATE_BADGE': {
       const tabId = message.tabId ?? sender.tab?.id;
       if (typeof tabId === 'number') {
