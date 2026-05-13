@@ -9,45 +9,94 @@ const OPTIONS: Array<{ format: ExportFormat; label: string; help: string }> = [
   { format: 'markdown', label: 'Markdown', help: 'Pasteable into a ticket' },
 ];
 
+const ESTIMATED_MENU_HEIGHT = 140;
+
+interface MenuCoords {
+  readonly top: number;
+  readonly right: number;
+}
+
 export function ExportMenu() {
   const [open, setOpen] = useState(false);
-  const wrapper = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<MenuCoords | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
   const page = useStore((s) => s.page);
   const components = useStore((s) => s.components);
   const pushToast = useStore((s) => s.pushToast);
 
   useEffect(() => {
     if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (!wrapper.current?.contains(e.target as Node)) setOpen(false);
+
+    // Use composedPath() so we correctly see clicks inside the shadow tree
+    // (default e.target gets retargeted to the shadow host at document level).
+    const onPointerDown = (e: Event) => {
+      const path = e.composedPath();
+      if (wrapperRef.current && !path.includes(wrapperRef.current)) {
+        setOpen(false);
+      }
     };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    const onResize = () => setOpen(false);
+
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onResize, true);
+
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onResize, true);
+    };
   }, [open]);
 
+  const toggle = () => {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const flipUp = rect.bottom + ESTIMATED_MENU_HEIGHT + 8 > window.innerHeight;
+    setCoords({
+      top: flipUp ? rect.top - ESTIMATED_MENU_HEIGHT - 4 : rect.bottom + 4,
+      right: Math.max(8, window.innerWidth - rect.right),
+    });
+    setOpen(true);
+  };
+
   const exportAs = (format: ExportFormat) => {
+    setOpen(false);
     try {
       downloadManifest(buildManifest(page, components), format);
       pushToast(`Manifest exported as ${format.toUpperCase()}`, 'success');
     } catch (err) {
       pushToast(err instanceof Error ? err.message : 'Export failed', 'error');
-    } finally {
-      setOpen(false);
     }
   };
 
   return (
-    <div className="cs-export" ref={wrapper}>
+    <div className="cs-export" ref={wrapperRef}>
       <button
+        ref={triggerRef}
         className="cs-link"
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={open}
       >
         Export ▾
       </button>
-      {open && (
-        <div className="cs-export-menu" role="menu">
+      {open && coords && (
+        <div
+          className="cs-export-menu"
+          role="menu"
+          style={{ top: coords.top, right: coords.right }}
+        >
           {OPTIONS.map((opt) => (
             <button
               key={opt.format}
