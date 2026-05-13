@@ -183,6 +183,9 @@ Releases are automated by `.github/workflows/release.yml`. The flow is:
 
 You can also kick off the workflow manually from the Actions tab against an existing tag (useful if a release run fails midway). Want to package locally without going through CI? `npm run release:dry` produces an identical `clay-slip-vX.Y.Z.zip` next to the repo.
 
+> **⚠️ Always use `npm run zip` (or `release:dry`) to package — never zip `dist/` from Finder / Explorer.**
+> Right-clicking the folder produces a zip with a `dist/` wrapper, which the Chrome Web Store rejects with _"No manifest found in package."_ Our script zips the **contents** of `dist/` (so `manifest.json` is at the root), strips source maps and macOS metadata, and verifies the zip layout before declaring success. Pass `INCLUDE_SOURCEMAPS=1` if you need maps for debugging a sideloaded build.
+
 ## Migration notes (1.0 → 2.0)
 
 This release is a full rewrite. There are no breaking _features_ — every capability of 1.0 is still present, plus a much larger set of new ones — but every implementation file changed:
