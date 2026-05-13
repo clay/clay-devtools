@@ -100,7 +100,7 @@ export function Options() {
           <div className="options-label">
             <span>Panel width</span>
             <span className="options-help">
-              Default starting width — drag the inner edge of the panel to resize live.
+              Drag the inner vertical edge of the panel to resize live.
             </span>
           </div>
           <input
@@ -110,6 +110,24 @@ export function Options() {
             step={20}
             value={prefs.panelWidth}
             onChange={(e) => update('panelWidth', Number(e.target.value))}
+          />
+        </label>
+
+        <label className="options-row">
+          <div className="options-label">
+            <span>Panel height</span>
+            <span className="options-help">
+              Drag the inner horizontal edge or the inner corner to resize. (Side-dock modes are
+              always full-height.)
+            </span>
+          </div>
+          <input
+            type="range"
+            min={240}
+            max={900}
+            step={20}
+            value={prefs.panelHeight}
+            onChange={(e) => update('panelHeight', Number(e.target.value))}
           />
         </label>
 

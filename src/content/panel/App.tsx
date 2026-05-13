@@ -29,6 +29,7 @@ export function App() {
   const activeTab = useStore((s) => s.activeTab);
   const corner = useStore((s) => s.preferences.panelPosition);
   const panelWidth = useStore((s) => s.preferences.panelWidth);
+  const panelHeight = useStore((s) => s.preferences.panelHeight);
   const highlightOpacity = useStore((s) => s.preferences.highlightOpacity);
   const highlightEnabled = useStore((s) => s.highlightEnabled);
   const setPrefs = useStore((s) => s.setPreferences);
@@ -40,7 +41,8 @@ export function App() {
   const maxRecent = useStore((s) => s.preferences.maxRecentComponents);
 
   const { style: themeStyle } = useThemedRoot();
-  const { style: positionStyle } = useDraggable(headerRef, corner, panelWidth);
+  const { style: positionStyle } = useDraggable(headerRef, corner, panelWidth, panelHeight);
+  const isSideDock = corner === 'left-side' || corner === 'right-side';
 
   useKeyboardShortcuts();
   useElementSelection();
@@ -120,7 +122,13 @@ export function App() {
           </div>
         </>
       )}
-      {!collapsed && <ResizeHandle />}
+      {!collapsed && (
+        <>
+          <ResizeHandle mode="width" />
+          {!isSideDock && <ResizeHandle mode="height" />}
+          {!isSideDock && <ResizeHandle mode="corner" />}
+        </>
+      )}
       <ShortcutOverlay />
       <Toasts />
     </div>

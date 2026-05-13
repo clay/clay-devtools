@@ -21,7 +21,7 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **Component screenshot to clipboard** — one-click PNG of any selected component, panel auto-hides during capture
 - **SEO tab** — title / meta / og / twitter / JSON-LD with a Twitter + Facebook card preview and lints (length, missing image, duplicate `<h1>`, etc.)
 - **Recently viewed components** persisted across sessions, with one-click jump back
-- **Resizable + dockable panel** — drag the inner edge to resize; choose any of four corners or a full-height left/right side dock
+- **Resizable + dockable panel** — drag the inner edges (or the inner-corner grabber) to resize width _and_ height; choose any of four corners or a full-height left/right side dock
 - **Toggleable component outlines** (button in the header, <kbd>h</kbd> shortcut) with a configurable opacity
 - **Auto / light / dark themes** that respond to OS theme changes live
 - **Keyboard shortcuts** with a <kbd>?</kbd> overlay listing every binding
@@ -67,7 +67,7 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 | Screenshot a component  | **Screenshot** button — PNG copied to clipboard                                                   |
 | Export page manifest    | **Export ▾** button on the Inspect tab → JSON / CSV / Markdown                                    |
 | Find on page            | **Tree** tab search box → matches dim non-matches; <kbd>Enter</kbd> cycles, <kbd>Esc</kbd> clears |
-| Resize the panel        | Drag the inner edge of the panel                                                                  |
+| Resize the panel        | Drag the inner vertical / horizontal edge — or the inner-corner grabber for both at once          |
 | Copy URI                | Press <kbd>y</kbd> then <kbd>c</kbd> (component) or <kbd>p</kbd> (page)                           |
 | Open URI in new tab     | Press <kbd>o</kbd> then <kbd>c</kbd> or <kbd>p</kbd>                                              |
 | Toggle outlines on page | Press <kbd>h</kbd> or click the eye icon in the header                                            |

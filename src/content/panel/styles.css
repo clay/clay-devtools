@@ -552,29 +552,79 @@
 }
 
 /* ============================================================
-   Resize handle
+   Resize handles — width (vertical strip), height (horizontal
+   strip), and corner (small grabber). All sit just inside the
+   panel edge so they're not clipped by `overflow: hidden`.
    ============================================================ */
 
 .cs-resize {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  cursor: ew-resize;
   background: transparent;
   z-index: 10;
 }
 
-.cs-resize.cs-resize-left {
-  left: -3px;
-}
-
-.cs-resize.cs-resize-right {
-  right: -3px;
-}
-
 .cs-resize:hover {
   background: var(--cs-accent-bg);
+}
+
+.cs-resize-width {
+  top: 0;
+  bottom: 0;
+  width: 6px;
+}
+
+.cs-resize-height {
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+
+.cs-resize-left {
+  left: 0;
+}
+
+.cs-resize-right {
+  right: 0;
+}
+
+.cs-resize-top {
+  top: 0;
+}
+
+.cs-resize-bottom {
+  bottom: 0;
+}
+
+.cs-resize-corner {
+  width: 14px;
+  height: 14px;
+  z-index: 11;
+}
+
+.cs-resize-corner:hover {
+  background: var(--cs-accent);
+  opacity: 0.4;
+  border-radius: 2px;
+}
+
+.cs-resize-corner-top-left {
+  top: 0;
+  left: 0;
+}
+
+.cs-resize-corner-top-right {
+  top: 0;
+  right: 0;
+}
+
+.cs-resize-corner-bottom-left {
+  bottom: 0;
+  left: 0;
+}
+
+.cs-resize-corner-bottom-right {
+  bottom: 0;
+  right: 0;
 }
 
 /* ============================================================

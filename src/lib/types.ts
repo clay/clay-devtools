@@ -36,6 +36,7 @@ export interface UserPreferences {
   readonly theme: 'auto' | 'light' | 'dark';
   readonly panelPosition: PanelPosition;
   readonly panelWidth: number;
+  readonly panelHeight: number;
   readonly defaultEnvironment: Environment;
   readonly environments: EnvironmentHosts;
   readonly highlightOpacity: number;
@@ -54,6 +55,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   theme: 'auto',
   panelPosition: 'bottom-right',
   panelWidth: 380,
+  panelHeight: 540,
   defaultEnvironment: 'prod',
   environments: DEFAULT_ENVIRONMENT_HOSTS,
   highlightOpacity: 0.85,
