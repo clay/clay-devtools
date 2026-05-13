@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { buildUrl } from '@/lib/clay-uri';
 import { copyToClipboard } from '@/lib/clipboard';
-import { useStore } from '../store';
+import { useEnvHost, useStore } from '../store';
 import { Icon } from './Icon';
 
 interface FetchState {
@@ -38,32 +38,41 @@ function highlightJson(value: unknown): string {
     );
 }
 
-function initialStateFor(uri: string | null): FetchState {
+function cacheKey(uri: string | null, host: string): string {
+  return `${host || '_'}::${uri ?? ''}`;
+}
+
+function initialStateFor(uri: string | null, host: string): FetchState {
   if (!uri) return { status: 'idle' };
-  return cache.get(uri) ?? { status: 'loading' };
+  return cache.get(cacheKey(uri, host)) ?? { status: 'loading' };
 }
 
 export function JsonPreview() {
   const selected = useStore((s) => s.selected);
   const page = useStore((s) => s.page);
   const pushToast = useStore((s) => s.pushToast);
+  const envHost = useEnvHost();
 
   const targetUri = selected?.uri ?? page?.pageUri ?? null;
-  const [state, setState] = useState<FetchState>(() => initialStateFor(targetUri));
-  const [prevUri, setPrevUri] = useState(targetUri);
+  const fetchUrl = targetUri ? buildUrl(targetUri, '.json', envHost) : null;
 
-  if (prevUri !== targetUri) {
-    setPrevUri(targetUri);
-    setState(initialStateFor(targetUri));
+  const [state, setState] = useState<FetchState>(() => initialStateFor(targetUri, envHost));
+  const [prevKey, setPrevKey] = useState(cacheKey(targetUri, envHost));
+
+  const currentKey = cacheKey(targetUri, envHost);
+  if (prevKey !== currentKey) {
+    setPrevKey(currentKey);
+    setState(initialStateFor(targetUri, envHost));
   }
 
   useEffect(() => {
-    if (!targetUri) return;
-    const cached = cache.get(targetUri);
+    if (!fetchUrl || !targetUri) return;
+    const key = cacheKey(targetUri, envHost);
+    const cached = cache.get(key);
     if (cached && cached.status !== 'loading') return;
 
     let cancelled = false;
-    fetch(buildUrl(targetUri, '.json'), { credentials: 'include' })
+    fetch(fetchUrl, { credentials: 'include' })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -71,21 +80,21 @@ export function JsonPreview() {
       .then((data) => {
         if (cancelled) return;
         const next: FetchState = { status: 'success', data };
-        cache.set(targetUri, next);
+        cache.set(key, next);
         setState(next);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : String(err);
         const next: FetchState = { status: 'error', error: message };
-        cache.set(targetUri, next);
+        cache.set(key, next);
         setState(next);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [targetUri]);
+  }, [fetchUrl, targetUri, envHost]);
 
   if (!targetUri) {
     return <div className="cs-empty">Select a component to preview its data.</div>;
@@ -94,7 +103,7 @@ export function JsonPreview() {
   if (state.status === 'loading') {
     return (
       <div className="cs-loading">
-        <span className="cs-spinner" /> Fetching {targetUri}…
+        <span className="cs-spinner" /> Fetching {fetchUrl}…
       </div>
     );
   }

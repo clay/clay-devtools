@@ -23,8 +23,17 @@ export function useKeyboardShortcuts(): void {
       if (target && /input|textarea|select/i.test(target.tagName)) return;
       if (target?.isContentEditable) return;
 
-      const { page, selected, toggleShortcuts, toggleCollapsed, pushToast, setActiveTab } =
-        useStore.getState();
+      const state = useStore.getState();
+      const {
+        page,
+        selected,
+        toggleShortcuts,
+        toggleCollapsed,
+        toggleHighlights,
+        pushToast,
+        setActiveTab,
+      } = state;
+      const envHost = state.preferences.environments[state.preferences.defaultEnvironment] ?? '';
 
       if (e.key === '?' && (e.shiftKey || e.key === '?')) {
         e.preventDefault();
@@ -40,6 +49,11 @@ export function useKeyboardShortcuts(): void {
       if (e.key === '[') {
         e.preventDefault();
         toggleCollapsed();
+        return;
+      }
+      if ((e.key === 'h' || e.key === 'H') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        toggleHighlights();
         return;
       }
       if ((e.key === 't' || e.key === 'T') && !e.metaKey && !e.ctrlKey) {
@@ -66,14 +80,14 @@ export function useKeyboardShortcuts(): void {
         } else if (combo === 'op' && page) {
           chrome.runtime.sendMessage({
             type: 'OPEN_TAB',
-            url: buildUrl(page.pageUri),
+            url: buildUrl(page.pageUri, '', envHost),
           } satisfies RuntimeMessage);
         } else if (combo === 'oc' && (selected || page)) {
           const uri = selected?.uri ?? page?.pageUri;
           if (uri) {
             chrome.runtime.sendMessage({
               type: 'OPEN_TAB',
-              url: buildUrl(uri),
+              url: buildUrl(uri, '', envHost),
             } satisfies RuntimeMessage);
           }
         }
@@ -97,6 +111,7 @@ export function useKeyboardShortcuts(): void {
 export const SHORTCUTS = [
   { keys: ['?'], description: 'Show this shortcut overlay' },
   { keys: ['['], description: 'Collapse / expand the panel' },
+  { keys: ['h'], description: 'Toggle component outlines' },
   { keys: ['i'], description: 'Switch to Inspect tab' },
   { keys: ['t'], description: 'Switch to Tree tab' },
   { keys: ['y', 'p'], description: 'Copy current page URI' },

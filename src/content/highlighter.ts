@@ -7,14 +7,24 @@ const STYLE_ID = 'clay-slip-highlight-styles';
 const HIGHLIGHT_ATTR = 'data-clay-slip-color';
 const SELECTED_ATTR = 'data-clay-slip-selected';
 const HOVER_ATTR = 'data-clay-slip-hover';
+const OPACITY_VAR = '--clay-slip-outline-opacity';
+const DEFAULT_OPACITY = 0.85;
 
-const PALETTE = [
-  { color: '#dda1a1', style: 'solid', width: 2 },
-  { color: '#dddda1', style: 'dashed', width: 3 },
-  { color: '#b0dda1', style: 'dotted', width: 4 },
-  { color: '#a1dddd', style: 'solid', width: 5 },
-  { color: '#a1a1dd', style: 'dashed', width: 4 },
-  { color: '#dda0dd', style: 'double', width: 4 },
+interface PaletteEntry {
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
+  readonly style: string;
+  readonly width: number;
+}
+
+const PALETTE: ReadonlyArray<PaletteEntry> = [
+  { r: 221, g: 161, b: 161, style: 'solid', width: 2 },
+  { r: 221, g: 221, b: 161, style: 'dashed', width: 3 },
+  { r: 176, g: 221, b: 161, style: 'dotted', width: 4 },
+  { r: 161, g: 221, b: 221, style: 'solid', width: 5 },
+  { r: 161, g: 161, b: 221, style: 'dashed', width: 4 },
+  { r: 221, g: 160, b: 221, style: 'double', width: 4 },
 ];
 
 export function installHighlightStyles(): void {
@@ -23,18 +33,19 @@ export function installHighlightStyles(): void {
   style.id = STYLE_ID;
   style.textContent = buildStyleSheet();
   document.head.appendChild(style);
+  setHighlightOpacity(DEFAULT_OPACITY);
 }
 
 function buildStyleSheet(): string {
   const colorRules = PALETTE.map(
     (p, i) =>
-      `[${HIGHLIGHT_ATTR}="${i}"]{outline:${p.width}px ${p.style} ${p.color} !important;outline-offset:-${p.width}px !important;}`
+      `[${HIGHLIGHT_ATTR}="${i}"]{outline:${p.width}px ${p.style} rgba(${p.r},${p.g},${p.b},var(${OPACITY_VAR},${DEFAULT_OPACITY})) !important;outline-offset:-${p.width}px !important;}`
   ).join('\n');
 
   return `
     ${colorRules}
-    [${HOVER_ATTR}]{outline:3px solid #ffaf3a !important;outline-offset:-3px !important;}
-    [${SELECTED_ATTR}]{outline:5px solid #e22c2c !important;outline-offset:-5px !important;}
+    [${HOVER_ATTR}]{outline:3px solid rgba(255,175,58,var(${OPACITY_VAR},${DEFAULT_OPACITY})) !important;outline-offset:-3px !important;}
+    [${SELECTED_ATTR}]{outline:5px solid rgba(226,44,44,var(${OPACITY_VAR},${DEFAULT_OPACITY})) !important;outline-offset:-5px !important;}
   `;
 }
 
@@ -72,4 +83,9 @@ export function setHighlightingEnabled(enabled: boolean): void {
   const style = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
   if (!style) return;
   style.disabled = !enabled;
+}
+
+export function setHighlightOpacity(opacity: number): void {
+  const clamped = Math.max(0, Math.min(1, opacity));
+  document.documentElement.style.setProperty(OPACITY_VAR, String(clamped));
 }

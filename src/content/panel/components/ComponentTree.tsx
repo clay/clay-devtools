@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { setSelected } from '../../highlighter';
+import { setHovered, setSelected } from '../../highlighter';
 import { useStore } from '../store';
 import { SearchBar } from './SearchBar';
 
@@ -38,12 +38,8 @@ export function ComponentTree() {
                 setSelectedStore(info);
                 info.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}
-              onMouseEnter={() => {
-                info.element.classList.add('cs-tree-hover');
-              }}
-              onMouseLeave={() => {
-                info.element.classList.remove('cs-tree-hover');
-              }}
+              onMouseEnter={() => setHovered(null, info.element)}
+              onMouseLeave={() => setHovered(info.element, null)}
             >
               <span>{info.displayName}</span>
               {info.instance && (

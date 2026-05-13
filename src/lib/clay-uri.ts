@@ -11,6 +11,10 @@ const COMPONENT_RE = /_components\/([^/.]+?)(?:[/.@]|$)/;
 const COMPONENT_INSTANCE_RE = /\/_components\/[^/]+?\/instances\/([^.@/]+)/;
 const PAGE_INSTANCE_RE = /\/_pages\/([^./@]+)/;
 const PUBLISHED_SUFFIX = '@published';
+/** Path segments Clay uses as the boundary between host and resource path. */
+const PATH_PREFIXES = ['/_pages/', '/_components/', '/_layouts/', '/_lists/', '/_users/'] as const;
+
+export type UriSuffix = '' | '.json' | '.html' | '/meta';
 
 export function isClayDocument(doc: Document = document): boolean {
   const html = doc.documentElement;
@@ -59,12 +63,46 @@ export function getDisplayName(uri: string | null | undefined): string {
 }
 
 /**
- * Build the full HTTPS URL for a relative Clay URI (which omits the protocol).
- * Optionally appends a suffix like ".json" or ".html".
+ * Splits a Clay URI into its host portion and Clay path portion.
+ * Returns a path that always starts with one of the known Clay path prefixes
+ * (e.g. `/_components/...`). Falls back to the input if no prefix is found.
  */
-export function buildUrl(uri: string, suffix: '' | '.json' | '.html' | '/meta' = ''): string {
+export function splitHostAndPath(uri: string): { host: string; path: string } {
   const cleaned = uri.replace(/^https?:\/\//, '');
-  return `https://${cleaned}${suffix}`;
+  for (const prefix of PATH_PREFIXES) {
+    const idx = cleaned.indexOf(prefix);
+    if (idx > -1) {
+      return { host: cleaned.slice(0, idx), path: cleaned.slice(idx) };
+    }
+  }
+  return { host: '', path: '/' + cleaned };
+}
+
+/**
+ * Normalizes a user-provided host string into a `protocol://hostname` form
+ * with no trailing slash. Returns an empty string when no host is set.
+ */
+export function normalizeHost(host: string | null | undefined): string {
+  if (!host) return '';
+  const trimmed = host.trim().replace(/\/+$/, '');
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+/**
+ * Build the full URL for a Clay URI.
+ * - When `hostOverride` is provided, the URI's host is replaced with it.
+ * - When omitted (or empty), the URI's existing host is used with `https://`.
+ */
+export function buildUrl(uri: string, suffix: UriSuffix = '', hostOverride = ''): string {
+  const normalizedOverride = normalizeHost(hostOverride);
+  if (!normalizedOverride) {
+    const cleaned = uri.replace(/^https?:\/\//, '');
+    return `https://${cleaned}${suffix}`;
+  }
+  const { path } = splitHostAndPath(uri);
+  return `${normalizedOverride}${path}${suffix}`;
 }
 
 /**
@@ -72,16 +110,23 @@ export function buildUrl(uri: string, suffix: '' | '.json' | '.html' | '/meta' =
  * Clay component schemas live at:
  *   {host}/_components/{name}/schema
  */
-export function buildSchemaUrl(uri: string): string | null {
+export function buildSchemaUrl(uri: string, hostOverride = ''): string | null {
   const name = getComponentName(uri);
   if (!name) return null;
-  const cleaned = uri.replace(/^https?:\/\//, '');
-  const host = cleaned.split('/_components/')[0];
+  const normalizedOverride = normalizeHost(hostOverride);
+  if (normalizedOverride) {
+    return `${normalizedOverride}/_components/${name}/schema`;
+  }
+  const { host } = splitHostAndPath(uri);
   if (!host) return null;
   return `https://${host}/_components/${name}/schema`;
 }
 
-export function buildCurlCommand(uri: string, suffix: '' | '.json' = '.json'): string {
-  const url = buildUrl(uri, suffix);
+export function buildCurlCommand(
+  uri: string,
+  suffix: UriSuffix = '.json',
+  hostOverride = ''
+): string {
+  const url = buildUrl(uri, suffix, hostOverride);
   return `curl -X GET "${url}" -H "Accept: application/json"`;
 }

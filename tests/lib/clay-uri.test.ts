@@ -9,6 +9,8 @@ import {
   getPageInstance,
   isClayDocument,
   isPublished,
+  normalizeHost,
+  splitHostAndPath,
   toTitleCase,
   unpublishedUri,
 } from '@/lib/clay-uri';
@@ -127,6 +129,28 @@ describe('buildUrl', () => {
   it('appends meta path correctly', () => {
     expect(buildUrl('site/_pages/abc', '/meta')).toBe('https://site/_pages/abc/meta');
   });
+
+  it('rewrites the host when override is provided (bare hostname)', () => {
+    expect(
+      buildUrl('prod.example.com/_components/foo/instances/x', '.json', 'staging.example.com')
+    ).toBe('https://staging.example.com/_components/foo/instances/x.json');
+  });
+
+  it('rewrites the host when override includes protocol', () => {
+    expect(buildUrl('prod.example.com/_pages/x', '', 'http://localhost:3001')).toBe(
+      'http://localhost:3001/_pages/x'
+    );
+  });
+
+  it('strips trailing slash from host override', () => {
+    expect(buildUrl('prod.example.com/_pages/x', '', 'https://staging.example.com/')).toBe(
+      'https://staging.example.com/_pages/x'
+    );
+  });
+
+  it('falls back to original host when override is empty', () => {
+    expect(buildUrl('prod.example.com/_pages/x', '', '')).toBe('https://prod.example.com/_pages/x');
+  });
 });
 
 describe('buildSchemaUrl', () => {
@@ -139,6 +163,12 @@ describe('buildSchemaUrl', () => {
   it('returns null for non-component URIs', () => {
     expect(buildSchemaUrl('site/_pages/abc')).toBeNull();
   });
+
+  it('respects host override', () => {
+    expect(buildSchemaUrl('prod.example.com/_components/byline/x', 'staging.example.com')).toBe(
+      'https://staging.example.com/_components/byline/schema'
+    );
+  });
 });
 
 describe('buildCurlCommand', () => {
@@ -147,6 +177,64 @@ describe('buildCurlCommand', () => {
     expect(cmd).toContain('curl -X GET');
     expect(cmd).toContain('https://site/_components/foo/instances/x.json');
     expect(cmd).toContain('Accept: application/json');
+  });
+
+  it('uses host override in URL', () => {
+    const cmd = buildCurlCommand(
+      'prod.example.com/_components/foo/instances/x',
+      '.json',
+      'staging.example.com'
+    );
+    expect(cmd).toContain('https://staging.example.com/_components/foo/instances/x.json');
+  });
+});
+
+describe('splitHostAndPath', () => {
+  it('separates host and path on a clean URI', () => {
+    expect(splitHostAndPath('site.example.com/_components/byline/instances/x')).toEqual({
+      host: 'site.example.com',
+      path: '/_components/byline/instances/x',
+    });
+  });
+
+  it('strips the protocol if present', () => {
+    expect(splitHostAndPath('https://site.example.com/_pages/foo')).toEqual({
+      host: 'site.example.com',
+      path: '/_pages/foo',
+    });
+  });
+
+  it('handles all known Clay path prefixes', () => {
+    expect(splitHostAndPath('site/_layouts/main/instances/x').path).toBe(
+      '/_layouts/main/instances/x'
+    );
+    expect(splitHostAndPath('site/_lists/x').path).toBe('/_lists/x');
+    expect(splitHostAndPath('site/_users/x').path).toBe('/_users/x');
+  });
+
+  it('returns empty host when there is no Clay prefix', () => {
+    expect(splitHostAndPath('not-a-clay-uri/whatever').host).toBe('');
+  });
+});
+
+describe('normalizeHost', () => {
+  it('returns empty string for empty input', () => {
+    expect(normalizeHost('')).toBe('');
+    expect(normalizeHost(null)).toBe('');
+    expect(normalizeHost(undefined)).toBe('');
+  });
+
+  it('prepends https:// to bare hostnames', () => {
+    expect(normalizeHost('staging.example.com')).toBe('https://staging.example.com');
+  });
+
+  it('preserves http:// for local dev', () => {
+    expect(normalizeHost('http://localhost:3001')).toBe('http://localhost:3001');
+  });
+
+  it('strips trailing slashes', () => {
+    expect(normalizeHost('https://example.com/')).toBe('https://example.com');
+    expect(normalizeHost('https://example.com///')).toBe('https://example.com');
   });
 });
 

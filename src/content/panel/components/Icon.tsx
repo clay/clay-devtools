@@ -86,6 +86,30 @@ const ICONS = {
       />
     </>
   ),
+  eye: (
+    <>
+      <path
+        d="M1.5 8C3 4.5 5.5 3 8 3s5 1.5 6.5 5C13 11.5 10.5 13 8 13s-5-1.5-6.5-5z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        fill="none"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.4" fill="none" />
+    </>
+  ),
+  eyeOff: (
+    <>
+      <path
+        d="M1.5 8C3 4.5 5.5 3 8 3c1 0 2 .25 2.9.7M14.5 8C13.6 10 12.3 11.4 10.7 12.2M5.5 4.7C3.6 5.7 2.3 7 1.5 8"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path d="M2 2l12 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </>
+  ),
 } as const;
 
 export type IconName = keyof typeof ICONS;

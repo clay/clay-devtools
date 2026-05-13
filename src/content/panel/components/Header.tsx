@@ -1,12 +1,18 @@
-import { forwardRef } from 'react';
+import type { Ref } from 'react';
 import { Icon } from './Icon';
 import { useStore } from '../store';
 
-export const Header = forwardRef<HTMLDivElement>(function Header(_, ref) {
+interface HeaderProps {
+  ref?: Ref<HTMLDivElement>;
+}
+
+export function Header({ ref }: HeaderProps) {
   const page = useStore((s) => s.page);
   const collapsed = useStore((s) => s.collapsed);
   const toggleCollapsed = useStore((s) => s.toggleCollapsed);
   const toggleShortcuts = useStore((s) => s.toggleShortcuts);
+  const toggleHighlights = useStore((s) => s.toggleHighlights);
+  const highlightEnabled = useStore((s) => s.highlightEnabled);
   const componentCount = useStore((s) => s.components.length);
 
   const openOptions = () => {
@@ -28,6 +34,15 @@ export const Header = forwardRef<HTMLDivElement>(function Header(_, ref) {
         </span>
       )}
       <button
+        className={`cs-icon-btn ${highlightEnabled ? '' : 'cs-icon-btn-off'}`}
+        onClick={toggleHighlights}
+        title={highlightEnabled ? 'Hide outlines' : 'Show outlines'}
+        aria-label={highlightEnabled ? 'Hide outlines' : 'Show outlines'}
+        aria-pressed={!highlightEnabled}
+      >
+        <Icon name={highlightEnabled ? 'eye' : 'eyeOff'} />
+      </button>
+      <button
         className="cs-icon-btn"
         onClick={toggleShortcuts}
         title="Keyboard shortcuts (?)"
@@ -48,4 +63,4 @@ export const Header = forwardRef<HTMLDivElement>(function Header(_, ref) {
       </button>
     </div>
   );
-});
+}

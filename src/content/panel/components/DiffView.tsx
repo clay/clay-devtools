@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { buildUrl, isPublished, unpublishedUri } from '@/lib/clay-uri';
-import { useStore } from '../store';
+import { useEnvHost, useStore } from '../store';
 
 interface DualState {
   readonly status: 'idle' | 'loading' | 'success' | 'error';
@@ -41,13 +41,15 @@ function initialStateFor(uri: string | null): DualState {
 export function DiffView() {
   const selected = useStore((s) => s.selected);
   const page = useStore((s) => s.page);
+  const envHost = useEnvHost();
   const targetUri = selected?.uri ?? page?.pageUri ?? null;
 
   const [state, setState] = useState<DualState>(() => initialStateFor(targetUri));
-  const [prevUri, setPrevUri] = useState(targetUri);
+  const [prevKey, setPrevKey] = useState(`${envHost}::${targetUri ?? ''}`);
+  const currentKey = `${envHost}::${targetUri ?? ''}`;
 
-  if (prevUri !== targetUri) {
-    setPrevUri(targetUri);
+  if (prevKey !== currentKey) {
+    setPrevKey(currentKey);
     setState(initialStateFor(targetUri));
   }
 
@@ -57,9 +59,11 @@ export function DiffView() {
     let cancelled = false;
 
     Promise.all([
-      fetch(buildUrl(targetUri, '.json'), { credentials: 'include' }).then((r) => r.json()),
-      fetch(buildUrl(unpublishedUri(targetUri), '.json'), { credentials: 'include' }).then((r) =>
+      fetch(buildUrl(targetUri, '.json', envHost), { credentials: 'include' }).then((r) =>
         r.json()
+      ),
+      fetch(buildUrl(unpublishedUri(targetUri), '.json', envHost), { credentials: 'include' }).then(
+        (r) => r.json()
       ),
     ])
       .then(([published, draft]) => {
@@ -77,7 +81,7 @@ export function DiffView() {
     return () => {
       cancelled = true;
     };
-  }, [targetUri]);
+  }, [targetUri, envHost]);
 
   if (!targetUri) {
     return <div className="cs-empty">Select a component to compare its versions.</div>;

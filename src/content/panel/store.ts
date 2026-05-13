@@ -20,6 +20,7 @@ interface StoreState {
   search: string;
   activeTab: PanelTab;
   showShortcuts: boolean;
+  highlightEnabled: boolean;
   preferences: UserPreferences;
   toasts: ToastMessage[];
 
@@ -30,6 +31,7 @@ interface StoreState {
   setSearch: (q: string) => void;
   setActiveTab: (tab: PanelTab) => void;
   toggleShortcuts: () => void;
+  toggleHighlights: () => void;
   setPreferences: (next: Partial<UserPreferences>) => void;
   pushToast: (text: string, tone?: ToastMessage['tone']) => void;
   dismissToast: (id: number) => void;
@@ -46,6 +48,7 @@ export const useStore = create<StoreState>()((set) => ({
   search: '',
   activeTab: 'inspect',
   showShortcuts: false,
+  highlightEnabled: true,
   preferences: DEFAULT_PREFERENCES,
   toasts: [],
 
@@ -56,6 +59,7 @@ export const useStore = create<StoreState>()((set) => ({
   setSearch: (search) => set({ search }),
   setActiveTab: (activeTab) => set({ activeTab }),
   toggleShortcuts: () => set((s) => ({ showShortcuts: !s.showShortcuts })),
+  toggleHighlights: () => set((s) => ({ highlightEnabled: !s.highlightEnabled })),
   setPreferences: (prefs) => set((s) => ({ preferences: { ...s.preferences, ...prefs } })),
   pushToast: (text, tone = 'info') =>
     set((s) => ({
@@ -63,3 +67,12 @@ export const useStore = create<StoreState>()((set) => ({
     })),
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
+
+/**
+ * Read-only selector hook for the resolved environment host string.
+ * Returns an empty string when the user has not configured a host for the
+ * currently-selected environment, signalling "use the page's existing host".
+ */
+export function useEnvHost(): string {
+  return useStore((s) => s.preferences.environments[s.preferences.defaultEnvironment] ?? '');
+}

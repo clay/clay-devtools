@@ -1,13 +1,14 @@
 import { buildCurlCommand, buildSchemaUrl, buildUrl, unpublishedUri } from '@/lib/clay-uri';
 import { copyToClipboard } from '@/lib/clipboard';
 import type { RuntimeMessage } from '@/lib/types';
-import { useStore } from '../store';
+import { useEnvHost, useStore } from '../store';
 import { Icon } from './Icon';
 import { Breadcrumb } from './Breadcrumb';
 
 export function ComponentDetails() {
   const selected = useStore((s) => s.selected);
   const pushToast = useStore((s) => s.pushToast);
+  const envHost = useEnvHost();
 
   if (!selected) {
     return (
@@ -27,7 +28,7 @@ export function ComponentDetails() {
   };
 
   const isPublished = selected.uri.includes('@published');
-  const schemaUrl = buildSchemaUrl(selected.uri);
+  const schemaUrl = buildSchemaUrl(selected.uri, envHost);
 
   return (
     <section className="cs-section">
@@ -36,13 +37,16 @@ export function ComponentDetails() {
       <p className="cs-name">{selected.displayName}</p>
       {selected.instance && <p className="cs-instance">{selected.instance}</p>}
       <div className="cs-link-row">
-        <button className="cs-link cs-link-primary" onClick={() => open(buildUrl(selected.uri))}>
+        <button
+          className="cs-link cs-link-primary"
+          onClick={() => open(buildUrl(selected.uri, '', envHost))}
+        >
           <Icon name="external" size={11} /> Data
         </button>
-        <button className="cs-link" onClick={() => open(buildUrl(selected.uri, '.json'))}>
+        <button className="cs-link" onClick={() => open(buildUrl(selected.uri, '.json', envHost))}>
           .json
         </button>
-        <button className="cs-link" onClick={() => open(buildUrl(selected.uri, '.html'))}>
+        <button className="cs-link" onClick={() => open(buildUrl(selected.uri, '.html', envHost))}>
           .html
         </button>
         {schemaUrl && (
@@ -51,7 +55,10 @@ export function ComponentDetails() {
           </button>
         )}
         {isPublished && (
-          <button className="cs-link" onClick={() => open(buildUrl(unpublishedUri(selected.uri)))}>
+          <button
+            className="cs-link"
+            onClick={() => open(buildUrl(unpublishedUri(selected.uri), '', envHost))}
+          >
             Unpublished
           </button>
         )}
@@ -60,7 +67,7 @@ export function ComponentDetails() {
         </button>
         <button
           className="cs-link"
-          onClick={() => copy(buildCurlCommand(selected.uri), 'cURL command')}
+          onClick={() => copy(buildCurlCommand(selected.uri, '.json', envHost), 'cURL command')}
           title="Copy as cURL"
         >
           cURL

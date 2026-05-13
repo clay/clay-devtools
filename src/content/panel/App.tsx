@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { loadPreferences, onPreferencesChanged } from '@/lib/storage';
+import { setHighlightingEnabled, setHighlightOpacity } from '../highlighter';
 import { useStore } from './store';
 import { useDraggable } from './hooks/useDraggable';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -21,6 +22,8 @@ export function App() {
   const collapsed = useStore((s) => s.collapsed);
   const activeTab = useStore((s) => s.activeTab);
   const corner = useStore((s) => s.preferences.panelPosition);
+  const highlightOpacity = useStore((s) => s.preferences.highlightOpacity);
+  const highlightEnabled = useStore((s) => s.highlightEnabled);
   const setPrefs = useStore((s) => s.setPreferences);
 
   const { style: themeStyle } = useThemedRoot();
@@ -33,6 +36,14 @@ export function App() {
     loadPreferences().then((prefs) => setPrefs(prefs));
     return onPreferencesChanged((prefs) => setPrefs(prefs));
   }, [setPrefs]);
+
+  useEffect(() => {
+    setHighlightOpacity(highlightOpacity);
+  }, [highlightOpacity]);
+
+  useEffect(() => {
+    setHighlightingEnabled(highlightEnabled);
+  }, [highlightEnabled]);
 
   return (
     <div

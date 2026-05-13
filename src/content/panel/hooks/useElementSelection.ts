@@ -3,6 +3,30 @@ import { setSelected, setHovered as setHoveredOutline } from '../../highlighter'
 import { useStore } from '../store';
 import type { ClayComponentInfo } from '@/lib/types';
 
+const INTERACTIVE_TAGS = new Set([
+  'A',
+  'BUTTON',
+  'INPUT',
+  'SELECT',
+  'TEXTAREA',
+  'LABEL',
+  'AUDIO',
+  'VIDEO',
+  'DETAILS',
+  'SUMMARY',
+]);
+
+function clickIsOnInteractive(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  let node: HTMLElement | null = target;
+  while (node && !node.hasAttribute('data-uri')) {
+    if (INTERACTIVE_TAGS.has(node.tagName)) return true;
+    if (node.isContentEditable) return true;
+    node = node.parentElement;
+  }
+  return false;
+}
+
 export function useElementSelection(): void {
   const components = useStore((s) => s.components);
   const setSelectedStore = useStore((s) => s.setSelected);
@@ -19,8 +43,14 @@ export function useElementSelection(): void {
       if (!target) return;
       const info = byElement.get(target);
       if (!info) return;
-      e.preventDefault();
-      e.stopPropagation();
+
+      // Always update the selection, but only swallow the event if the user
+      // didn't actually click a real interactive element (link, button, etc.).
+      const onInteractive = clickIsOnInteractive(e.target);
+      if (!onInteractive) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       const prev = useStore.getState().selected;
       setSelected(prev?.element ?? null, target);
       setSelectedStore(info);

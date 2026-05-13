@@ -51,20 +51,6 @@ export const darkTheme: ThemeTokens = {
   mono: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
 };
 
-export function resolveTheme(mode: 'auto' | 'light' | 'dark'): {
-  mode: ThemeMode;
-  tokens: ThemeTokens;
-} {
-  if (mode === 'auto') {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return {
-      mode: prefersDark ? 'dark' : 'light',
-      tokens: prefersDark ? darkTheme : lightTheme,
-    };
-  }
-  return { mode, tokens: mode === 'dark' ? darkTheme : lightTheme };
-}
-
 export function tokensToCssVars(tokens: ThemeTokens): Record<string, string> {
   return {
     '--cs-bg': tokens.bg,

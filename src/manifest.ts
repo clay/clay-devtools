@@ -18,6 +18,7 @@ export default defineManifest({
 
   action: {
     default_title: 'Toggle Clay Slip',
+    default_popup: 'src/popup/index.html',
     default_icon: {
       16: 'icons/icon-16.png',
       32: 'icons/icon-32.png',

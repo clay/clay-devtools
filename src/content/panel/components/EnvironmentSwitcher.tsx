@@ -1,28 +1,33 @@
 import { useStore } from '../store';
 import { savePreferences } from '@/lib/storage';
-import type { Environment } from '@/lib/types';
-
-const ENVIRONMENTS: Array<{ id: Environment; label: string }> = [
-  { id: 'local', label: 'local' },
-  { id: 'dev', label: 'dev' },
-  { id: 'staging', label: 'staging' },
-  { id: 'prod', label: 'prod' },
-];
+import { ENVIRONMENT_LABELS, ENVIRONMENT_ORDER } from '@/lib/types';
 
 export function EnvironmentSwitcher() {
   const env = useStore((s) => s.preferences.defaultEnvironment);
+  const host = useStore((s) => s.preferences.environments[env]);
   const setPrefs = useStore((s) => s.setPreferences);
 
   const cycle = () => {
-    const idx = ENVIRONMENTS.findIndex((e) => e.id === env);
-    const next = ENVIRONMENTS[(idx + 1) % ENVIRONMENTS.length]!;
-    setPrefs({ defaultEnvironment: next.id });
-    void savePreferences({ defaultEnvironment: next.id });
+    const idx = ENVIRONMENT_ORDER.indexOf(env);
+    const next = ENVIRONMENT_ORDER[(idx + 1) % ENVIRONMENT_ORDER.length]!;
+    setPrefs({ defaultEnvironment: next });
+    void savePreferences({ defaultEnvironment: next });
   };
 
+  const isConfigured = Boolean(host?.trim());
+
   return (
-    <button className="cs-env-pill" onClick={cycle} title="Cycle environment">
+    <button
+      className={`cs-env-pill ${isConfigured ? 'cs-env-pill-active' : ''}`}
+      onClick={cycle}
+      title={
+        isConfigured
+          ? `All links + fetches use ${host}. Click to cycle.`
+          : `No host configured for ${ENVIRONMENT_LABELS[env]}. Open Settings to add one.`
+      }
+    >
       env: {env}
+      {isConfigured ? '' : ' (unset)'}
     </button>
   );
 }

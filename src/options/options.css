@@ -107,14 +107,37 @@ body {
 }
 
 .options-row select,
-.options-row input[type='range'] {
+.options-row input[type='range'],
+.options-row input[type='text'] {
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 6px 8px;
   font-size: 13px;
-  min-width: 180px;
+  min-width: 220px;
+  font-family: inherit;
+}
+
+.options-row input[type='text']:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.options-section-help {
+  margin: 12px 0 4px;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.options-section-help code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 11px;
 }
 
 .options-row input[type='checkbox'] {

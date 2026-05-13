@@ -98,6 +98,10 @@
   color: var(--cs-text);
 }
 
+.cs-icon-btn.cs-icon-btn-off {
+  color: var(--cs-text-subtle);
+}
+
 .cs-tabs {
   display: flex;
   gap: 0;
@@ -443,6 +447,12 @@
 }
 
 .cs-env-pill:hover {
+  border-color: var(--cs-accent);
+  color: var(--cs-accent);
+}
+
+.cs-env-pill.cs-env-pill-active {
+  background: var(--cs-accent-bg);
   border-color: var(--cs-accent);
   color: var(--cs-accent);
 }

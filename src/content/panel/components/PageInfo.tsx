@@ -1,10 +1,11 @@
 import { buildUrl, unpublishedUri } from '@/lib/clay-uri';
 import type { RuntimeMessage } from '@/lib/types';
-import { useStore } from '../store';
+import { useEnvHost, useStore } from '../store';
 import { Icon } from './Icon';
 
 export function PageInfo() {
   const page = useStore((s) => s.page);
+  const envHost = useEnvHost();
   if (!page) return null;
 
   const open = (url: string) => {
@@ -17,14 +18,17 @@ export function PageInfo() {
       <p className="cs-name">{page.pageInstance ?? 'Unknown page'}</p>
       <p className="cs-instance">{page.pageUri}</p>
       <div className="cs-link-row">
-        <button className="cs-link cs-link-primary" onClick={() => open(buildUrl(page.pageUri))}>
+        <button
+          className="cs-link cs-link-primary"
+          onClick={() => open(buildUrl(page.pageUri, '', envHost))}
+        >
           <Icon name="external" size={11} /> Page
         </button>
-        <button className="cs-link" onClick={() => open(buildUrl(page.pageUri, '/meta'))}>
+        <button className="cs-link" onClick={() => open(buildUrl(page.pageUri, '/meta', envHost))}>
           Metadata
         </button>
         {page.layoutUri !== null && (
-          <button className="cs-link" onClick={() => open(buildUrl(page.layoutUri!))}>
+          <button className="cs-link" onClick={() => open(buildUrl(page.layoutUri!, '', envHost))}>
             Layout
           </button>
         )}
@@ -32,14 +36,14 @@ export function PageInfo() {
           <>
             <button
               className="cs-link"
-              onClick={() => open(buildUrl(unpublishedUri(page.pageUri)))}
+              onClick={() => open(buildUrl(unpublishedUri(page.pageUri), '', envHost))}
             >
               Unpublished Page
             </button>
             {page.layoutUri !== null && (
               <button
                 className="cs-link"
-                onClick={() => open(buildUrl(unpublishedUri(page.layoutUri!)))}
+                onClick={() => open(buildUrl(unpublishedUri(page.layoutUri!), '', envHost))}
               >
                 Unpublished Layout
               </button>
