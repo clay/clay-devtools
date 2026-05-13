@@ -48,15 +48,10 @@ body {
 }
 
 .options-logo {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: var(--accent);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
+  width: 32px;
+  height: 32px;
+  display: block;
+  object-fit: contain;
 }
 
 .options-saved {
