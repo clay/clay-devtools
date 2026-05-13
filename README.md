@@ -199,6 +199,10 @@ This release is a full rewrite. There are no breaking _features_ — every capab
 - **Lint / format**: ESLint 9 flat config + `typescript-eslint@8` + Prettier 3.
 - **CI**: GitHub Actions runs typecheck, lint, format check, tests, and a production build on every push and PR.
 
+## Privacy
+
+Clay Slip runs entirely on your device, makes no telemetry calls, and ships no remote code. See [PRIVACY.md](PRIVACY.md) for the full disclosure that's also linked from the Chrome Web Store listing.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

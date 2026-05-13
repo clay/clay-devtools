@@ -55,6 +55,11 @@ export default defineManifest({
     },
   ],
 
-  permissions: ['activeTab', 'scripting', 'storage', 'clipboardWrite'],
+  // Permissions are deliberately minimal — see PRIVACY.md for the
+  // per-permission justification used in the Chrome Web Store listing:
+  //   activeTab     → captureVisibleTab for the Screenshot feature
+  //   storage       → user prefs (sync) + annotations/recents (local)
+  //   clipboardWrite → all "Copy to clipboard" panel actions
+  permissions: ['activeTab', 'storage', 'clipboardWrite'],
   host_permissions: ['<all_urls>'],
 });
