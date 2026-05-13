@@ -1,6 +1,16 @@
 import { defineManifest } from '@crxjs/vite-plugin';
 import pkg from '../package.json' with { type: 'json' };
 
+// Chrome Web Store rejects uploads with `manifest.description` > 132 chars.
+// Catch the regression at build time, where it's easy to fix, instead of at
+// upload time, where it bricks a release.
+const MAX_DESCRIPTION_CHARS = 132;
+if (pkg.description.length > MAX_DESCRIPTION_CHARS) {
+  throw new Error(
+    `package.json "description" is ${pkg.description.length} chars; Chrome Web Store limit is ${MAX_DESCRIPTION_CHARS}.`
+  );
+}
+
 export default defineManifest({
   manifest_version: 3,
   name: 'Clay Slip',
