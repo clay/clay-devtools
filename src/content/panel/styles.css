@@ -1196,3 +1196,147 @@
   background: var(--cs-accent-bg);
   color: var(--cs-accent);
 }
+
+/* ============================================================
+   JSON-LD collapsible cards (SEO tab → Structured data section)
+   ============================================================ */
+
+.cs-section-count {
+  font-weight: 400;
+  color: var(--cs-text-subtle);
+  font-size: 11px;
+}
+
+.cs-jsonld-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cs-jsonld-card {
+  border: 1px solid var(--cs-border);
+  border-radius: 6px;
+  background: var(--cs-bg-elevated);
+  overflow: hidden;
+}
+
+.cs-jsonld-card[open] {
+  border-color: var(--cs-accent);
+}
+
+.cs-jsonld-card-invalid {
+  border-color: var(--cs-danger);
+}
+
+.cs-jsonld-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  font-size: 12px;
+  color: var(--cs-text);
+}
+
+/* Hide the default disclosure triangle (Chrome / Safari / Firefox). */
+.cs-jsonld-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cs-jsonld-summary::marker {
+  display: none;
+  content: '';
+}
+
+.cs-jsonld-summary:hover {
+  background: var(--cs-bg-hover);
+}
+
+.cs-jsonld-chevron {
+  display: inline-block;
+  width: 10px;
+  font-size: 9px;
+  color: var(--cs-text-subtle);
+  transition: transform 0.12s ease;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.cs-jsonld-card[open] .cs-jsonld-chevron {
+  transform: rotate(90deg);
+}
+
+.cs-jsonld-index {
+  font-family: var(--cs-mono);
+  font-size: 10px;
+  color: var(--cs-text-subtle);
+  background: var(--cs-bg);
+  border: 1px solid var(--cs-border);
+  border-radius: 3px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+}
+
+.cs-jsonld-type {
+  font-weight: 600;
+  color: var(--cs-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  max-width: 60%;
+}
+
+.cs-jsonld-card-invalid .cs-jsonld-type {
+  color: var(--cs-danger);
+}
+
+.cs-jsonld-count {
+  font-weight: 400;
+  color: var(--cs-text-subtle);
+}
+
+.cs-jsonld-secondary {
+  font-size: 11px;
+  color: var(--cs-text-muted);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-jsonld-copy {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.cs-jsonld-body {
+  margin: 0;
+  border-top: 1px solid var(--cs-border);
+  border-radius: 0;
+  max-height: 360px;
+  overflow: auto;
+  font-size: 11px;
+}
+
+.cs-jsonld-error {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--cs-danger);
+  border-bottom: 1px solid var(--cs-border);
+}
+
+.cs-jsonld-raw {
+  margin: 0;
+  padding: 8px;
+  background: var(--cs-bg);
+  font-family: var(--cs-mono);
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--cs-text-muted);
+}

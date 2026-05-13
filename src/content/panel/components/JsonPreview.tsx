@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { buildUrl } from '@/lib/clay-uri';
 import { copyToClipboard } from '@/lib/clipboard';
+import { highlightJson } from '@/lib/json-highlight';
 import { useEnvHost, useStore } from '../store';
 import { Icon } from './Icon';
 
@@ -11,32 +12,6 @@ interface FetchState {
 }
 
 const cache = new Map<string, FetchState>();
-
-function highlightJson(value: unknown): string {
-  const json = JSON.stringify(value, null, 2);
-  return json
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(
-      /("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(?=\s*:))|("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*")|(\b(?:true|false)\b)|(\bnull\b)|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
-      (match: string) => {
-        if (/^"[^"]+"\s*:?$/.test(match) && match.endsWith(':')) {
-          return `<span class="cs-json-key">${match}</span>`;
-        }
-        if (match.startsWith('"')) {
-          return `<span class="cs-json-string">${match}</span>`;
-        }
-        if (match === 'true' || match === 'false') {
-          return `<span class="cs-json-bool">${match}</span>`;
-        }
-        if (match === 'null') {
-          return `<span class="cs-json-null">${match}</span>`;
-        }
-        return `<span class="cs-json-number">${match}</span>`;
-      }
-    );
-}
 
 function cacheKey(uri: string | null, host: string): string {
   return `${host || '_'}::${uri ?? ''}`;

@@ -57,6 +57,93 @@ function readJsonLd(doc: Document): unknown[] {
   return blocks;
 }
 
+/**
+ * One-line description of a JSON-LD block, suitable for the collapsed
+ * card header in the SEO tab. Tries hard to extract the most useful
+ * signal — `@type` (or list of types in a `@graph`) plus a name/headline
+ * if one is present — and falls back to a generic label when the block
+ * doesn't follow the schema.org conventions.
+ */
+export interface JsonLdSummary {
+  readonly typeLabel: string;
+  readonly secondary: string | null;
+  readonly invalid: boolean;
+  readonly itemCount: number | null;
+}
+
+const MAX_SECONDARY = 80;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Schema.org `@type` values can be a string, an array of strings, or
+ * occasionally a nested array. Normalize into a clean string list.
+ */
+function readTypes(node: unknown): string[] {
+  if (!isRecord(node)) return [];
+  const raw = node['@type'];
+  if (typeof raw === 'string') return [raw];
+  if (Array.isArray(raw)) return raw.filter((t): t is string => typeof t === 'string');
+  return [];
+}
+
+/**
+ * Pick the best human-readable label out of the common name-ish fields.
+ * `headline` is the standard for `Article`/`NewsArticle`; `name` is the
+ * fallback for almost everything else; `url` is a last resort.
+ */
+function readSecondary(node: unknown): string | null {
+  if (!isRecord(node)) return null;
+  for (const field of ['headline', 'name', 'title', 'url'] as const) {
+    const v = node[field];
+    if (typeof v === 'string' && v.trim()) {
+      const trimmed = v.trim();
+      return trimmed.length > MAX_SECONDARY ? `${trimmed.slice(0, MAX_SECONDARY - 1)}…` : trimmed;
+    }
+  }
+  return null;
+}
+
+export function summarizeJsonLd(block: unknown): JsonLdSummary {
+  if (isRecord(block) && block.__invalid === true) {
+    return { typeLabel: 'Invalid JSON', secondary: null, invalid: true, itemCount: null };
+  }
+
+  // `@graph` is the canonical "bag of multiple top-level entities" pattern
+  // — Yoast and Rank Math both emit it. Show the count + the unique types
+  // in the graph so the user knows what they're about to expand.
+  if (isRecord(block) && Array.isArray(block['@graph'])) {
+    const items = block['@graph'];
+    const types = new Set<string>();
+    for (const item of items) for (const t of readTypes(item)) types.add(t);
+    const typeLabel =
+      types.size === 0
+        ? '@graph'
+        : `@graph (${[...types].sort().slice(0, 4).join(', ')}${types.size > 4 ? '…' : ''})`;
+    return { typeLabel, secondary: null, invalid: false, itemCount: items.length };
+  }
+
+  // A bare top-level array of entities — unusual but valid.
+  if (Array.isArray(block)) {
+    const types = new Set<string>();
+    for (const item of block) for (const t of readTypes(item)) types.add(t);
+    const typeLabel =
+      types.size === 0 ? 'Array' : `Array (${[...types].sort().slice(0, 4).join(', ')})`;
+    return { typeLabel, secondary: null, invalid: false, itemCount: block.length };
+  }
+
+  const types = readTypes(block);
+  const typeLabel = types.length === 0 ? 'Untyped object' : types.join(' / ');
+  return {
+    typeLabel,
+    secondary: readSecondary(block),
+    invalid: false,
+    itemCount: null,
+  };
+}
+
 export function extractSeoMeta(doc: Document = document): SeoMeta {
   return {
     title: doc.title ?? '',
