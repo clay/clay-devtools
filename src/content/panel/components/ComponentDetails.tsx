@@ -1,6 +1,5 @@
 import {
   buildCurlCommand,
-  buildEditorUrl,
   buildSchemaUrl,
   buildUrl,
   copyAsCssSelector,
@@ -20,7 +19,6 @@ import { ShareMenu } from './ShareMenu';
 
 export function ComponentDetails() {
   const selected = useStore((s) => s.selected);
-  const page = useStore((s) => s.page);
   const pushToast = useStore((s) => s.pushToast);
   const envHost = useEnvHost();
 
@@ -55,7 +53,6 @@ export function ComponentDetails() {
 
   const isPublished = selected.uri.includes('@published');
   const schemaUrl = buildSchemaUrl(selected.uri, envHost);
-  const editUrl = page ? buildEditorUrl(page.pageUri, envHost, selected.instance) : null;
 
   return (
     <section className="cs-section">
@@ -70,15 +67,6 @@ export function ComponentDetails() {
         >
           <Icon name="external" size={11} /> Data
         </button>
-        {editUrl && (
-          <button
-            className="cs-link cs-link-edit"
-            onClick={() => open(editUrl)}
-            title="Open the parent page in Clay edit mode, focused on this component"
-          >
-            <Icon name="edit" size={11} /> Edit
-          </button>
-        )}
         <button className="cs-link" onClick={() => open(buildUrl(selected.uri, '.json', envHost))}>
           .json
         </button>

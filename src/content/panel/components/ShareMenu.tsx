@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildShareLink } from '@/lib/clay-uri';
 import { copyToClipboard } from '@/lib/clipboard';
 import { availableEnvsFor, findMappingForHost, rewriteUrlToEnv } from '@/lib/site-host';
@@ -17,18 +17,19 @@ interface MenuCoords {
 
 const ESTIMATED_MENU_HEIGHT = 160;
 
-interface Target {
+interface MenuTarget {
   readonly key: string;
   readonly label: string;
-  readonly url: string;
-  readonly env: SiteEnv | 'current';
+  readonly env: SiteEnv;
 }
 
 /**
  * Split share button. The main face copies a share link for the *current*
- * page (existing behaviour). The trailing ▾ opens a tiny menu that adds one
- * row per cross-env target — uses {@link rewriteUrlToEnv} to swap the host
- * before generating the share link.
+ * page (always reading {@link Window.location.href} at click time so it can
+ * never go stale). The trailing ▾ — only rendered when site-host mappings
+ * are configured — opens a menu that adds one row per cross-env target,
+ * using {@link rewriteUrlToEnv} to swap the host before generating the
+ * share link.
  */
 export function ShareMenu({ uri }: Props) {
   const [open, setOpen] = useState(false);
@@ -39,38 +40,23 @@ export function ShareMenu({ uri }: Props) {
   const siteHosts = useStore((s) => s.preferences.siteHosts);
   const pushToast = useStore((s) => s.pushToast);
 
-  const targets = useMemo<Target[]>(() => {
-    const currentHref = location.href;
+  // Cross-env targets are derived from configuration only — the URL itself
+  // is computed at click time so SPA navigation can never produce a stale
+  // share link.
+  const menuTargets = useMemo<MenuTarget[]>(() => {
+    if (siteHosts.length === 0) return [];
     const currentMatch = findMappingForHost(location.hostname, siteHosts);
-    const currentEnvLabel = currentMatch ? SITE_ENV_LABELS[currentMatch.env] : '';
-
-    const list: Target[] = [
-      {
-        key: 'current',
-        label: currentEnvLabel ? `Current page (${currentEnvLabel})` : 'Current page',
-        url: buildShareLink(currentHref, uri),
-        env: 'current',
-      },
-    ];
-
-    if (!currentMatch) return list;
-
+    if (!currentMatch) return [];
     const envs = availableEnvsFor(location.hostname, siteHosts);
+    const list: MenuTarget[] = [];
     for (const env of SITE_ENV_ORDER) {
       if (env === currentMatch.env || !envs.includes(env)) continue;
-      const rewritten = rewriteUrlToEnv(currentHref, env, siteHosts);
-      if (!rewritten) continue;
-      list.push({
-        key: env,
-        label: SITE_ENV_LABELS[env],
-        url: buildShareLink(rewritten, uri),
-        env,
-      });
+      list.push({ key: env, label: SITE_ENV_LABELS[env], env });
     }
     return list;
-  }, [siteHosts, uri]);
+  }, [siteHosts]);
 
-  const hasMenu = targets.length > 1;
+  const hasMenu = menuTargets.length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -99,18 +85,35 @@ export function ShareMenu({ uri }: Props) {
     };
   }, [open]);
 
-  const copy = async (target: Target) => {
+  const copyShare = useCallback(
+    async (targetUrl: string, label: string) => {
+      const ok = await copyToClipboard(targetUrl);
+      pushToast(ok ? `Share link copied (${label})` : 'Copy failed', ok ? 'success' : 'error');
+    },
+    [pushToast]
+  );
+
+  const onShareClick = useCallback(() => {
     setOpen(false);
-    const ok = await copyToClipboard(target.url);
-    pushToast(ok ? `Share link copied (${target.label})` : 'Copy failed', ok ? 'success' : 'error');
-  };
+    const currentMatch = findMappingForHost(location.hostname, siteHosts);
+    const label = currentMatch ? `Current — ${SITE_ENV_LABELS[currentMatch.env]}` : 'Current page';
+    void copyShare(buildShareLink(location.href, uri), label);
+  }, [copyShare, siteHosts, uri]);
 
-  const onShareClick = () => {
-    const current = targets[0];
-    if (current) void copy(current);
-  };
+  const onMenuClick = useCallback(
+    (target: MenuTarget) => {
+      setOpen(false);
+      const rewritten = rewriteUrlToEnv(location.href, target.env, siteHosts);
+      if (!rewritten) {
+        pushToast(`No ${target.label} host configured for this site`, 'error');
+        return;
+      }
+      void copyShare(buildShareLink(rewritten, uri), target.label);
+    },
+    [copyShare, pushToast, siteHosts, uri]
+  );
 
-  const toggle = () => {
+  const toggle = useCallback(() => {
     if (open) {
       setOpen(false);
       return;
@@ -123,44 +126,60 @@ export function ShareMenu({ uri }: Props) {
       right: Math.max(8, window.innerWidth - rect.right),
     });
     setOpen(true);
-  };
+  }, [open]);
+
+  // Without a menu, render a normal pill button (full radius, full border)
+  // so it doesn't look visually broken / half-cut next to nothing.
+  if (!hasMenu) {
+    return (
+      <button
+        type="button"
+        className="cs-link"
+        onClick={onShareClick}
+        title="Copy a link that auto-selects this component when opened"
+      >
+        <Icon name="share" size={11} /> Share
+      </button>
+    );
+  }
 
   return (
     <div className="cs-share-split" ref={wrapperRef}>
       <button
+        type="button"
         className="cs-link cs-share-main"
         onClick={onShareClick}
         title="Copy a link that auto-selects this component when opened"
       >
         <Icon name="share" size={11} /> Share
       </button>
-      {hasMenu && (
-        <button
-          ref={triggerRef}
-          className="cs-link cs-share-toggle"
-          onClick={toggle}
-          aria-haspopup="menu"
-          aria-expanded={open}
-          title="Share for a different environment"
-        >
-          ▾
-        </button>
-      )}
-      {open && coords && hasMenu && (
+      <button
+        type="button"
+        ref={triggerRef}
+        className="cs-link cs-share-toggle"
+        onClick={toggle}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        title="Share for a different environment"
+      >
+        ▾
+      </button>
+      {open && coords && (
         <div
           className="cs-export-menu"
           role="menu"
           style={{ top: coords.top, right: coords.right }}
         >
-          {targets.map((t) => (
+          {menuTargets.map((t) => (
             <button
+              type="button"
               key={t.key}
               role="menuitem"
               className="cs-export-item"
-              onClick={() => void copy(t)}
+              onClick={() => onMenuClick(t)}
             >
-              <span className="cs-export-label">{t.label}</span>
-              <span className="cs-export-help">{t.url}</span>
+              <span className="cs-export-label">Open on {t.label}</span>
+              <span className="cs-export-help">Rewrites the host for {t.label}</span>
             </button>
           ))}
         </div>
