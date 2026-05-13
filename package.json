@@ -1,6 +1,6 @@
 {
   "name": "clay-slip",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A modern Chrome extension for exploring Clay CMS pages — visualize component boundaries, inspect data, and navigate the page/layout hierarchy.",
   "private": true,
   "type": "module",
