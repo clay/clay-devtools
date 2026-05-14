@@ -3,6 +3,7 @@ import type { RuntimeMessage } from '@/lib/types';
 import {
   applyHighlights,
   clearHighlights,
+  installAltRevealListener,
   installHighlightStyles,
   setSelected,
 } from './highlighter';
@@ -47,6 +48,12 @@ function bootstrap(): void {
   send({ type: 'CLAY_DETECTED' });
   const count = paintAndSync();
   send({ type: 'UPDATE_BADGE', count });
+
+  // Wire the Alt/Option modifier so users can "peek" at every component
+  // when in 'all' mode. No-op in other modes (the listener checks per-event)
+  // so installing it once at bootstrap is safe and doesn't need to react
+  // to mode changes.
+  installAltRevealListener();
 
   // Auto-mount on every Clay page. The panel boots into its collapsed state
   // (the floating Clay button); the user clicks the FAB to expand. This is

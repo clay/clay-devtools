@@ -14,16 +14,19 @@
  *   - setHovered / setSelected toggle exactly one element at a time
  *   - setAnnotatedUris syncs based on the URI set, not element identity
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applyHighlights,
   clearHighlights,
   getHighlightMode,
+  getReveal,
+  installAltRevealListener,
   installHighlightStyles,
   setAnnotatedUris,
   setHighlightMode,
   setHighlightOpacity,
   setHovered,
+  setReveal,
   setSelected,
 } from '@/content/highlighter';
 
@@ -33,6 +36,7 @@ const HOVER_ATTR = 'data-clay-slip-hover';
 const ANNOTATED_ATTR = 'data-clay-slip-annotated';
 const LABEL_ATTR = 'data-clay-slip-label';
 const MODE_ATTR = 'data-clay-slip-mode';
+const REVEAL_ATTR = 'data-clay-slip-reveal';
 
 function makeComponent(uri: string, opts: { editable?: boolean } = {}): HTMLElement {
   const el = document.createElement('div');
@@ -46,6 +50,7 @@ beforeEach(() => {
   document.head.innerHTML = '';
   document.body.innerHTML = '';
   document.documentElement.removeAttribute(MODE_ATTR);
+  document.documentElement.removeAttribute(REVEAL_ATTR);
   document.documentElement.style.cssText = '';
 });
 
@@ -215,8 +220,10 @@ describe('setHighlightOpacity', () => {
 describe('ambient corner-tick stylesheet (mode=all / editable)', () => {
   // The actual rendering is CSS-only, but the *contract* between the
   // highlighter module and its stylesheet is testable:
-  //   1. The corner-tick rule must be gated by mode='all' or mode='editable'
-  //      so 'selection' and 'off' produce no ambient paint at all.
+  //   1. mode='all' is gated on BOTH the mode attr AND the reveal attr —
+  //      the page is pristine until the user holds ⌥. mode='editable' is
+  //      intentionally NOT reveal-gated (it's an explicit "show editables"
+  //      affordance, not an on-demand peek).
   //   2. The rule must exclude :hover / :selected so the corner ticks don't
   //      compete with the richer hover/selected outlines.
   //   3. The pseudo-element must be ::before (the selection label badge
@@ -229,11 +236,33 @@ describe('ambient corner-tick stylesheet (mode=all / editable)', () => {
     return document.getElementById('clay-slip-highlight-styles')?.textContent ?? '';
   }
 
-  it('gates the corner-tick rule on mode=all + mode=editable', () => {
+  it("gates mode='all' corner ticks on the reveal attribute, not just the mode", () => {
     const css = getStylesheetText();
-    expect(css).toMatch(/html\[data-clay-slip-mode="all"\][^{]*::before/);
-    expect(css).toMatch(/html\[data-clay-slip-mode="editable"\][^{]*::before/);
-    // No ambient rule should match selection or off mode.
+    // Every mode='all' corner-tick selector must require [data-clay-slip-reveal]
+    // so the page is pristine when the user is not holding ⌥.
+    const allModeRules = css.match(/html\[data-clay-slip-mode="all"\][^{]+::before/g);
+    expect(allModeRules?.length).toBeGreaterThan(0);
+    for (const rule of allModeRules ?? []) {
+      expect(rule).toContain('[data-clay-slip-reveal]');
+    }
+    // A mode='all' rule without the reveal attr would defeat the whole
+    // pristine-by-default behavior, so explicitly assert it never appears.
+    expect(css).not.toMatch(/html\[data-clay-slip-mode="all"\] \[/);
+  });
+
+  it("does NOT gate mode='editable' on the reveal attribute (always-on for editables)", () => {
+    const css = getStylesheetText();
+    // The editable selector should NOT include the reveal attribute —
+    // editable mode is the "show me what's editable" mode, ambient by design.
+    const editableRules = css.match(/html\[data-clay-slip-mode="editable"\][^{]+::before/g);
+    expect(editableRules?.length).toBeGreaterThan(0);
+    for (const rule of editableRules ?? []) {
+      expect(rule).not.toContain('[data-clay-slip-reveal]');
+    }
+  });
+
+  it('emits no ambient rule for selection or off (regardless of reveal state)', () => {
+    const css = getStylesheetText();
     expect(css).not.toMatch(/html\[data-clay-slip-mode="selection"\][^{]*::before/);
     expect(css).not.toMatch(/html\[data-clay-slip-mode="off"\][^{]*::before/);
   });
@@ -261,6 +290,118 @@ describe('ambient corner-tick stylesheet (mode=all / editable)', () => {
     expect(css).toContain('data-clay-slip-annotated]::after');
     const cornerTickRule = css.match(/html\[data-clay-slip-mode="all"\][^{]+::before/);
     expect(cornerTickRule).not.toBeNull();
+  });
+});
+
+describe('setReveal / getReveal', () => {
+  it('round-trips the reveal attribute on <html>', () => {
+    expect(getReveal()).toBe(false);
+    setReveal(true);
+    expect(getReveal()).toBe(true);
+    expect(document.documentElement.hasAttribute(REVEAL_ATTR)).toBe(true);
+    setReveal(false);
+    expect(getReveal()).toBe(false);
+    expect(document.documentElement.hasAttribute(REVEAL_ATTR)).toBe(false);
+  });
+
+  it('is idempotent so keydown auto-repeat does not churn the DOM', () => {
+    // Spy on setAttribute. If setReveal(true) blindly set the attr every
+    // call, an OS-repeating keydown would hit the DOM dozens of times per
+    // second. We want exactly one mutation per state transition.
+    const spy = vi.spyOn(document.documentElement, 'setAttribute');
+    setReveal(true);
+    setReveal(true);
+    setReveal(true);
+    const setCalls = spy.mock.calls.filter((c) => c[0] === REVEAL_ATTR).length;
+    expect(setCalls).toBe(1);
+    spy.mockRestore();
+  });
+});
+
+describe('installAltRevealListener', () => {
+  it("toggles reveal on Alt keydown / keyup while mode='all'", () => {
+    setHighlightMode('all');
+    const cleanup = installAltRevealListener();
+    try {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+      expect(getReveal()).toBe(true);
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt' }));
+      expect(getReveal()).toBe(false);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("does not reveal on Alt while mode is anything other than 'all'", () => {
+    // The point of this listener is to be a no-op outside 'all' mode so we
+    // don't have to install/uninstall it on every mode change. Assert the
+    // per-event mode check actually skips work.
+    const cleanup = installAltRevealListener();
+    try {
+      for (const mode of ['off', 'selection', 'editable'] as const) {
+        setHighlightMode(mode);
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+        expect(getReveal()).toBe(false);
+      }
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('ignores keys other than Alt so Alt+letter shortcuts do not flicker', () => {
+    setHighlightMode('all');
+    const cleanup = installAltRevealListener();
+    try {
+      // altKey true on a non-Alt key (e.g. user pressing Alt+Tab combo,
+      // but the key event is for Tab itself). Our listener must key on
+      // e.key === 'Alt' specifically.
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', altKey: true }));
+      expect(getReveal()).toBe(false);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('clears reveal on window blur (Alt-tab leaves the window with ⌥ held)', () => {
+    setHighlightMode('all');
+    const cleanup = installAltRevealListener();
+    try {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+      expect(getReveal()).toBe(true);
+      window.dispatchEvent(new Event('blur'));
+      expect(getReveal()).toBe(false);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('does not flash reveal while typing in an input (Option-letter on macOS)', () => {
+    setHighlightMode('all');
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    const cleanup = installAltRevealListener();
+    try {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+      // Skipped because the active element is an input — Option-modified
+      // typography (é, ø, etc.) shouldn't trigger a peek flash.
+      expect(getReveal()).toBe(false);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('cleanup removes the listeners and clears reveal', () => {
+    setHighlightMode('all');
+    const cleanup = installAltRevealListener();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+    expect(getReveal()).toBe(true);
+    cleanup();
+    // After cleanup, reveal is forced off (in case the user uninstalls
+    // mid-press) and subsequent keydowns are no-ops.
+    expect(getReveal()).toBe(false);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+    expect(getReveal()).toBe(false);
   });
 });
 

@@ -39,6 +39,16 @@ const MATCH_ATTR = 'data-clay-slip-match';
 const FILTER_MODE_ATTR = 'data-clay-slip-filtering';
 const LABEL_ATTR = 'data-clay-slip-label';
 const MODE_ATTR = 'data-clay-slip-mode';
+/**
+ * Toggled on `<html>` while the user holds the reveal modifier (Alt/Option).
+ * `mode='all'` is gated on this attribute so the page reads as pristine
+ * during normal use and only "lights up" the full structure on demand.
+ *
+ * Naming is deliberately neutral (`reveal`, not `alt`) so we can later
+ * support other triggers — a sticky toolbar toggle, a click on the mode
+ * pill, etc. — without renaming attributes the stylesheet depends on.
+ */
+const REVEAL_ATTR = 'data-clay-slip-reveal';
 
 const OPACITY_VAR = '--clay-slip-outline-opacity';
 const DEFAULT_OPACITY = 0.85;
@@ -100,24 +110,29 @@ function buildStyleSheet(): string {
   const tick = `${TOKENS.ambient.tick}px`;
 
   return `
-    /* ── Ambient corner ticks (mode='all' + mode='editable') ─────────────
-       Replaces the previous "1px outline at 18% on every edge" with four
-       short L-shaped accents at each corner. Trade-offs:
-       - Way less visual mass: nested components no longer create stacks
-         of parallel lines at shared edges.
-       - Reads as "this is a discrete thing" without drawing a box around
-         the content.
+    /* ── Ambient corner ticks ────────────────────────────────────────────
+       Four short L-shaped accents at each corner. Trade-offs:
+       - Way less visual mass than a full perimeter outline: nested
+         components no longer create stacks of parallel lines at shared
+         edges; reads as "this is a discrete thing" without drawing a
+         box around the content.
        - Hover (2px @ 70%) and selection (2px @ 100%) stay visually
          dominant by comparison — exactly what you want during inspection.
 
+       Mode gating:
+         'all'      → corner ticks ON DEMAND only, gated by the reveal
+                      modifier (Alt/Option). Idle = pristine page; the
+                      user holds ⌥ to "peek" at the full structure.
+         'editable' → corner ticks ALWAYS ON for [data-editable] only.
+                      This mode is an explicit "show me what's editable"
+                      affordance, not an ambient overview, so we don't
+                      gate it on ⌥.
+         'selection' / 'off' → no rule matches, nothing painted.
+
        The :not() chain keeps the corner ticks from competing with the
        richer hover/selected outlines: while you're inspecting, only the
-       inspected element's outline lights up.
-
-       Mode gating: 'all' → every component; 'editable' → only
-       [data-editable]; 'selection'/'off' → no rule matches, nothing
-       painted at all. */
-    html[${MODE_ATTR}="all"] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]),
+       inspected element's outline lights up. */
+    html[${MODE_ATTR}="all"][${REVEAL_ATTR}] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]),
     html[${MODE_ATTR}="editable"] [${HIGHLIGHT_ATTR}][data-editable]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]) {
       /* Establish a positioning context for the ::before pseudo. We omit
          !important so we never fight a host's own positioning rule — if
@@ -125,13 +140,13 @@ function buildStyleSheet(): string {
          the pseudo positions against that, which is exactly right. The
          only failure mode is: host uses position:static AND has an
          absolute-positioned descendant currently positioning against a
-         farther ancestor (it would reparent to this component). 'all'
-         is opt-in, so the user can dial back to 'selection' if they
-         hit that edge case. */
+         farther ancestor (it would reparent to this component). For
+         mode='all' the rule is reveal-gated, so this only applies
+         while ⌥ is held. */
       position: relative;
     }
 
-    html[${MODE_ATTR}="all"] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before,
+    html[${MODE_ATTR}="all"][${REVEAL_ATTR}] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before,
     html[${MODE_ATTR}="editable"] [${HIGHLIGHT_ATTR}][data-editable]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before {
       content: "";
       position: absolute;
@@ -313,6 +328,96 @@ export function setAnnotatedUris(allElements: HTMLElement[], annotatedUris: Set<
     if (uri && annotatedUris.has(uri)) el.setAttribute(ANNOTATED_ATTR, '');
     else el.removeAttribute(ANNOTATED_ATTR);
   }
+}
+
+/**
+ * Toggle the "reveal" attribute on `<html>`. When set, mode='all' lights up
+ * every component's corner ticks; when removed, mode='all' is visually
+ * identical to mode='selection' (pristine ambient).
+ *
+ * Idempotent so the keydown auto-repeat that fires while a key is held
+ * doesn't churn the DOM.
+ */
+export function setReveal(on: boolean): void {
+  const html = document.documentElement;
+  if (on) {
+    if (!html.hasAttribute(REVEAL_ATTR)) html.setAttribute(REVEAL_ATTR, '');
+  } else {
+    if (html.hasAttribute(REVEAL_ATTR)) html.removeAttribute(REVEAL_ATTR);
+  }
+}
+
+export function getReveal(): boolean {
+  return document.documentElement.hasAttribute(REVEAL_ATTR);
+}
+
+/**
+ * Wire the reveal modifier (Alt / Option) to {@link setReveal}. Only takes
+ * effect while the active highlight mode is 'all' — other modes have their
+ * own deterministic ambient behavior, so the modifier would be a no-op
+ * there. We still install the listener once globally; the mode check
+ * happens per-event so switching modes doesn't require teardown.
+ *
+ * Edge cases handled:
+ * - **Auto-repeat** while ⌥ is held: `setReveal(true)` is idempotent, no
+ *   DOM churn.
+ * - **Window blur** (alt-tab, command-tab, focus to devtools) while ⌥ is
+ *   held: `keyup` never fires in the original window, so the reveal would
+ *   be stuck on. The blur handler clears it.
+ * - **Page visibility change** (background tab woken up): clear, same
+ *   reasoning as blur.
+ * - **macOS Option for special characters**: typing in an input while
+ *   holding ⌥ would briefly flash the reveal. We skip the reveal when
+ *   the active element is editable to avoid the flash during typing.
+ *
+ * @returns Cleanup function that removes the listeners.
+ */
+export function installAltRevealListener(
+  getMode: () => HighlightMode = getHighlightMode
+): () => void {
+  const isEditableTarget = (): boolean => {
+    const ae = document.activeElement as HTMLElement | null;
+    if (!ae) return false;
+    if (ae.isContentEditable) return true;
+    const tag = ae.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  };
+
+  const onKeyDown = (e: KeyboardEvent) => {
+    // `e.key === 'Alt'` covers both Windows/Linux Alt and macOS Option.
+    // We *don't* trigger on `e.altKey` for arbitrary keys — that would
+    // fire on every Alt+letter shortcut and feel jumpy.
+    if (e.key !== 'Alt') return;
+    if (getMode() !== 'all') return;
+    if (isEditableTarget()) return;
+    setReveal(true);
+  };
+
+  const onKeyUp = (e: KeyboardEvent) => {
+    if (e.key !== 'Alt') return;
+    setReveal(false);
+  };
+
+  const onBlur = () => setReveal(false);
+  const onVisibility = () => {
+    if (document.hidden) setReveal(false);
+  };
+
+  // `capture: true` so the listener still sees the event even if a host
+  // page calls stopPropagation on its own keyboard handlers. The reveal
+  // is a peek, not an interaction — it should always work.
+  window.addEventListener('keydown', onKeyDown, true);
+  window.addEventListener('keyup', onKeyUp, true);
+  window.addEventListener('blur', onBlur);
+  document.addEventListener('visibilitychange', onVisibility);
+
+  return () => {
+    window.removeEventListener('keydown', onKeyDown, true);
+    window.removeEventListener('keyup', onKeyUp, true);
+    window.removeEventListener('blur', onBlur);
+    document.removeEventListener('visibilitychange', onVisibility);
+    setReveal(false);
+  };
 }
 
 export function setFindMatches(

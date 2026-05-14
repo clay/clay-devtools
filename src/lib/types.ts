@@ -39,11 +39,13 @@ export type PanelPosition =
  *
  * - `off`        – no ambient outlines at all. Hover + selection still highlight.
  * - `selection`  – ambient is off; only the hovered/selected element is outlined.
- *                  This is the new default — feels closest to Chrome DevTools.
+ *                  This is the default — feels closest to Chrome DevTools.
  * - `editable`   – ambient outlines on `[data-editable]` components only.
  *                  Useful for editorial / PM workflows.
- * - `all`        – ambient outlines on every component.
- *                  The "give me the bird's-eye view of structure" mode.
+ * - `all`        – pristine page by default; **hold ⌥ (Alt/Option)** to reveal
+ *                  every component's corner accents on demand. Hover and click
+ *                  still work normally without the modifier. The "I want to
+ *                  peek at the structure occasionally" mode.
  */
 export type HighlightMode = 'off' | 'selection' | 'editable' | 'all';
 
@@ -58,14 +60,14 @@ export const HIGHLIGHT_MODE_LABELS: Readonly<Record<HighlightMode, string>> = {
   off: 'Off',
   selection: 'Selection only',
   editable: 'Editable only',
-  all: 'All components',
+  all: 'All on ⌥',
 };
 
 export const HIGHLIGHT_MODE_DESCRIPTIONS: Readonly<Record<HighlightMode, string>> = {
   off: 'No outlines anywhere. The panel still works for inspection.',
   selection: 'Only the component you hover or click gets an outline.',
-  editable: 'Subtle outlines on every editable component.',
-  all: 'Subtle outlines on every Clay component.',
+  editable: 'Subtle corner accents on every editable component.',
+  all: 'Pristine by default. Hold ⌥ (Alt/Option) to reveal every component.',
 };
 
 export interface UserPreferences {

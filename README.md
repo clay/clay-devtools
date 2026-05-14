@@ -23,7 +23,7 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **SEO tab** — title / meta / og / twitter / JSON-LD with a Twitter + Facebook card preview and lints (length, missing image, duplicate `<h1>`, etc.)
 - **Recently viewed components** persisted across sessions, with one-click jump back
 - **Resizable + dockable panel** — drag the inner edges (or the inner-corner grabber) to resize width _and_ height; choose any of four corners or a full-height left/right side dock
-- **Refined highlight modes** — _Off_, _Selection only_ (default, like Chrome DevTools' element inspector), _Editable only_, or _All components_. Single accent color with state-based opacity instead of the old multi-color dashed rainbow. Selected component carries a labelled top-left badge. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
+- **Refined highlight modes** — _Off_, _Selection only_ (default, like Chrome DevTools' element inspector), _Editable only_, or _All on ⌥_ (pristine page; hold <kbd>⌥</kbd> Alt/Option to reveal corner accents on every component). Single blue accent with state-based opacity (no rainbow), corner accents (no full-perimeter outlines on busy layouts), and a labelled top-left badge on the selected component. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
 - **Auto / light / dark themes** that respond to OS theme changes live
 - **Keyboard shortcuts** with a <kbd>?</kbd> overlay listing every binding
 - **Options page** for theme, dock side + width, environment hosts, highlight mode + intensity, shortcut toggle, and recents history size
@@ -76,6 +76,7 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 | Copy URI                 | Press <kbd>y</kbd> then <kbd>c</kbd> (component) or <kbd>p</kbd> (page)                           |
 | Open URI in new tab      | Press <kbd>o</kbd> then <kbd>c</kbd> or <kbd>p</kbd>                                              |
 | Cycle highlight mode     | Press <kbd>h</kbd> (off → selection → editable → all) or pick from the eye-icon dropdown          |
+| Reveal all components    | In _All on ⌥_ mode, hold <kbd>⌥</kbd> Alt/Option to peek at every component; release to hide      |
 | Cycle environment        | Click the `env: …` pill at the bottom of the Inspect tab                                          |
 | Show shortcut overlay    | Press <kbd>?</kbd>                                                                                |
 | Toggle FAB ↔ panel       | Press <kbd>[</kbd> or click the collapse button / the FAB                                         |
