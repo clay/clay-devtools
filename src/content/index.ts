@@ -3,8 +3,8 @@ import type { RuntimeMessage } from '@/lib/types';
 import {
   applyHighlights,
   clearHighlights,
-  installAltRevealListener,
   installHighlightStyles,
+  installRevealKeyListener,
   setSelected,
 } from './highlighter';
 import { readComponents } from './page-info';
@@ -89,7 +89,7 @@ function bootstrap(): void {
     //     and silently no-ops (see `isHighlighterInstalled`), so we don't
     //     have to plumb the edit-mode flag through every call site.
     //   - The host-page click/hover listeners (see `useElementSelection`).
-    //   - The Alt-reveal keyboard listener.
+    //   - The reveal-modifier keyboard listener (Control).
     //
     // What still runs:
     //   - Component detection (read-only walk of `[data-uri]`).
@@ -106,12 +106,12 @@ function bootstrap(): void {
   const count = paintAndSync();
   send({ type: 'UPDATE_BADGE', count });
 
-  // Wire the Alt/Option modifier so users can "peek" at every component
+  // Wire the Control modifier so users can "peek" at every component
   // when in 'selection' mode. No-op in other modes (the listener checks
   // per-event) so installing it once at bootstrap is safe and doesn't need
   // to react to mode changes. Skipped entirely in passive mode above so
   // we don't add keyboard listeners on edit pages.
-  installAltRevealListener();
+  installRevealKeyListener();
 
   // Auto-mount on every Clay page. The panel boots into its collapsed state
   // (the floating Clay button); the user clicks the FAB to expand. This is

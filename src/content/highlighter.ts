@@ -41,13 +41,15 @@ const FILTER_MODE_ATTR = 'data-clay-slip-filtering';
 const LABEL_ATTR = 'data-clay-slip-label';
 const MODE_ATTR = 'data-clay-slip-mode';
 /**
- * Toggled on `<html>` while the user holds the reveal modifier (Alt/Option).
- * `mode='all'` is gated on this attribute so the page reads as pristine
- * during normal use and only "lights up" the full structure on demand.
+ * Toggled on `<html>` while the user holds the reveal modifier (Control).
+ * `mode='selection'` is gated on this attribute so the page reads as
+ * pristine during normal use and only "lights up" the full structure on
+ * demand.
  *
- * Naming is deliberately neutral (`reveal`, not `alt`) so we can later
- * support other triggers — a sticky toolbar toggle, a click on the mode
- * pill, etc. — without renaming attributes the stylesheet depends on.
+ * Naming is deliberately neutral (`reveal`, not `ctrl`) so we can later
+ * swap the modifier or add other triggers — a sticky toolbar toggle, a
+ * click on the mode pill, etc. — without renaming attributes the
+ * stylesheet depends on.
  */
 const REVEAL_ATTR = 'data-clay-slip-reveal';
 
@@ -66,7 +68,7 @@ const ACCENT_RGB = '37, 99, 235'; // tailwind blue-600
 
 /**
  * Six-color rainbow palette for the *ambient* layer in `all` mode and
- * during the ⌥-peek in `selection` mode. Each component gets a color
+ * during the ⌃-peek in `selection` mode. Each component gets a color
  * cycled by its index in the document order ({@link applyHighlights}
  * stamps `data-clay-slip-color-idx="0..5"`), giving the page the
  * "blueprint" look the original Clay devtools shipped with — discrete
@@ -164,7 +166,7 @@ function buildStyleSheet(): string {
   const tick = `${TOKENS.ambient.tick}px`;
 
   return `
-    /* ── Ambient: rainbow outlines (mode='all' + selection+⌥) ────────────
+    /* ── Ambient: rainbow outlines (mode='all' + selection+⌃) ────────────
        Continuous full-perimeter outlines, one color per component cycled
        from PALETTE via [data-clay-slip-color-idx="N"]. Reads as a
        blueprint of the page: every component is visually distinct from
@@ -172,7 +174,7 @@ function buildStyleSheet(): string {
 
        Mode gating:
          'selection' + reveal → rainbow ON DEMAND. Selection is the
-                                pristine default; ⌥ flashes the full
+                                pristine default; ⌃ flashes the full
                                 structural map for as long as it's held.
          'all'                → rainbow ALWAYS ON. The bird's-eye-view
                                 mode.
@@ -336,7 +338,7 @@ function buildStyleSheet(): string {
  *   - `data-clay-slip-color-idx` → integer 0..PALETTE.length-1, cycled
  *                                  by document order. Drives the rainbow
  *                                  ambient layer in `all` mode and during
- *                                  the ⌥-peek in `selection` mode.
+ *                                  the ⌃-peek in `selection` mode.
  *   - `data-clay-slip-label`     → optional, populates the name badge
  *                                  shown on hover and selected.
  *
@@ -458,7 +460,7 @@ export function getReveal(): boolean {
 }
 
 /**
- * Wire the reveal modifier (Alt / Option) to {@link setReveal}. Only takes
+ * Wire the reveal modifier (Control) to {@link setReveal}. Only takes
  * effect while the active highlight mode is 'selection' — that's the
  * daily-driver mode where the page is pristine and the user occasionally
  * wants a quick spatial overview of where every component lives. Other
@@ -469,20 +471,23 @@ export function getReveal(): boolean {
  * per-event so switching modes doesn't require teardown.
  *
  * Edge cases handled:
- * - **Auto-repeat** while ⌥ is held: `setReveal(true)` is idempotent, no
+ * - **Auto-repeat** while ⌃ is held: `setReveal(true)` is idempotent, no
  *   DOM churn.
- * - **Window blur** (alt-tab, command-tab, focus to devtools) while ⌥ is
- *   held: `keyup` never fires in the original window, so the reveal would
- *   be stuck on. The blur handler clears it.
+ * - **Window blur** (cmd-tab, focus to devtools) while ⌃ is held: `keyup`
+ *   never fires in the original window, so the reveal would be stuck on.
+ *   The blur handler clears it.
  * - **Page visibility change** (background tab woken up): clear, same
  *   reasoning as blur.
- * - **macOS Option for special characters**: typing in an input while
- *   holding ⌥ would briefly flash the reveal. We skip the reveal when
- *   the active element is editable to avoid the flash during typing.
+ * - **Modifier-only trigger**: we listen for the Control key itself
+ *   (`e.key === 'Control'`), not `e.ctrlKey` on arbitrary keys — that
+ *   would briefly flash on every Ctrl+letter shortcut and feel jumpy.
+ * - **Inputs**: typing in a field while holding ⌃ (e.g. ⌃A select-all)
+ *   would briefly flash the reveal. We skip the reveal when the active
+ *   element is editable to avoid the flash during typing.
  *
  * @returns Cleanup function that removes the listeners.
  */
-export function installAltRevealListener(
+export function installRevealKeyListener(
   getMode: () => HighlightMode = getHighlightMode
 ): () => void {
   const isEditableTarget = (): boolean => {
@@ -494,17 +499,17 @@ export function installAltRevealListener(
   };
 
   const onKeyDown = (e: KeyboardEvent) => {
-    // `e.key === 'Alt'` covers both Windows/Linux Alt and macOS Option.
-    // We *don't* trigger on `e.altKey` for arbitrary keys — that would
-    // fire on every Alt+letter shortcut and feel jumpy.
-    if (e.key !== 'Alt') return;
+    // `e.key === 'Control'` is the key itself, not the modifier flag.
+    // We *don't* trigger on `e.ctrlKey` for arbitrary keys — that would
+    // fire on every Ctrl+letter shortcut and feel jumpy.
+    if (e.key !== 'Control') return;
     if (getMode() !== 'selection') return;
     if (isEditableTarget()) return;
     setReveal(true);
   };
 
   const onKeyUp = (e: KeyboardEvent) => {
-    if (e.key !== 'Alt') return;
+    if (e.key !== 'Control') return;
     setReveal(false);
   };
 

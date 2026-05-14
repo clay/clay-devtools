@@ -26,7 +26,7 @@ export function isClayDocument(doc: Document = document): boolean {
  * `?edit=true`). The extension switches to a "passive" mode on these
  * pages: the panel still mounts and every read-only feature stays
  * available, but we skip installing the highlighter stylesheet, the
- * host-page click/hover listeners, and the Alt-reveal listener — none of
+ * host-page click/hover listeners, and the reveal-modifier listener — none of
  * which should compete with Clay's own click-to-select, selection
  * overlays, and editor toolbar.
  *

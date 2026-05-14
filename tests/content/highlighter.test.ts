@@ -20,8 +20,8 @@ import {
   clearHighlights,
   getHighlightMode,
   getReveal,
-  installAltRevealListener,
   installHighlightStyles,
+  installRevealKeyListener,
   setAnnotatedUris,
   setHighlightMode,
   setHighlightOpacity,
@@ -102,7 +102,7 @@ describe('applyHighlights', () => {
     // Seven elements verify: indices 0..5 are unique, then 6 wraps back
     // to 0. The rainbow CSS keys off this exact attribute, so cycling
     // is the contract — a regression here would break the bird's-eye
-    // visual map in 'all' mode and the ⌥-peek in 'selection' mode.
+    // visual map in 'all' mode and the ⌃-peek in 'selection' mode.
     const els = Array.from({ length: 7 }, (_, i) => makeComponent(`c${i}`));
     applyHighlights(els);
     expect(els.map((e) => e.getAttribute(COLOR_IDX_ATTR))).toEqual([
@@ -258,7 +258,7 @@ describe('setHighlightOpacity', () => {
 
 describe('ambient stylesheet (mode gating + rainbow contract)', () => {
   // The four modes map to three rendering behaviors now:
-  //   - 'selection' → reveal-gated rainbow (pristine until ⌥ is held).
+  //   - 'selection' → reveal-gated rainbow (pristine until ⌃ is held).
   //   - 'all'       → always-on rainbow on every component.
   //   - 'editable'  → always-on subtle corner accents on [data-editable].
   //   - 'off'       → no rule matches; nothing painted.
@@ -288,10 +288,10 @@ describe('ambient stylesheet (mode gating + rainbow contract)', () => {
     }
   });
 
-  it("gates mode='selection' rainbow on the reveal attribute (the ⌥-peek behavior)", () => {
+  it("gates mode='selection' rainbow on the reveal attribute (the ⌃-peek behavior)", () => {
     const css = getStylesheetText();
     // Every mode='selection' rainbow selector must require [data-clay-slip-reveal]
-    // so the daily-driver mode stays pristine when the user isn't holding ⌥.
+    // so the daily-driver mode stays pristine when the user isn't holding ⌃.
     const selectionRainbowRules = css.match(
       /html\[data-clay-slip-mode="selection"\][^{]+\[data-clay-slip-color-idx[^{]+\{/g
     );
@@ -438,30 +438,30 @@ describe('setReveal / getReveal', () => {
   });
 });
 
-describe('installAltRevealListener', () => {
+describe('installRevealKeyListener', () => {
   // The peek modifier lives on selection mode now (the daily-driver
   // default). Other modes either have always-on ambient ('all',
   // 'editable') or are intentionally silent ('off'), so the listener
   // must be a no-op outside selection.
-  it("toggles reveal on Alt keydown / keyup while mode='selection'", () => {
+  it("toggles reveal on Control keydown / keyup while mode='selection'", () => {
     setHighlightMode('selection');
-    const cleanup = installAltRevealListener();
+    const cleanup = installRevealKeyListener();
     try {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control' }));
       expect(getReveal()).toBe(true);
-      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { key: 'Control' }));
       expect(getReveal()).toBe(false);
     } finally {
       cleanup();
     }
   });
 
-  it("does not reveal on Alt while mode is anything other than 'selection'", () => {
-    const cleanup = installAltRevealListener();
+  it("does not reveal on Control while mode is anything other than 'selection'", () => {
+    const cleanup = installRevealKeyListener();
     try {
       for (const mode of ['off', 'editable', 'all'] as const) {
         setHighlightMode(mode);
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control' }));
         expect(getReveal()).toBe(false);
       }
     } finally {
@@ -469,25 +469,28 @@ describe('installAltRevealListener', () => {
     }
   });
 
-  it('ignores keys other than Alt so Alt+letter shortcuts do not flicker', () => {
+  it('ignores keys other than Control so Ctrl+letter shortcuts do not flicker', () => {
     setHighlightMode('selection');
-    const cleanup = installAltRevealListener();
+    const cleanup = installRevealKeyListener();
     try {
-      // altKey true on a non-Alt key (e.g. user pressing Alt+Tab combo,
-      // but the key event is for Tab itself). Our listener must key on
-      // e.key === 'Alt' specifically.
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', altKey: true }));
+      // ctrlKey true on a non-Control key (e.g. user pressing Ctrl+L to
+      // focus the URL bar, the key event is for L itself). Our listener
+      // must key on e.key === 'Control' specifically so the rainbow
+      // doesn't strobe on every browser shortcut.
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', ctrlKey: true }));
+      expect(getReveal()).toBe(false);
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', ctrlKey: true }));
       expect(getReveal()).toBe(false);
     } finally {
       cleanup();
     }
   });
 
-  it('clears reveal on window blur (Alt-tab leaves the window with ⌥ held)', () => {
+  it('clears reveal on window blur (cmd-tab leaves the window with ⌃ held)', () => {
     setHighlightMode('selection');
-    const cleanup = installAltRevealListener();
+    const cleanup = installRevealKeyListener();
     try {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control' }));
       expect(getReveal()).toBe(true);
       window.dispatchEvent(new Event('blur'));
       expect(getReveal()).toBe(false);
@@ -496,16 +499,17 @@ describe('installAltRevealListener', () => {
     }
   });
 
-  it('does not flash reveal while typing in an input (Option-letter on macOS)', () => {
+  it('does not flash reveal while typing in an input (Ctrl+A select-all etc.)', () => {
     setHighlightMode('selection');
     const input = document.createElement('input');
     document.body.appendChild(input);
     input.focus();
-    const cleanup = installAltRevealListener();
+    const cleanup = installRevealKeyListener();
     try {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
-      // Skipped because the active element is an input — Option-modified
-      // typography (é, ø, etc.) shouldn't trigger a peek flash.
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control' }));
+      // Skipped because the active element is an input — pressing
+      // Control as the lead-in to Ctrl+A / Ctrl+C shouldn't strobe the
+      // rainbow over the page while the user is editing text.
       expect(getReveal()).toBe(false);
     } finally {
       cleanup();
@@ -514,14 +518,14 @@ describe('installAltRevealListener', () => {
 
   it('cleanup removes the listeners and clears reveal', () => {
     setHighlightMode('selection');
-    const cleanup = installAltRevealListener();
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+    const cleanup = installRevealKeyListener();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control' }));
     expect(getReveal()).toBe(true);
     cleanup();
     // After cleanup, reveal is forced off (in case the user uninstalls
     // mid-press) and subsequent keydowns are no-ops.
     expect(getReveal()).toBe(false);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control' }));
     expect(getReveal()).toBe(false);
   });
 });

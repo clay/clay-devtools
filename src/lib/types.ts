@@ -29,8 +29,8 @@ export type PanelPosition =
  *
  * - `off`        – no ambient outlines at all. Hover + selection still highlight.
  * - `selection`  – the daily-driver default: pristine page; hover and click
- *                  still highlight individual components, **and holding ⌥
- *                  (Alt/Option) reveals corner accents on every component**
+ *                  still highlight individual components, **and holding ⌃
+ *                  (Control) reveals the rainbow over every component**
  *                  for a quick spatial overview. Closest to Chrome DevTools'
  *                  inspector with a "show all" peek gesture layered on.
  * - `editable`   – always-on corner accents on `[data-editable]` components.
@@ -57,7 +57,7 @@ export const HIGHLIGHT_MODE_LABELS: Readonly<Record<HighlightMode, string>> = {
 export const HIGHLIGHT_MODE_DESCRIPTIONS: Readonly<Record<HighlightMode, string>> = {
   off: 'No outlines anywhere. The panel still works for inspection.',
   selection:
-    'Hover or click to highlight a component. Hold ⌥ to reveal every component on the page.',
+    'Hover or click to highlight a component. Hold ⌃ Control to reveal every component on the page.',
   editable: 'Subtle corner accents on every editable component.',
   all: 'Subtle corner accents on every Clay component, all the time.',
 };
