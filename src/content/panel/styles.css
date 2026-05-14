@@ -711,33 +711,6 @@
   border-color: var(--cs-danger);
 }
 
-.cs-env-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--cs-bg-elevated);
-  border: 1px solid var(--cs-border);
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--cs-text-muted);
-  cursor: pointer;
-}
-
-.cs-env-pill:hover {
-  border-color: var(--cs-accent);
-  color: var(--cs-accent);
-}
-
-.cs-env-pill.cs-env-pill-active {
-  background: var(--cs-accent-bg);
-  border-color: var(--cs-accent);
-  color: var(--cs-accent);
-}
-
 .cs-diff-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

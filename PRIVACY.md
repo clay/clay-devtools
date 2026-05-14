@@ -48,7 +48,7 @@ This data is **only ever displayed inside the panel on your machine.** It is nev
 The extension makes outbound `fetch()` requests **only when you initiate them** by interacting with one of these features:
 
 - **JSON tab**: fetches `<componentUri>.json` from the host you are currently browsing.
-- **Diff tab**: fetches the `.json` for two component URIs you select (published vs draft, or across two configured environments).
+- **Diff tab**: fetches the `.json` for two component URIs you select (published vs draft, or across two environments resolved from your site host mappings).
 - **fetch() / cURL "Copy as…" actions**: do not make a request — they only generate a snippet you can paste elsewhere.
 
 All of these requests target the Clay site you are already browsing (or another Clay environment you have explicitly configured under **Options → Site host mappings**). They are sent with `credentials: 'include'` so your existing browser session is reused — Clay Slip never asks for, intercepts, or stores any credentials of its own.

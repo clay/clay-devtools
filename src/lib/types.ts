@@ -1,11 +1,3 @@
-export type Environment = 'local' | 'dev' | 'staging' | 'prod';
-
-export interface EnvironmentConfig {
-  readonly id: Environment;
-  readonly label: string;
-  readonly host: string;
-}
-
 export interface ClayPageInfo {
   readonly pageUri: string;
   readonly layoutUri: string | null;
@@ -21,8 +13,6 @@ export interface ClayComponentInfo {
   readonly element: HTMLElement;
   readonly depth: number;
 }
-
-export type EnvironmentHosts = Readonly<Record<Environment, string>>;
 
 export type PanelPosition =
   | 'bottom-right'
@@ -77,8 +67,6 @@ export interface UserPreferences {
   readonly panelPosition: PanelPosition;
   readonly panelWidth: number;
   readonly panelHeight: number;
-  readonly defaultEnvironment: Environment;
-  readonly environments: EnvironmentHosts;
   readonly highlightMode: HighlightMode;
   readonly highlightOpacity: number;
   readonly enableShortcuts: boolean;
@@ -87,9 +75,11 @@ export interface UserPreferences {
 }
 
 /**
- * Environments supported by the site-host mapping feature. Intentionally
- * narrower than {@link Environment} (no `local`/`dev`) — site-host mappings
- * are a per-brand lookup that only makes sense for stable shared envs.
+ * Environments supported by the site-host mapping feature. The mapping
+ * is the *only* place the extension learns about envs — there's no
+ * separate global env config. Local/dev are intentionally excluded:
+ * mappings are per-brand hostname lookups for stable shared envs, and
+ * "localhost" / single-developer hosts don't fit that shape.
  */
 export type SiteEnv = 'prod' | 'staging' | 'qa';
 
@@ -113,34 +103,16 @@ export interface SiteHostMapping {
   readonly hosts: Partial<Record<SiteEnv, string>>;
 }
 
-export const DEFAULT_ENVIRONMENT_HOSTS: EnvironmentHosts = {
-  local: 'http://localhost:3001',
-  dev: '',
-  staging: '',
-  prod: '',
-};
-
 export const DEFAULT_PREFERENCES: UserPreferences = {
   theme: 'auto',
   panelPosition: 'bottom-right',
   panelWidth: 380,
   panelHeight: 540,
-  defaultEnvironment: 'prod',
-  environments: DEFAULT_ENVIRONMENT_HOSTS,
   highlightMode: 'selection',
   highlightOpacity: 0.85,
   enableShortcuts: true,
   maxRecentComponents: 20,
   siteHosts: [],
-};
-
-export const ENVIRONMENT_ORDER: readonly Environment[] = ['local', 'dev', 'staging', 'prod'];
-
-export const ENVIRONMENT_LABELS: Readonly<Record<Environment, string>> = {
-  local: 'Local',
-  dev: 'Dev',
-  staging: 'Staging',
-  prod: 'Production',
 };
 
 /** Minimal serializable info we keep about a component for recents/annotations. */

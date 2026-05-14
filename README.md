@@ -12,9 +12,8 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **Shadow-DOM panel** that never collides with host page styles
 - **Component tree + find-on-page** — live filter dims non-matches on the page, <kbd>Enter</kbd> cycles through them, <kbd>Esc</kbd> clears
 - **Inline JSON preview** so you don't need to open a new tab to read component data
-- **Diff view** comparing the published version against the unpublished draft, **or** the same URI across two environments
-- **Environment switcher** that rewrites every link and JSON fetch through your configured local / dev / staging / prod host
-- **Site host mappings** — per-brand hostname config that powers a one-click _View on prod / staging / qa_ pill row and lets the Share button hand out cross-env links without leaving the page
+- **Diff view** comparing the published version against the unpublished draft, **or** the same URI on a different environment using the site host mappings
+- **Site host mappings** — the single source of truth for cross-env navigation. Per-brand hostname config that powers a one-click _View on prod / staging / qa_ pill row, a cross-env Share menu, and the Diff tab&rsquo;s env-vs-env compare options
 - **Open in Clay editor** — jump from the page or any component straight into Clay edit mode (always opens the unpublished version)
 - **Sticky-note annotations** pinned to component URIs, surfaced as a dot on the page and a dedicated Notes tab — leave async review notes for teammates
 - **Page audit export** to clipboard as JSON, CSV, or Markdown — every component on the page, ready to paste into a ticket or QA checklist
@@ -23,16 +22,16 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **SEO tab** — title / meta / og / twitter / JSON-LD with a Twitter + Facebook card preview and lints (length, missing image, duplicate `<h1>`, etc.)
 - **Recently viewed components** persisted across sessions, with one-click jump back
 - **Resizable + dockable panel** — drag the inner edges (or the inner-corner grabber) to resize width _and_ height; choose any of four corners or a full-height left/right side dock
-- **Refined highlight modes** — _Off_, _Selection_ (default; pristine page, hover and click to highlight, hold <kbd>⌥</kbd> Alt/Option to peek at every component), _Editable only_ (always-on corner accents on `[data-editable]`), or _All components_ (always-on corner accents everywhere). Single blue accent with state-based opacity (no rainbow), corner accents (no full-perimeter outlines on busy layouts), an inset blue tint on the selected component for clear "you clicked it" feedback, and a labelled top-left badge that follows your hover and selection. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
+- **Refined highlight modes** — _Off_, _Selection_ (default; pristine page, hover and click highlight in blue, hold <kbd>⌥</kbd> Alt/Option to flash the rainbow over every component), _Editable only_ (always-on subtle corner accents on `[data-editable]`), or _All components_ (always-on rainbow over every component, like the original Clay devtools). Hover and selected always paint in a single blue accent — outline + inset tint — so the "you clicked it" feedback reads consistently across every mode, on top of either the rainbow or the corner-accent ambient layer. Top-left labelled badge follows your hover and selection. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
 - **Disabled in Clay edit mode** — when a page is loaded with `?edit=true`, the extension stays out of the way entirely so it doesn't compete with Clay's own in-page editor chrome.
 - **Auto / light / dark themes** that respond to OS theme changes live
 - **Keyboard shortcuts** with a <kbd>?</kbd> overlay listing every binding
-- **Options page** for theme, dock side + width, environment hosts, highlight mode + intensity, shortcut toggle, and recents history size
+- **Options page** for theme, dock side + width, site host mappings, highlight mode + intensity, shortcut toggle, and recents history size
 - **Floating Clay button (FAB)** on every Clay page — collapsed/idle state of the panel is a small circular button anchored to the user's preferred corner, with a live component-count badge. Click it to expand the full panel. The standard browser-extension chrome pattern (Sentry / Hotjar / Crisp / Intercom).
 - **Smart popup**: friendly "Not a Clay page" popup on non-Clay pages; on Clay pages the toolbar icon mounts/unmounts the entire extension as an escape hatch
 - **Toolbar badge** shows the count of Clay components on the current page (cleared on navigation)
 - **Click-through-aware selection**: the panel selects the component you clicked but lets real interactive elements (links, buttons, inputs) keep working
-- **Copy-as menu**: URI / cURL / `fetch()` snippet / CSS selector — all env-host aware
+- **Copy-as menu**: URI / cURL / `fetch()` snippet / CSS selector — every snippet uses the URI&rsquo;s embedded host
 - **Vitest** unit tests and **GitHub Actions** CI on every PR
 
 ## Install (development)
@@ -77,8 +76,7 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 | Copy URI                 | Press <kbd>y</kbd> then <kbd>c</kbd> (component) or <kbd>p</kbd> (page)                           |
 | Open URI in new tab      | Press <kbd>o</kbd> then <kbd>c</kbd> or <kbd>p</kbd>                                              |
 | Cycle highlight mode     | Press <kbd>h</kbd> (off → selection → editable → all) or pick from the eye-icon dropdown          |
-| Peek at every component  | In _Selection_ mode, hold <kbd>⌥</kbd> Alt/Option to reveal every component; release to hide      |
-| Cycle environment        | Click the `env: …` pill at the bottom of the Inspect tab                                          |
+| Peek at every component  | In _Selection_ mode, hold <kbd>⌥</kbd> Alt/Option to reveal the rainbow over every component      |
 | Show shortcut overlay    | Press <kbd>?</kbd>                                                                                |
 | Toggle FAB ↔ panel       | Press <kbd>[</kbd> or click the collapse button / the FAB                                         |
 | Switch tabs              | Press <kbd>i</kbd> (Inspect) or <kbd>t</kbd> (Tree)                                               |
@@ -94,7 +92,13 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 
 ### Site host mappings
 
-The **Site host mappings** section in the options page is a per-instance lookup table mapping each brand to its hostnames per environment. With it configured, the panel renders a **View on:** pill row on every Clay page so you can jump to the equivalent URL on a different env, and the **Share** button gains a **▾** picker for cross-env share links. Empty by default — every fork populates its own.
+The **Site host mappings** section in the options page is the **single source of truth** for cross-environment behavior. It maps each brand to its hostnames per environment. With it configured:
+
+- The **View on:** pill row appears on every Clay page so you can jump to the equivalent URL on a different env.
+- The **Share** button gains a **▾** picker for cross-env share links.
+- The **Diff** tab&rsquo;s `Compare:` dropdown auto-populates with one option per other env in the matching mapping (e.g. on a `stg.thecut.com` page you get _Staging vs. Production_ and _Staging vs. QA_).
+
+Empty by default — every fork populates its own.
 
 Example for a Vox-Media-style multi-brand setup:
 
@@ -104,7 +108,7 @@ Example for a Vox-Media-style multi-brand setup:
 | Vulture | www.vulture.com | stg.vulture.com |               |
 | Curbed  | www.curbed.com  | stg.curbed.com  | qa.curbed.com |
 
-Hostnames are matched **exactly** (case-insensitive) — no prefix stripping or wildcards — so the mapping does what you wrote and nothing more. The `dev` and `local` envs are out of scope for site mappings; use the existing **Environments** section for Clay-API hosts.
+Hostnames are matched **exactly** (case-insensitive) — no prefix stripping or wildcards — so the mapping does what you wrote and nothing more. There&rsquo;s no separate global env config; if a host isn&rsquo;t in any mapping, the extension falls back to whatever host the Clay component URI itself encodes, which is also the page&rsquo;s host.
 
 ## Architecture
 

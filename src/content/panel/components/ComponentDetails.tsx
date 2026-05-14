@@ -11,7 +11,7 @@ import { captureElementToClipboard } from '@/lib/screenshot';
 import type { RuntimeMessage } from '@/lib/types';
 import { getPanelHost } from '../../shadow-host';
 import { useCopyAction } from '../hooks/useCopyAction';
-import { useEnvHost, useStore } from '../store';
+import { useStore } from '../store';
 import { CopyableUri } from './CopyableUri';
 import { Icon } from './Icon';
 import { Breadcrumb } from './Breadcrumb';
@@ -21,7 +21,6 @@ import { ShareMenu } from './ShareMenu';
 export function ComponentDetails() {
   const selected = useStore((s) => s.selected);
   const pushToast = useStore((s) => s.pushToast);
-  const envHost = useEnvHost();
   // Each "Copy as…" button needs its own inline-feedback signal so a click
   // on cURL doesn't make every button flash "Copied". The hook tracks the
   // most-recently-used key; siblings compare against it.
@@ -52,7 +51,11 @@ export function ComponentDetails() {
   };
 
   const isPublished = selected.uri.includes('@published');
-  const schemaUrl = buildSchemaUrl(selected.uri, envHost);
+  // No host override: helpers use the URI's embedded host. For
+  // cross-env switching the user goes through the Diff tab or the
+  // Share menu's site-host-mapping pills — we no longer have a global
+  // "default environment" that mass-rewrites every link.
+  const schemaUrl = buildSchemaUrl(selected.uri);
 
   return (
     <section className="cs-section">
@@ -71,14 +74,14 @@ export function ComponentDetails() {
       <div className="cs-link-row">
         <button
           className="cs-link cs-link-primary"
-          onClick={() => open(buildUrl(selected.uri, '', envHost))}
+          onClick={() => open(buildUrl(selected.uri, ''))}
         >
           <Icon name="external" size={11} /> Data
         </button>
-        <button className="cs-link" onClick={() => open(buildUrl(selected.uri, '.json', envHost))}>
+        <button className="cs-link" onClick={() => open(buildUrl(selected.uri, '.json'))}>
           .json
         </button>
-        <button className="cs-link" onClick={() => open(buildUrl(selected.uri, '.html', envHost))}>
+        <button className="cs-link" onClick={() => open(buildUrl(selected.uri, '.html'))}>
           .html
         </button>
         {schemaUrl && (
@@ -89,7 +92,7 @@ export function ComponentDetails() {
         {isPublished && (
           <button
             className="cs-link"
-            onClick={() => open(buildUrl(unpublishedUri(selected.uri), '', envHost))}
+            onClick={() => open(buildUrl(unpublishedUri(selected.uri), ''))}
           >
             Unpublished
           </button>
@@ -112,9 +115,7 @@ export function ComponentDetails() {
           </button>
           <button
             className={`cs-link ${copiedKey === 'curl' ? 'cs-link-copied' : ''}`}
-            onClick={() =>
-              copy(buildCurlCommand(selected.uri, '.json', envHost), 'cURL command', 'curl')
-            }
+            onClick={() => copy(buildCurlCommand(selected.uri, '.json'), 'cURL command', 'curl')}
           >
             {copiedKey === 'curl' ? (
               <>
@@ -126,9 +127,7 @@ export function ComponentDetails() {
           </button>
           <button
             className={`cs-link ${copiedKey === 'fetch' ? 'cs-link-copied' : ''}`}
-            onClick={() =>
-              copy(copyAsFetchSnippet(selected.uri, envHost), 'fetch() snippet', 'fetch')
-            }
+            onClick={() => copy(copyAsFetchSnippet(selected.uri), 'fetch() snippet', 'fetch')}
           >
             {copiedKey === 'fetch' ? (
               <>

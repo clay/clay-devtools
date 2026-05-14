@@ -41,7 +41,6 @@ export function useKeyboardShortcuts(): void {
         pushToast,
         setActiveTab,
       } = state;
-      const envHost = state.preferences.environments[state.preferences.defaultEnvironment] ?? '';
 
       if (e.key === '?' && (e.shiftKey || e.key === '?')) {
         e.preventDefault();
@@ -88,16 +87,19 @@ export function useKeyboardShortcuts(): void {
           const ok = await copyToClipboard(ensureProtocol(selected.uri));
           pushToast(ok ? 'Component URI copied' : 'Copy failed', ok ? 'success' : 'error');
         } else if (combo === 'op' && page) {
+          // No host override: buildUrl uses the URI's embedded host, which
+          // is the page's actual host. Cross-env nav is handled by the
+          // "View on…" pills (siteHosts) and the Diff tab.
           chrome.runtime.sendMessage({
             type: 'OPEN_TAB',
-            url: buildUrl(page.pageUri, '', envHost),
+            url: buildUrl(page.pageUri, ''),
           } satisfies RuntimeMessage);
         } else if (combo === 'oc' && (selected || page)) {
           const uri = selected?.uri ?? page?.pageUri;
           if (uri) {
             chrome.runtime.sendMessage({
               type: 'OPEN_TAB',
-              url: buildUrl(uri, '', envHost),
+              url: buildUrl(uri, ''),
             } satisfies RuntimeMessage);
           }
         }

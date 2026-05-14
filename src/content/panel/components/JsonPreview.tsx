@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { buildUrl } from '@/lib/clay-uri';
 import { highlightJson } from '@/lib/json-highlight';
 import { useCopyAction } from '../hooks/useCopyAction';
-import { useEnvHost, useStore } from '../store';
+import { useStore } from '../store';
 import { Icon } from './Icon';
 
 interface FetchState {
@@ -13,37 +13,39 @@ interface FetchState {
 
 const cache = new Map<string, FetchState>();
 
-function cacheKey(uri: string | null, host: string): string {
-  return `${host || '_'}::${uri ?? ''}`;
+function cacheKey(uri: string | null): string {
+  return `::${uri ?? ''}`;
 }
 
-function initialStateFor(uri: string | null, host: string): FetchState {
+function initialStateFor(uri: string | null): FetchState {
   if (!uri) return { status: 'idle' };
-  return cache.get(cacheKey(uri, host)) ?? { status: 'loading' };
+  return cache.get(cacheKey(uri)) ?? { status: 'loading' };
 }
 
 export function JsonPreview() {
   const selected = useStore((s) => s.selected);
   const page = useStore((s) => s.page);
-  const envHost = useEnvHost();
   const { copy, copiedKey } = useCopyAction();
   const copied = copiedKey === 'default';
 
+  // No host override: buildUrl uses the URI's embedded host, which is
+  // the page's actual host. Cross-env fetches now go through the Diff
+  // tab's site-host-mapping selector instead of a global default env.
   const targetUri = selected?.uri ?? page?.pageUri ?? null;
-  const fetchUrl = targetUri ? buildUrl(targetUri, '.json', envHost) : null;
+  const fetchUrl = targetUri ? buildUrl(targetUri, '.json') : null;
 
-  const [state, setState] = useState<FetchState>(() => initialStateFor(targetUri, envHost));
-  const [prevKey, setPrevKey] = useState(cacheKey(targetUri, envHost));
+  const [state, setState] = useState<FetchState>(() => initialStateFor(targetUri));
+  const [prevKey, setPrevKey] = useState(cacheKey(targetUri));
 
-  const currentKey = cacheKey(targetUri, envHost);
+  const currentKey = cacheKey(targetUri);
   if (prevKey !== currentKey) {
     setPrevKey(currentKey);
-    setState(initialStateFor(targetUri, envHost));
+    setState(initialStateFor(targetUri));
   }
 
   useEffect(() => {
     if (!fetchUrl || !targetUri) return;
-    const key = cacheKey(targetUri, envHost);
+    const key = cacheKey(targetUri);
     const cached = cache.get(key);
     if (cached && cached.status !== 'loading') return;
 
@@ -70,7 +72,7 @@ export function JsonPreview() {
     return () => {
       cancelled = true;
     };
-  }, [fetchUrl, targetUri, envHost]);
+  }, [fetchUrl, targetUri]);
 
   if (!targetUri) {
     return <div className="cs-empty">Select a component to preview its data.</div>;

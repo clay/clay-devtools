@@ -32,6 +32,7 @@ import type { HighlightMode } from '@/lib/types';
 const STYLE_ID = 'clay-slip-highlight-styles';
 
 const HIGHLIGHT_ATTR = 'data-clay-slip-color';
+const COLOR_IDX_ATTR = 'data-clay-slip-color-idx';
 const SELECTED_ATTR = 'data-clay-slip-selected';
 const HOVER_ATTR = 'data-clay-slip-hover';
 const ANNOTATED_ATTR = 'data-clay-slip-annotated';
@@ -54,14 +55,45 @@ const OPACITY_VAR = '--clay-slip-outline-opacity';
 const DEFAULT_OPACITY = 0.85;
 
 /**
- * Single accent color for ambient/hover/selected outlines.
- * Picked to be readable against both light and dark editorial designs and
- * to *not* visually clash with typical brand reds, magentas, or oranges (the
- * colors most likely to appear in a Clay site's content). RGB triple is
- * inlined into rgba() expressions since CSS `outline` only takes a single
- * color and we vary opacity per state.
+ * Single accent color for *interaction* signals (hover, selected, match).
+ * Hover/selected use width + opacity of this single accent so the
+ * inspection layer reads consistently across every mode. Picked to not
+ * visually clash with typical brand reds/magentas/oranges in editorial
+ * content. RGB triple is inlined into rgba() expressions since CSS
+ * `outline` only takes a single color and we vary opacity per state.
  */
 const ACCENT_RGB = '37, 99, 235'; // tailwind blue-600
+
+/**
+ * Six-color rainbow palette for the *ambient* layer in `all` mode and
+ * during the ⌥-peek in `selection` mode. Each component gets a color
+ * cycled by its index in the document order ({@link applyHighlights}
+ * stamps `data-clay-slip-color-idx="0..5"`), giving the page the
+ * "blueprint" look the original Clay devtools shipped with — discrete
+ * components are visually distinct from each other at a glance.
+ *
+ * Colors are Tailwind 500-shade equivalents picked for:
+ *   - High mutual distinguishability (well-separated hues across red
+ *     → orange → yellow → green → sky → purple).
+ *   - Decent contrast on both light and dark editorial backgrounds at
+ *     ~70% opacity.
+ *   - No collision with the inspection blue (ACCENT_RGB above) — sky
+ *     is the closest but lighter and shifted, so a hovered/selected
+ *     component reads as a separate signal even when its ambient ring
+ *     is also visible.
+ *
+ * Hover and selected DO NOT cycle this palette — they always paint in
+ * ACCENT_RGB so the click-feedback fill + outline always means the
+ * same thing across modes. The rainbow is purely a structural map.
+ */
+const PALETTE: readonly string[] = [
+  '239, 68, 68', //  0 red-500
+  '249, 115, 22', // 1 orange-500
+  '234, 179, 8', //  2 yellow-500
+  '34, 197, 94', //  3 green-500
+  '14, 165, 233', // 4 sky-500
+  '168, 85, 247', // 5 purple-500
+];
 
 /**
  * Element width/opacity tokens per state. Tweak these together.
@@ -114,47 +146,49 @@ function buildStyleSheet(): string {
   const tick = `${TOKENS.ambient.tick}px`;
 
   return `
-    /* ── Ambient corner ticks ────────────────────────────────────────────
-       Four short L-shaped accents at each corner. Trade-offs:
-       - Way less visual mass than a full perimeter outline: nested
-         components no longer create stacks of parallel lines at shared
-         edges; reads as "this is a discrete thing" without drawing a
-         box around the content.
-       - Hover (2px @ 70%) and selection (2px @ 100%) stay visually
-         dominant by comparison — exactly what you want during inspection.
+    /* ── Ambient: rainbow outlines (mode='all' + selection+⌥) ────────────
+       Continuous full-perimeter outlines, one color per component cycled
+       from PALETTE via [data-clay-slip-color-idx="N"]. Reads as a
+       blueprint of the page: every component is visually distinct from
+       its neighbors at a glance.
 
        Mode gating:
-         'selection' → corner ticks ON DEMAND only, gated by the reveal
-                       modifier (Alt/Option). Selection mode is the
-                       daily-driver default: the page is pristine, hover
-                       and click work normally, and ⌥ is the "peek at
-                       all components for a moment" gesture.
-         'all'       → corner ticks ALWAYS ON for every component. The
-                       "give me the bird's-eye view" mode.
-         'editable'  → corner ticks ALWAYS ON for [data-editable] only.
-                       Explicit "show me what's editable" affordance.
-         'off'       → no rule matches, nothing painted at all.
+         'selection' + reveal → rainbow ON DEMAND. Selection is the
+                                pristine default; ⌥ flashes the full
+                                structural map for as long as it's held.
+         'all'                → rainbow ALWAYS ON. The bird's-eye-view
+                                mode.
+         'editable'           → kept on the subtle corner-tick rendering
+                                below — different purpose ("show me
+                                what's editable", a focused affordance,
+                                not an overview).
+         'off'                → no rule matches, nothing painted.
 
-       The :not() chain keeps the corner ticks from competing with the
-       richer hover/selected outlines: while you're inspecting, only the
-       inspected element's outline lights up. */
-    html[${MODE_ATTR}="selection"][${REVEAL_ATTR}] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]),
-    html[${MODE_ATTR}="all"] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]),
+       The :not([hover]):not([selected]) chain keeps the rainbow from
+       competing with the inspection layer: hover and selected always
+       paint in ACCENT_RGB blue (with the inset tint on selected) so the
+       click-feedback signal is consistent across every mode. */
+    ${PALETTE.map(
+      (rgb, idx) => `
+    html[${MODE_ATTR}="selection"][${REVEAL_ATTR}] [${HIGHLIGHT_ATTR}][${COLOR_IDX_ATTR}="${idx}"]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]),
+    html[${MODE_ATTR}="all"] [${HIGHLIGHT_ATTR}][${COLOR_IDX_ATTR}="${idx}"]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]) {
+      outline: 1px solid rgba(${rgb}, calc(0.7 * var(${OPACITY_VAR}, ${DEFAULT_OPACITY}))) !important;
+      outline-offset: -1px !important;
+    }`
+    ).join('\n')}
+
+    /* ── Ambient corner ticks (editable mode only) ───────────────────────
+       Editable mode keeps the subtle corner-accent treatment from the
+       previous design — it's a focused "show me what's editable"
+       affordance, not the structural overview. Same :not() exclusion
+       chain so hover/selected don't compete. */
     html[${MODE_ATTR}="editable"] [${HIGHLIGHT_ATTR}][data-editable]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]) {
-      /* Establish a positioning context for the ::before pseudo. We omit
-         !important so we never fight a host's own positioning rule — if
-         the host already has position: relative/absolute/fixed/sticky,
-         the pseudo positions against that, which is exactly right. The
-         only failure mode is: host uses position:static AND has an
-         absolute-positioned descendant currently positioning against a
-         farther ancestor (it would reparent to this component). For
-         mode='selection' the rule is reveal-gated, so this only applies
-         while ⌥ is held. */
+      /* Establish a positioning context for the ::before pseudo. No
+         !important so a host's own positioning rule wins — pseudo then
+         positions against that, which is correct. */
       position: relative;
     }
 
-    html[${MODE_ATTR}="selection"][${REVEAL_ATTR}] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before,
-    html[${MODE_ATTR}="all"] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before,
     html[${MODE_ATTR}="editable"] [${HIGHLIGHT_ATTR}][data-editable]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before {
       content: "";
       position: absolute;
@@ -278,12 +312,22 @@ function buildStyleSheet(): string {
 
 /**
  * Tag every component element so the ambient + state CSS selectors have
- * something to target. Also stashes a human-readable label on the element
- * so the selection badge can read it via `attr()`.
+ * something to target. Sets:
+ *   - `data-clay-slip-color`     → presence flag, drives every state
+ *                                  selector (hover/selected/ambient/etc.).
+ *   - `data-clay-slip-color-idx` → integer 0..PALETTE.length-1, cycled
+ *                                  by document order. Drives the rainbow
+ *                                  ambient layer in `all` mode and during
+ *                                  the ⌥-peek in `selection` mode.
+ *   - `data-clay-slip-label`     → optional, populates the name badge
+ *                                  shown on hover and selected.
  *
- * The previous implementation also encoded a per-sibling color index here.
- * That was the source of the rainbow look and we drop it — `[data-clay-slip-color]`
- * is now just a presence flag.
+ * The index is computed from the array position rather than the DOM
+ * sibling index because the array is already in document order and
+ * cycling by array position guarantees adjacent components in the same
+ * grid get different colors (good visual distinction). True sibling
+ * indexing would also work but would tie us to a specific DOM walk and
+ * recompute on every mutation.
  */
 export function applyHighlights(
   elements: readonly HTMLElement[],
@@ -293,6 +337,7 @@ export function applyHighlights(
     const el = elements[i];
     if (!el) continue;
     el.setAttribute(HIGHLIGHT_ATTR, '');
+    el.setAttribute(COLOR_IDX_ATTR, String(i % PALETTE.length));
     const label = labels?.[i];
     if (label) el.setAttribute(LABEL_ATTR, label);
   }
@@ -301,6 +346,7 @@ export function applyHighlights(
 export function clearHighlights(elements: readonly HTMLElement[]): void {
   for (const el of elements) {
     el.removeAttribute(HIGHLIGHT_ATTR);
+    el.removeAttribute(COLOR_IDX_ATTR);
     el.removeAttribute(SELECTED_ATTR);
     el.removeAttribute(HOVER_ATTR);
     el.removeAttribute(ANNOTATED_ATTR);

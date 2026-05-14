@@ -31,6 +31,7 @@ import {
 } from '@/content/highlighter';
 
 const HIGHLIGHT_ATTR = 'data-clay-slip-color';
+const COLOR_IDX_ATTR = 'data-clay-slip-color-idx';
 const SELECTED_ATTR = 'data-clay-slip-selected';
 const HOVER_ATTR = 'data-clay-slip-hover';
 const ANNOTATED_ATTR = 'data-clay-slip-annotated';
@@ -90,6 +91,24 @@ describe('applyHighlights', () => {
     expect(b.hasAttribute(HIGHLIGHT_ATTR)).toBe(true);
   });
 
+  it('cycles the color-index attribute by document position (drives the rainbow)', () => {
+    // Seven elements verify: indices 0..5 are unique, then 6 wraps back
+    // to 0. The rainbow CSS keys off this exact attribute, so cycling
+    // is the contract — a regression here would break the bird's-eye
+    // visual map in 'all' mode and the ⌥-peek in 'selection' mode.
+    const els = Array.from({ length: 7 }, (_, i) => makeComponent(`c${i}`));
+    applyHighlights(els);
+    expect(els.map((e) => e.getAttribute(COLOR_IDX_ATTR))).toEqual([
+      '0',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '0',
+    ]);
+  });
+
   it('writes labels in the same index as the element array', () => {
     const a = makeComponent('a');
     const b = makeComponent('b');
@@ -123,6 +142,7 @@ describe('clearHighlights', () => {
     a.setAttribute(ANNOTATED_ATTR, '');
     clearHighlights([a]);
     expect(a.hasAttribute(HIGHLIGHT_ATTR)).toBe(false);
+    expect(a.hasAttribute(COLOR_IDX_ATTR)).toBe(false);
     expect(a.hasAttribute(SELECTED_ATTR)).toBe(false);
     expect(a.hasAttribute(HOVER_ATTR)).toBe(false);
     expect(a.hasAttribute(ANNOTATED_ATTR)).toBe(false);
@@ -217,87 +237,108 @@ describe('setHighlightOpacity', () => {
   });
 });
 
-describe('ambient corner-tick stylesheet (mode gating contract)', () => {
-  // The actual rendering is CSS-only, but the *contract* between the
-  // highlighter module and its stylesheet is testable. The four modes
-  // map to three rendering behaviors:
-  //   - 'selection' → reveal-gated (pristine until ⌥ is held). This is
-  //     where the on-demand peek lives now.
-  //   - 'all'       → always-on corner accents on every component.
-  //   - 'editable'  → always-on corner accents on [data-editable] only.
+describe('ambient stylesheet (mode gating + rainbow contract)', () => {
+  // The four modes map to three rendering behaviors now:
+  //   - 'selection' → reveal-gated rainbow (pristine until ⌥ is held).
+  //   - 'all'       → always-on rainbow on every component.
+  //   - 'editable'  → always-on subtle corner accents on [data-editable].
   //   - 'off'       → no rule matches; nothing painted.
-  // Every modification to this stylesheet has to preserve those four
-  // shapes, so we lock them in as separate assertions.
+  // The rainbow is six per-color outline rules cycled by
+  // [data-clay-slip-color-idx="0..5"]. The corner ticks (editable only)
+  // still use a ::before pseudo. We lock both shapes in as separate
+  // assertions so any future stylesheet edit that breaks the visual
+  // handoff fails loudly.
   function getStylesheetText(): string {
     installHighlightStyles();
     return document.getElementById('clay-slip-highlight-styles')?.textContent ?? '';
   }
 
-  it("gates mode='selection' corner ticks on the reveal attribute (the ⌥-peek behavior)", () => {
+  it("renders rainbow outlines (one rule per palette color) for mode='all' and mode='selection'+reveal", () => {
     const css = getStylesheetText();
-    // Every mode='selection' corner-tick selector must require
-    // [data-clay-slip-reveal] so the daily-driver mode is pristine
-    // when the user isn't holding ⌥.
-    const selectionRules = css.match(/html\[data-clay-slip-mode="selection"\][^{]+::before/g);
-    expect(selectionRules?.length).toBeGreaterThan(0);
-    for (const rule of selectionRules ?? []) {
+    // Six color buckets means six outline rules per active mode. Match
+    // each [color-idx="N"] selector for both modes.
+    for (let idx = 0; idx < 6; idx++) {
+      const allRule = new RegExp(
+        `html\\[data-clay-slip-mode="all"\\][^{]+\\[data-clay-slip-color-idx="${idx}"\\][^{]+\\{[^}]*outline:`
+      );
+      const selectionRule = new RegExp(
+        `html\\[data-clay-slip-mode="selection"\\]\\[data-clay-slip-reveal\\][^{]+\\[data-clay-slip-color-idx="${idx}"\\][^{]+\\{[^}]*outline:`
+      );
+      expect(css).toMatch(allRule);
+      expect(css).toMatch(selectionRule);
+    }
+  });
+
+  it("gates mode='selection' rainbow on the reveal attribute (the ⌥-peek behavior)", () => {
+    const css = getStylesheetText();
+    // Every mode='selection' rainbow selector must require [data-clay-slip-reveal]
+    // so the daily-driver mode stays pristine when the user isn't holding ⌥.
+    const selectionRainbowRules = css.match(
+      /html\[data-clay-slip-mode="selection"\][^{]+\[data-clay-slip-color-idx[^{]+\{/g
+    );
+    expect(selectionRainbowRules?.length).toBeGreaterThan(0);
+    for (const rule of selectionRainbowRules ?? []) {
       expect(rule).toContain('[data-clay-slip-reveal]');
     }
-    // A bare selection selector without the reveal attr would defeat
-    // the pristine-by-default behavior, so assert it never appears.
-    expect(css).not.toMatch(/html\[data-clay-slip-mode="selection"\] \[/);
   });
 
-  it("does NOT gate mode='all' on the reveal attribute (always-on for everything)", () => {
+  it("does NOT gate mode='all' rainbow on the reveal attribute (always-on)", () => {
     const css = getStylesheetText();
-    // 'all' is the "give me the bird's-eye view" mode — no modifier
-    // gate, every component renders ambient ticks all the time.
-    const allRules = css.match(/html\[data-clay-slip-mode="all"\][^{]+::before/g);
-    expect(allRules?.length).toBeGreaterThan(0);
-    for (const rule of allRules ?? []) {
-      expect(rule).not.toContain('[data-clay-slip-reveal]');
-    }
-  });
-
-  it("does NOT gate mode='editable' on the reveal attribute (always-on for editables)", () => {
-    const css = getStylesheetText();
-    // The editable selector should NOT include the reveal attribute —
-    // editable mode is the "show me what's editable" mode, ambient by design.
-    const editableRules = css.match(/html\[data-clay-slip-mode="editable"\][^{]+::before/g);
-    expect(editableRules?.length).toBeGreaterThan(0);
-    for (const rule of editableRules ?? []) {
-      expect(rule).not.toContain('[data-clay-slip-reveal]');
-    }
-  });
-
-  it('emits no ambient rule for off mode (and no bare-selection rule)', () => {
-    const css = getStylesheetText();
-    expect(css).not.toMatch(/html\[data-clay-slip-mode="off"\][^{]*::before/);
-  });
-
-  it('excludes hovered + selected elements from every corner-tick rule', () => {
-    const css = getStylesheetText();
-    // Each corner-tick selector must carry both :not() exclusions so the
-    // ambient ticks fade out when the user is actually inspecting an
-    // element. This is the visual handoff to the hover/selected outlines.
-    const cornerTickRules = css.match(
-      /html\[data-clay-slip-mode="(?:selection|all|editable)"\][^{]+::before/g
+    const allRainbowRules = css.match(
+      /html\[data-clay-slip-mode="all"\][^{]+\[data-clay-slip-color-idx[^{]+\{/g
     );
-    expect(cornerTickRules?.length).toBeGreaterThan(0);
-    for (const rule of cornerTickRules ?? []) {
+    expect(allRainbowRules?.length).toBeGreaterThan(0);
+    for (const rule of allRainbowRules ?? []) {
+      expect(rule).not.toContain('[data-clay-slip-reveal]');
+    }
+  });
+
+  it("keeps mode='editable' on the subtle corner-tick rendering (::before)", () => {
+    const css = getStylesheetText();
+    // Editable mode is a focused affordance ("show me what's editable"),
+    // not an overview, so it stays on the corner-tick treatment. Verify
+    // the ::before rule exists AND that editable does NOT participate
+    // in the rainbow rules (those would require a [color-idx] selector).
+    const editableCornerRule = css.match(
+      /html\[data-clay-slip-mode="editable"\][^{]+\[data-editable\][^{]+::before/
+    );
+    expect(editableCornerRule).not.toBeNull();
+    const editableRainbow = css.match(
+      /html\[data-clay-slip-mode="editable"\][^{]+\[data-clay-slip-color-idx[^{]+\{/
+    );
+    expect(editableRainbow).toBeNull();
+  });
+
+  it('emits no ambient rule for off mode', () => {
+    const css = getStylesheetText();
+    expect(css).not.toMatch(/html\[data-clay-slip-mode="off"\][^{]*\{/);
+  });
+
+  it('excludes hovered + selected elements from every ambient rule', () => {
+    const css = getStylesheetText();
+    // Both the rainbow rules AND the editable corner-tick rule must
+    // exclude :hover / :selected so the ambient layer fades out when
+    // the user is inspecting an element. Without the exclusion, a
+    // selected component would paint both the rainbow and the blue
+    // selected outline on top of each other.
+    const rainbowRules =
+      css.match(
+        /html\[data-clay-slip-mode="(?:selection|all)"\][^{]+\[data-clay-slip-color-idx[^{]+\{/g
+      ) ?? [];
+    const editableRules = css.match(/html\[data-clay-slip-mode="editable"\][^{]+::before/g) ?? [];
+    const ambientRules = [...rainbowRules, ...editableRules];
+    expect(ambientRules.length).toBeGreaterThan(0);
+    for (const rule of ambientRules) {
       expect(rule).toContain(':not([data-clay-slip-hover])');
       expect(rule).toContain(':not([data-clay-slip-selected])');
     }
   });
 
-  it('uses ::before so it does not collide with the annotation dot (::after)', () => {
+  it('uses ::before for editable corner ticks so it stays independent of the annotation dot (::after)', () => {
     const css = getStylesheetText();
-    // Annotation dot uses ::after; corner ticks must use ::before. Verifying
-    // the literal pseudo-element keeps the two independent when an element
-    // is both annotated and ambient.
     expect(css).toContain('data-clay-slip-annotated]::after');
-    const cornerTickRule = css.match(/html\[data-clay-slip-mode="all"\][^{]+::before/);
-    expect(cornerTickRule).not.toBeNull();
+    const editableCornerRule = css.match(/html\[data-clay-slip-mode="editable"\][^{]+::before/);
+    expect(editableCornerRule).not.toBeNull();
   });
 });
 

@@ -118,7 +118,3 @@ export const useStore = create<StoreState>()((set) => ({
     })),
   dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
-
-export function useEnvHost(): string {
-  return useStore((s) => s.preferences.environments[s.preferences.defaultEnvironment] ?? '');
-}
