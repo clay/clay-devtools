@@ -21,6 +21,27 @@ export function isClayDocument(doc: Document = document): boolean {
   return Boolean(html?.getAttribute('data-uri'));
 }
 
+/**
+ * True when the current page is rendered in Clay's edit mode (URL carries
+ * `?edit=true`). The extension *intentionally disables itself* in edit mode
+ * so its outlines, click handlers, and floating panel don't compete with
+ * Clay's own in-page editing chrome (which has its own click-to-select,
+ * highlight, and toolbar UI).
+ *
+ * Implemented as a URL check rather than a DOM probe because the edit-mode
+ * UI mounts asynchronously and we need to bail out at content-script
+ * bootstrap, before any of our own DOM mutations happen.
+ *
+ * Defaults to {@link location.search}; takes a string for testability.
+ */
+export function isEditMode(search: string = location.search): boolean {
+  try {
+    return new URLSearchParams(search).get('edit') === 'true';
+  } catch {
+    return false;
+  }
+}
+
 export function getComponentName(uri: string | null | undefined): string | null {
   if (!uri) return null;
   const match = COMPONENT_RE.exec(uri);

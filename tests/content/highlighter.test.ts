@@ -217,37 +217,46 @@ describe('setHighlightOpacity', () => {
   });
 });
 
-describe('ambient corner-tick stylesheet (mode=all / editable)', () => {
+describe('ambient corner-tick stylesheet (mode gating contract)', () => {
   // The actual rendering is CSS-only, but the *contract* between the
-  // highlighter module and its stylesheet is testable:
-  //   1. mode='all' is gated on BOTH the mode attr AND the reveal attr —
-  //      the page is pristine until the user holds ⌥. mode='editable' is
-  //      intentionally NOT reveal-gated (it's an explicit "show editables"
-  //      affordance, not an on-demand peek).
-  //   2. The rule must exclude :hover / :selected so the corner ticks don't
-  //      compete with the richer hover/selected outlines.
-  //   3. The pseudo-element must be ::before (the selection label badge
-  //      uses ::before too, but we exclude :selected from the corner-tick
-  //      rule so they never collide on the same element).
-  // If any of these invariants change without intent, the test fails and
-  // forces a deliberate update.
+  // highlighter module and its stylesheet is testable. The four modes
+  // map to three rendering behaviors:
+  //   - 'selection' → reveal-gated (pristine until ⌥ is held). This is
+  //     where the on-demand peek lives now.
+  //   - 'all'       → always-on corner accents on every component.
+  //   - 'editable'  → always-on corner accents on [data-editable] only.
+  //   - 'off'       → no rule matches; nothing painted.
+  // Every modification to this stylesheet has to preserve those four
+  // shapes, so we lock them in as separate assertions.
   function getStylesheetText(): string {
     installHighlightStyles();
     return document.getElementById('clay-slip-highlight-styles')?.textContent ?? '';
   }
 
-  it("gates mode='all' corner ticks on the reveal attribute, not just the mode", () => {
+  it("gates mode='selection' corner ticks on the reveal attribute (the ⌥-peek behavior)", () => {
     const css = getStylesheetText();
-    // Every mode='all' corner-tick selector must require [data-clay-slip-reveal]
-    // so the page is pristine when the user is not holding ⌥.
-    const allModeRules = css.match(/html\[data-clay-slip-mode="all"\][^{]+::before/g);
-    expect(allModeRules?.length).toBeGreaterThan(0);
-    for (const rule of allModeRules ?? []) {
+    // Every mode='selection' corner-tick selector must require
+    // [data-clay-slip-reveal] so the daily-driver mode is pristine
+    // when the user isn't holding ⌥.
+    const selectionRules = css.match(/html\[data-clay-slip-mode="selection"\][^{]+::before/g);
+    expect(selectionRules?.length).toBeGreaterThan(0);
+    for (const rule of selectionRules ?? []) {
       expect(rule).toContain('[data-clay-slip-reveal]');
     }
-    // A mode='all' rule without the reveal attr would defeat the whole
-    // pristine-by-default behavior, so explicitly assert it never appears.
-    expect(css).not.toMatch(/html\[data-clay-slip-mode="all"\] \[/);
+    // A bare selection selector without the reveal attr would defeat
+    // the pristine-by-default behavior, so assert it never appears.
+    expect(css).not.toMatch(/html\[data-clay-slip-mode="selection"\] \[/);
+  });
+
+  it("does NOT gate mode='all' on the reveal attribute (always-on for everything)", () => {
+    const css = getStylesheetText();
+    // 'all' is the "give me the bird's-eye view" mode — no modifier
+    // gate, every component renders ambient ticks all the time.
+    const allRules = css.match(/html\[data-clay-slip-mode="all"\][^{]+::before/g);
+    expect(allRules?.length).toBeGreaterThan(0);
+    for (const rule of allRules ?? []) {
+      expect(rule).not.toContain('[data-clay-slip-reveal]');
+    }
   });
 
   it("does NOT gate mode='editable' on the reveal attribute (always-on for editables)", () => {
@@ -261,19 +270,18 @@ describe('ambient corner-tick stylesheet (mode=all / editable)', () => {
     }
   });
 
-  it('emits no ambient rule for selection or off (regardless of reveal state)', () => {
+  it('emits no ambient rule for off mode (and no bare-selection rule)', () => {
     const css = getStylesheetText();
-    expect(css).not.toMatch(/html\[data-clay-slip-mode="selection"\][^{]*::before/);
     expect(css).not.toMatch(/html\[data-clay-slip-mode="off"\][^{]*::before/);
   });
 
-  it('excludes hovered + selected elements from the corner-tick rule', () => {
+  it('excludes hovered + selected elements from every corner-tick rule', () => {
     const css = getStylesheetText();
     // Each corner-tick selector must carry both :not() exclusions so the
     // ambient ticks fade out when the user is actually inspecting an
     // element. This is the visual handoff to the hover/selected outlines.
     const cornerTickRules = css.match(
-      /html\[data-clay-slip-mode="(?:all|editable)"\][^{]+::before/g
+      /html\[data-clay-slip-mode="(?:selection|all|editable)"\][^{]+::before/g
     );
     expect(cornerTickRules?.length).toBeGreaterThan(0);
     for (const rule of cornerTickRules ?? []) {
@@ -285,11 +293,63 @@ describe('ambient corner-tick stylesheet (mode=all / editable)', () => {
   it('uses ::before so it does not collide with the annotation dot (::after)', () => {
     const css = getStylesheetText();
     // Annotation dot uses ::after; corner ticks must use ::before. Verifying
-    // the literal pseudo-element keeps the two independent in `all` mode
-    // where the same element could be both annotated and ambient.
+    // the literal pseudo-element keeps the two independent when an element
+    // is both annotated and ambient.
     expect(css).toContain('data-clay-slip-annotated]::after');
     const cornerTickRule = css.match(/html\[data-clay-slip-mode="all"\][^{]+::before/);
     expect(cornerTickRule).not.toBeNull();
+  });
+});
+
+describe('hover + selected stylesheet contract', () => {
+  // Hover and selected are the inspection signals — they must always read
+  // as "you're pointing at this" and "you clicked this", and the click
+  // signal has to be visually distinct from hover. Those two requirements
+  // are enforced in CSS, so we lock the contract here.
+  function getStylesheetText(): string {
+    installHighlightStyles();
+    return document.getElementById('clay-slip-highlight-styles')?.textContent ?? '';
+  }
+
+  it('renders the component-name label on BOTH hover and selected', () => {
+    const css = getStylesheetText();
+    // The label badge ::before rule must include both selectors in its
+    // selector list. Without the hover half, hovering a non-selected
+    // component shows no name — regression we explicitly want to prevent.
+    const labelRule = css.match(
+      /\[data-clay-slip-(?:hover|selected)\]\[data-clay-slip-label\]::before[^{]*,\s*\[data-clay-slip-(?:hover|selected)\]\[data-clay-slip-label\]::before/
+    );
+    expect(labelRule).not.toBeNull();
+  });
+
+  it("gives 'selected' a distinct fill so it reads differently from 'hover'", () => {
+    const css = getStylesheetText();
+    // The inset box-shadow is what creates the "you clicked it" surface
+    // tint. If somebody removes it, hover and selected become visually
+    // near-identical (both 2px solid blue) and the click feedback
+    // disappears. Lock the rule shape so that's a deliberate choice,
+    // not an accidental edit.
+    const selectedRule = css.match(/\[data-clay-slip-selected\]\s*\{[^}]+\}/);
+    expect(selectedRule).not.toBeNull();
+    expect(selectedRule?.[0]).toContain('box-shadow: inset');
+  });
+
+  it("does NOT add the inset fill to the 'hover' rule", () => {
+    const css = getStylesheetText();
+    // Hover stays outline-only; the inset fill is reserved for selected
+    // so the two states stay visually distinct.
+    const hoverRule = css.match(/\[data-clay-slip-hover\]\s*\{[^}]+\}/);
+    expect(hoverRule).not.toBeNull();
+    expect(hoverRule?.[0]).not.toContain('box-shadow: inset');
+  });
+
+  it('anchors position: relative on hover too (so the label badge can render)', () => {
+    const css = getStylesheetText();
+    // ::before with position: absolute needs a positioned ancestor.
+    // Selected has had position: relative for ages; hover needs it too
+    // now that the label badge follows hover.
+    const hoverRule = css.match(/\[data-clay-slip-hover\]\s*\{[^}]+\}/);
+    expect(hoverRule?.[0]).toContain('position: relative');
   });
 });
 
@@ -319,8 +379,12 @@ describe('setReveal / getReveal', () => {
 });
 
 describe('installAltRevealListener', () => {
-  it("toggles reveal on Alt keydown / keyup while mode='all'", () => {
-    setHighlightMode('all');
+  // The peek modifier lives on selection mode now (the daily-driver
+  // default). Other modes either have always-on ambient ('all',
+  // 'editable') or are intentionally silent ('off'), so the listener
+  // must be a no-op outside selection.
+  it("toggles reveal on Alt keydown / keyup while mode='selection'", () => {
+    setHighlightMode('selection');
     const cleanup = installAltRevealListener();
     try {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
@@ -332,13 +396,10 @@ describe('installAltRevealListener', () => {
     }
   });
 
-  it("does not reveal on Alt while mode is anything other than 'all'", () => {
-    // The point of this listener is to be a no-op outside 'all' mode so we
-    // don't have to install/uninstall it on every mode change. Assert the
-    // per-event mode check actually skips work.
+  it("does not reveal on Alt while mode is anything other than 'selection'", () => {
     const cleanup = installAltRevealListener();
     try {
-      for (const mode of ['off', 'selection', 'editable'] as const) {
+      for (const mode of ['off', 'editable', 'all'] as const) {
         setHighlightMode(mode);
         window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
         expect(getReveal()).toBe(false);
@@ -349,7 +410,7 @@ describe('installAltRevealListener', () => {
   });
 
   it('ignores keys other than Alt so Alt+letter shortcuts do not flicker', () => {
-    setHighlightMode('all');
+    setHighlightMode('selection');
     const cleanup = installAltRevealListener();
     try {
       // altKey true on a non-Alt key (e.g. user pressing Alt+Tab combo,
@@ -363,7 +424,7 @@ describe('installAltRevealListener', () => {
   });
 
   it('clears reveal on window blur (Alt-tab leaves the window with ⌥ held)', () => {
-    setHighlightMode('all');
+    setHighlightMode('selection');
     const cleanup = installAltRevealListener();
     try {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
@@ -376,7 +437,7 @@ describe('installAltRevealListener', () => {
   });
 
   it('does not flash reveal while typing in an input (Option-letter on macOS)', () => {
-    setHighlightMode('all');
+    setHighlightMode('selection');
     const input = document.createElement('input');
     document.body.appendChild(input);
     input.focus();
@@ -392,7 +453,7 @@ describe('installAltRevealListener', () => {
   });
 
   it('cleanup removes the listeners and clears reveal', () => {
-    setHighlightMode('all');
+    setHighlightMode('selection');
     const cleanup = installAltRevealListener();
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Alt' }));
     expect(getReveal()).toBe(true);

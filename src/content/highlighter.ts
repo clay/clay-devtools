@@ -80,7 +80,11 @@ const ACCENT_RGB = '37, 99, 235'; // tailwind blue-600
 const TOKENS = {
   ambient: { tick: 8, alpha: 0.55 },
   hover: { width: 2, alpha: 0.7, offset: -2 },
-  selected: { width: 2, alpha: 1, offset: -2 },
+  // `fillAlpha` drives the inset blue tint that makes "selected" visually
+  // distinct from "hovered" — hover is outline-only, selected is outline
+  // + filled background. Tuned to 0.08 so it reads as "active item" without
+  // overpowering the host page's content underneath.
+  selected: { width: 2, alpha: 1, offset: -2, fillAlpha: 0.08 },
   match: { width: 2, alpha: 0.95, offset: -2 },
 } as const;
 
@@ -120,19 +124,22 @@ function buildStyleSheet(): string {
          dominant by comparison — exactly what you want during inspection.
 
        Mode gating:
-         'all'      → corner ticks ON DEMAND only, gated by the reveal
-                      modifier (Alt/Option). Idle = pristine page; the
-                      user holds ⌥ to "peek" at the full structure.
-         'editable' → corner ticks ALWAYS ON for [data-editable] only.
-                      This mode is an explicit "show me what's editable"
-                      affordance, not an ambient overview, so we don't
-                      gate it on ⌥.
-         'selection' / 'off' → no rule matches, nothing painted.
+         'selection' → corner ticks ON DEMAND only, gated by the reveal
+                       modifier (Alt/Option). Selection mode is the
+                       daily-driver default: the page is pristine, hover
+                       and click work normally, and ⌥ is the "peek at
+                       all components for a moment" gesture.
+         'all'       → corner ticks ALWAYS ON for every component. The
+                       "give me the bird's-eye view" mode.
+         'editable'  → corner ticks ALWAYS ON for [data-editable] only.
+                       Explicit "show me what's editable" affordance.
+         'off'       → no rule matches, nothing painted at all.
 
        The :not() chain keeps the corner ticks from competing with the
        richer hover/selected outlines: while you're inspecting, only the
        inspected element's outline lights up. */
-    html[${MODE_ATTR}="all"][${REVEAL_ATTR}] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]),
+    html[${MODE_ATTR}="selection"][${REVEAL_ATTR}] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]),
+    html[${MODE_ATTR}="all"] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]),
     html[${MODE_ATTR}="editable"] [${HIGHLIGHT_ATTR}][data-editable]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]) {
       /* Establish a positioning context for the ::before pseudo. We omit
          !important so we never fight a host's own positioning rule — if
@@ -141,12 +148,13 @@ function buildStyleSheet(): string {
          only failure mode is: host uses position:static AND has an
          absolute-positioned descendant currently positioning against a
          farther ancestor (it would reparent to this component). For
-         mode='all' the rule is reveal-gated, so this only applies
+         mode='selection' the rule is reveal-gated, so this only applies
          while ⌥ is held. */
       position: relative;
     }
 
-    html[${MODE_ATTR}="all"][${REVEAL_ATTR}] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before,
+    html[${MODE_ATTR}="selection"][${REVEAL_ATTR}] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before,
+    html[${MODE_ATTR}="all"] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before,
     html[${MODE_ATTR}="editable"] [${HIGHLIGHT_ATTR}][data-editable]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before {
       content: "";
       position: absolute;
@@ -178,24 +186,44 @@ function buildStyleSheet(): string {
     }
 
     /* Hover and selection always render regardless of mode (otherwise
-       click-to-inspect would be invisible in 'off'). */
+       click-to-inspect would be invisible in 'off'). Both also need
+       position: relative so the label-badge ::before can anchor. */
     [${HOVER_ATTR}] {
       outline: ${TOKENS.hover.width}px solid ${o(TOKENS.hover.alpha)} !important;
       outline-offset: ${TOKENS.hover.offset}px !important;
+      position: relative;
     }
 
+    /* Selected = hover's outline + a subtle accent-tinted fill. The
+       fill is what gives the click "I clicked it" feedback that hover
+       alone can't, since hover and selected outlines are otherwise
+       visually similar (2px solid blue, 70% vs 100% opacity). The inset
+       tint is implemented via box-shadow with a giant spread so it
+       fills the box without affecting layout and without needing
+       another pseudo-element (::before is the label badge, ::after is
+       the annotation dot). 8% opacity is heavy enough to clearly read
+       as "this is the active item" the way macOS Finder + GitHub file
+       browser highlight rows, light enough that text/imagery underneath
+       stays fully legible. */
     [${SELECTED_ATTR}] {
       outline: ${TOKENS.selected.width}px solid ${o(TOKENS.selected.alpha)} !important;
       outline-offset: ${TOKENS.selected.offset}px !important;
       position: relative;
+      box-shadow: inset 0 0 0 9999px ${o(TOKENS.selected.fillAlpha)} !important;
     }
 
-    /* Selection label — a small pill in the top-left of the selected box
-       reading the component name from the data-clay-slip-label attribute.
+    /* Component-name label — a small pill in the top-left reading the
+       component name from data-clay-slip-label. Renders for BOTH hover
+       and selected so users always know what they're pointing at, not
+       just what they've clicked. Both selectors target ::before (CSS
+       only allows one); when an element is both hovered and selected
+       they paint identically so there's no flicker.
+
        Sits *outside* the box when there's room above it, otherwise tucks
        inside via translateY(0). The negative-then-clamp trick keeps the
        label visible at the very top of the page where translateY(-100%)
        would scroll out of view. */
+    [${HOVER_ATTR}][${LABEL_ATTR}]::before,
     [${SELECTED_ATTR}][${LABEL_ATTR}]::before {
       content: attr(${LABEL_ATTR});
       position: absolute;
@@ -353,10 +381,14 @@ export function getReveal(): boolean {
 
 /**
  * Wire the reveal modifier (Alt / Option) to {@link setReveal}. Only takes
- * effect while the active highlight mode is 'all' — other modes have their
- * own deterministic ambient behavior, so the modifier would be a no-op
- * there. We still install the listener once globally; the mode check
- * happens per-event so switching modes doesn't require teardown.
+ * effect while the active highlight mode is 'selection' — that's the
+ * daily-driver mode where the page is pristine and the user occasionally
+ * wants a quick spatial overview of where every component lives. Other
+ * modes have deterministic ambient behavior already (always-on for 'all'
+ * and 'editable'; nothing for 'off'), so the modifier would be a no-op.
+ *
+ * We still install the listener once globally; the mode check happens
+ * per-event so switching modes doesn't require teardown.
  *
  * Edge cases handled:
  * - **Auto-repeat** while ⌥ is held: `setReveal(true)` is idempotent, no
@@ -388,7 +420,7 @@ export function installAltRevealListener(
     // We *don't* trigger on `e.altKey` for arbitrary keys — that would
     // fire on every Alt+letter shortcut and feel jumpy.
     if (e.key !== 'Alt') return;
-    if (getMode() !== 'all') return;
+    if (getMode() !== 'selection') return;
     if (isEditableTarget()) return;
     setReveal(true);
   };

@@ -1,4 +1,4 @@
-import { isClayDocument, parseShareTarget } from '@/lib/clay-uri';
+import { isClayDocument, isEditMode, parseShareTarget } from '@/lib/clay-uri';
 import type { RuntimeMessage } from '@/lib/types';
 import {
   applyHighlights,
@@ -45,6 +45,16 @@ function bootstrap(): void {
     send({ type: 'UPDATE_BADGE', count: 0 });
     return;
   }
+  // Edit-mode pages run Clay's own editor chrome (its own click-to-select,
+  // highlight overlays, toolbar). Our outlines and click handlers would
+  // step on that experience, so we no-op the entire extension on those
+  // pages. We also intentionally do NOT send CLAY_DETECTED, which keeps
+  // the toolbar popup at its default ("not active here") state — the
+  // toolbar icon won't try to mount the panel via PANEL_TOGGLE either.
+  if (isEditMode()) {
+    send({ type: 'UPDATE_BADGE', count: 0 });
+    return;
+  }
   send({ type: 'CLAY_DETECTED' });
   const count = paintAndSync();
   send({ type: 'UPDATE_BADGE', count });
@@ -71,6 +81,14 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
   if (message.type === 'PANEL_TOGGLE') {
     if (!isClayDocument()) {
       sendResponse({ ok: false, reason: 'not-clay' });
+      return true;
+    }
+    // Same edit-mode bypass as bootstrap, in case the user was on a
+    // normal page (extension active) and SPA-navigated to ?edit=true
+    // without a full reload — the bootstrap-time check wouldn't have
+    // re-run, but the toolbar click still funnels through here.
+    if (isEditMode()) {
+      sendResponse({ ok: false, reason: 'edit-mode' });
       return true;
     }
     if (isPanelMounted()) {

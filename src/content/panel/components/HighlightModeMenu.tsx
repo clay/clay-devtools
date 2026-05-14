@@ -87,19 +87,20 @@ export function HighlightModeMenu() {
 /**
  * Header real estate is tight, so we abbreviate the label next to the icon.
  *
- * `all` shows `All ⌥` (with the keycap glyph) so the modifier-gated behavior
- * is glanceable from the header without needing to open the popover. The
- * symbol works on every modern browser font without an icon font.
+ * `selection` shows `Sel ⌥` (with the keycap glyph) so the modifier-gated
+ * "peek at all components" gesture is glanceable from the header without
+ * needing to open the popover. The symbol works on every modern browser
+ * font without an icon font.
  */
 function compactLabel(mode: HighlightMode): string {
   switch (mode) {
     case 'off':
       return 'Off';
     case 'selection':
-      return 'Sel';
+      return 'Sel ⌥';
     case 'editable':
       return 'Edit';
     case 'all':
-      return 'All ⌥';
+      return 'All';
   }
 }

@@ -38,14 +38,15 @@ export type PanelPosition =
  * (otherwise click-to-inspect would be invisible).
  *
  * - `off`        – no ambient outlines at all. Hover + selection still highlight.
- * - `selection`  – ambient is off; only the hovered/selected element is outlined.
- *                  This is the default — feels closest to Chrome DevTools.
- * - `editable`   – ambient outlines on `[data-editable]` components only.
+ * - `selection`  – the daily-driver default: pristine page; hover and click
+ *                  still highlight individual components, **and holding ⌥
+ *                  (Alt/Option) reveals corner accents on every component**
+ *                  for a quick spatial overview. Closest to Chrome DevTools'
+ *                  inspector with a "show all" peek gesture layered on.
+ * - `editable`   – always-on corner accents on `[data-editable]` components.
  *                  Useful for editorial / PM workflows.
- * - `all`        – pristine page by default; **hold ⌥ (Alt/Option)** to reveal
- *                  every component's corner accents on demand. Hover and click
- *                  still work normally without the modifier. The "I want to
- *                  peek at the structure occasionally" mode.
+ * - `all`        – always-on corner accents on every Clay component. The
+ *                  "give me the bird's-eye view of structure" mode.
  */
 export type HighlightMode = 'off' | 'selection' | 'editable' | 'all';
 
@@ -58,16 +59,17 @@ export const HIGHLIGHT_MODE_ORDER: readonly HighlightMode[] = [
 
 export const HIGHLIGHT_MODE_LABELS: Readonly<Record<HighlightMode, string>> = {
   off: 'Off',
-  selection: 'Selection only',
+  selection: 'Selection',
   editable: 'Editable only',
-  all: 'All on ⌥',
+  all: 'All components',
 };
 
 export const HIGHLIGHT_MODE_DESCRIPTIONS: Readonly<Record<HighlightMode, string>> = {
   off: 'No outlines anywhere. The panel still works for inspection.',
-  selection: 'Only the component you hover or click gets an outline.',
+  selection:
+    'Hover or click to highlight a component. Hold ⌥ to reveal every component on the page.',
   editable: 'Subtle corner accents on every editable component.',
-  all: 'Pristine by default. Hold ⌥ (Alt/Option) to reveal every component.',
+  all: 'Subtle corner accents on every Clay component, all the time.',
 };
 
 export interface UserPreferences {

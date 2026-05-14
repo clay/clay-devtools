@@ -23,7 +23,8 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **SEO tab** — title / meta / og / twitter / JSON-LD with a Twitter + Facebook card preview and lints (length, missing image, duplicate `<h1>`, etc.)
 - **Recently viewed components** persisted across sessions, with one-click jump back
 - **Resizable + dockable panel** — drag the inner edges (or the inner-corner grabber) to resize width _and_ height; choose any of four corners or a full-height left/right side dock
-- **Refined highlight modes** — _Off_, _Selection only_ (default, like Chrome DevTools' element inspector), _Editable only_, or _All on ⌥_ (pristine page; hold <kbd>⌥</kbd> Alt/Option to reveal corner accents on every component). Single blue accent with state-based opacity (no rainbow), corner accents (no full-perimeter outlines on busy layouts), and a labelled top-left badge on the selected component. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
+- **Refined highlight modes** — _Off_, _Selection_ (default; pristine page, hover and click to highlight, hold <kbd>⌥</kbd> Alt/Option to peek at every component), _Editable only_ (always-on corner accents on `[data-editable]`), or _All components_ (always-on corner accents everywhere). Single blue accent with state-based opacity (no rainbow), corner accents (no full-perimeter outlines on busy layouts), an inset blue tint on the selected component for clear "you clicked it" feedback, and a labelled top-left badge that follows your hover and selection. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
+- **Disabled in Clay edit mode** — when a page is loaded with `?edit=true`, the extension stays out of the way entirely so it doesn't compete with Clay's own in-page editor chrome.
 - **Auto / light / dark themes** that respond to OS theme changes live
 - **Keyboard shortcuts** with a <kbd>?</kbd> overlay listing every binding
 - **Options page** for theme, dock side + width, environment hosts, highlight mode + intensity, shortcut toggle, and recents history size
@@ -76,7 +77,7 @@ Reload the extension in `chrome://extensions` after switching between `dev` and 
 | Copy URI                 | Press <kbd>y</kbd> then <kbd>c</kbd> (component) or <kbd>p</kbd> (page)                           |
 | Open URI in new tab      | Press <kbd>o</kbd> then <kbd>c</kbd> or <kbd>p</kbd>                                              |
 | Cycle highlight mode     | Press <kbd>h</kbd> (off → selection → editable → all) or pick from the eye-icon dropdown          |
-| Reveal all components    | In _All on ⌥_ mode, hold <kbd>⌥</kbd> Alt/Option to peek at every component; release to hide      |
+| Peek at every component  | In _Selection_ mode, hold <kbd>⌥</kbd> Alt/Option to reveal every component; release to hide      |
 | Cycle environment        | Click the `env: …` pill at the bottom of the Inspect tab                                          |
 | Show shortcut overlay    | Press <kbd>?</kbd>                                                                                |
 | Toggle FAB ↔ panel       | Press <kbd>[</kbd> or click the collapse button / the FAB                                         |
