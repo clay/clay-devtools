@@ -4,7 +4,7 @@ _Last updated: 2026-05-13_
 
 Clay Slip is a developer tool. It runs entirely on your device, in your browser. **It does not collect, transmit, sell, or share any personal data.**
 
-This document is the canonical privacy disclosure linked from the [Chrome Web Store listing](https://chrome.google.com/webstore/devconsole).
+This document is the canonical privacy disclosure for the extension. It's distributed alongside the [GitHub releases](https://github.com/clay/clay-devtools/releases) — the only place Clay Slip is published.
 
 ---
 
@@ -22,10 +22,10 @@ This document is the canonical privacy disclosure linked from the [Chrome Web St
 
 Clay Slip uses the standard Chrome storage APIs. Stored data never leaves the user's device or Google account.
 
-| Storage area           | Contents                                                                                                       | Why                                                                                                   |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `chrome.storage.sync`  | UI preferences (theme, panel position/size, environment hosts, site host mappings, shortcut + outline toggles) | Carries your settings across browsers when you're signed in to Chrome.                                |
-| `chrome.storage.local` | Sticky-note annotations pinned to component URIs; "recently viewed components" history (capped, configurable)  | Keeps notes and history available offline; not synced because they may include page-specific context. |
+| Storage area           | Contents                                                                                                      | Why                                                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `chrome.storage.sync`  | UI preferences (theme, panel position/size, site host mappings, highlight mode + intensity, shortcut toggle)  | Carries your settings across browsers when you're signed in to Chrome.                                |
+| `chrome.storage.local` | Sticky-note annotations pinned to component URIs; "recently viewed components" history (capped, configurable) | Keeps notes and history available offline; not synced because they may include page-specific context. |
 
 You can clear everything from the extension's **Options** page (Reset preferences, Clear history) or via Chrome → _Manage extensions_ → _Site access / storage_.
 
@@ -74,7 +74,7 @@ The extension does **not** request `cookies`, `webRequest`, `webNavigation`, `hi
 
 Clay Slip does **not** execute remote code.
 
-- All JavaScript ships in the `.zip` you download from the Chrome Web Store, bundled at build time by Vite/Rollup.
+- All JavaScript ships in the `.zip` attached to each [GitHub Release](https://github.com/clay/clay-devtools/releases), bundled at build time by Vite/Rollup. Anyone can verify by checking out the matching `vX.Y.Z` tag and rebuilding with `npm install && npm run build`.
 - The extension contains no `eval()` or `new Function(string)` calls of remote payloads.
 - The extension does not load scripts from any CDN or remote host at runtime.
 

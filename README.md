@@ -34,26 +34,48 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **Copy-as menu**: URI / cURL / `fetch()` snippet / CSS selector — every snippet uses the URI&rsquo;s embedded host
 - **Vitest** unit tests and **GitHub Actions** CI on every PR
 
-## Install (development)
+## Install
 
-```bash
-npm install
-npm run build
-```
+Clay Slip is distributed as a Chromium extension `.zip` attached to every release on this repo. There is **no Chrome Web Store listing** — installation is sideloaded ("Load unpacked"), which works the same way in every Chromium-based browser: Chrome, Edge, Brave, Arc, Vivaldi, Opera.
 
-Then in Chrome:
+### First-time install
 
-1. Visit `chrome://extensions`
-2. Enable **Developer mode** (top right)
-3. Click **Load unpacked** and select the `dist/` directory
+1. Open the [latest release](https://github.com/clay/clay-devtools/releases/latest) and download the `clay-slip-vX.Y.Z.zip` asset (under **Assets**, near the bottom of the release notes).
+2. **Unzip it** to a stable folder on your machine — e.g. `~/Applications/clay-slip/`, `~/Documents/clay-slip/`, or wherever you like to keep developer tooling. **Don't move or delete this folder later.** Chrome reads the extension from it on every browser start; if the folder disappears, the extension stops working until you reinstall.
+3. Open the extensions page in your browser:
+   - Chrome → `chrome://extensions`
+   - Edge → `edge://extensions`
+   - Brave → `brave://extensions`
+   - Arc / Vivaldi / Opera / other Chromium browsers → same URL pattern.
+4. Toggle **Developer mode** on (top-right corner of the page).
+5. Click **Load unpacked** and select the unzipped folder you created in step 2. The folder you pick must contain `manifest.json` at the top level — if you have to drill into a subfolder to see `manifest.json`, pick that subfolder instead.
+6. The Clay icon now appears in your extensions list. Click the puzzle-piece icon in the browser toolbar and pin Clay Slip so it stays visible.
 
-For live development with HMR:
+That's it — visit any Clay-rendered page and the floating Clay button appears in the corner.
 
-```bash
-npm run dev
-```
+> **About the "Developer mode" warning.** Chrome shows a yellow banner reminding you that extensions are loaded in developer mode. This is normal for any sideloaded (non–Web-Store) extension and can be ignored. It does **not** mean the extension is unsafe; it's the same code attached to the GitHub release. Closing the warning popup that appears on each Chrome startup keeps the extension active.
 
-Reload the extension in `chrome://extensions` after switching between `dev` and `build` outputs.
+### Updating to a new version
+
+1. Download the new `clay-slip-vX.Y.Z.zip` from the [Releases page](https://github.com/clay/clay-devtools/releases).
+2. Unzip it **over the existing folder** (replace the old contents) so the path Chrome remembers is still valid.
+3. Open the extensions page, find Clay Slip, and click the circular **↻ Reload** icon. Or restart the browser — same effect.
+
+Your settings, notes, and "recently viewed" history are preserved across updates; they live in `chrome.storage`, not in the extension folder.
+
+### Removing the extension
+
+Open the extensions page → find Clay Slip → **Remove**. You can then delete the unzipped folder. Stored preferences/notes can also be cleared from the Options page (**Clear recents**) or via your browser's _Manage extensions_ → _Site access / storage_ controls.
+
+### Troubleshooting
+
+| Symptom                                                  | Fix                                                                                                                                                                             |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| _"Manifest file is missing or unreadable"_               | The folder you picked doesn't contain `manifest.json` at its top level. Look one level deeper inside the unzipped folder (some unzippers wrap the contents in an extra folder). |
+| Extension disappeared after restart                      | The unzipped folder was moved or deleted. Re-unzip the release zip to the same path and click **Load unpacked** again, or pick the new path.                                    |
+| Toolbar icon greyed out on a page                        | That page isn't a Clay page (no `data-uri` attributes detected). The extension stays out of the way on non-Clay pages by design.                                                |
+| Floating Clay button doesn't appear on a known Clay page | The page has `?edit=true` in the URL — by design the extension hides itself in Clay edit mode. Remove the query param or visit the published version.                           |
+| Hot reload after update doesn't pick up new code         | Click **↻ Reload** on the extensions page _then_ refresh the tab. Service-worker-based extensions need both.                                                                    |
 
 ## Usage
 
@@ -110,6 +132,25 @@ Example for a Vox-Media-style multi-brand setup:
 
 Hostnames are matched **exactly** (case-insensitive) — no prefix stripping or wildcards — so the mapping does what you wrote and nothing more. There&rsquo;s no separate global env config; if a host isn&rsquo;t in any mapping, the extension falls back to whatever host the Clay component URI itself encodes, which is also the page&rsquo;s host.
 
+## Build from source
+
+For contributors and anyone who wants to run the extension from a local checkout instead of a release zip:
+
+```bash
+npm install
+npm run build
+```
+
+Then in your browser's extensions page (Developer mode on) click **Load unpacked** and select the `dist/` directory. Reload the extension after every rebuild.
+
+For live development with HMR (no manual rebuild between code changes):
+
+```bash
+npm run dev
+```
+
+When switching between `dev` and `build` outputs, click the **↻ Reload** icon on the extension card so Chrome picks up the new bundle.
+
 ## Architecture
 
 ```
@@ -130,7 +171,7 @@ src/
 │       ├── components/     # Tabs, tree, JSON viewer, diff, breadcrumb…
 │       └── hooks/          # Drag, theme, shortcuts, selection
 ├── popup/                  # "Not a Clay page" popup (active until a page sends CLAY_DETECTED)
-├── options/                # Full options page (env hosts, dock + width, highlight mode + intensity, recents, shortcuts)
+├── options/                # Full options page (site host mappings, dock + width, highlight mode + intensity, recents, shortcuts)
 └── lib/                    # Pure utilities
     ├── clay-uri.ts         # URI parsing + buildUrl/buildEditorUrl/buildShareLink + copy-as helpers
     ├── clipboard.ts        # Modern + legacy clipboard
@@ -165,7 +206,9 @@ src/
 
 ## Releasing
 
-Releases are automated by `.github/workflows/release.yml`. The flow is:
+Releases are automated by `.github/workflows/release.yml`. The published GitHub Release is the **only** distribution channel — there is no Chrome Web Store listing. Users follow the [Install](#install) section above to grab and load the zip.
+
+The flow is:
 
 1. Bump the version + create a tag locally:
 
@@ -183,14 +226,12 @@ Releases are automated by `.github/workflows/release.yml`. The flow is:
    - Zips `dist/` as `clay-slip-vX.Y.Z.zip`.
    - Creates a **draft** GitHub release with the zip attached and auto-generated release notes.
 
-3. Open the draft release on GitHub, edit the notes, and **Publish**.
+3. Open the draft release on GitHub, polish the notes (call out the highlights, breaking changes, install/update instructions if anything changed in those flows), and click **Publish**. The zip becomes available under **Assets** for users to download.
 
-4. Upload the zip to the [Chrome Web Store dashboard](https://chrome.google.com/webstore/devconsole) → _New version_.
-
-You can also kick off the workflow manually from the Actions tab against an existing tag (useful if a release run fails midway). Want to package locally without going through CI? `npm run release:dry` produces an identical `clay-slip-vX.Y.Z.zip` next to the repo.
+You can also kick off the workflow manually from the Actions tab against an existing tag (useful if a release run fails midway). To package locally without going through CI, `npm run release:dry` produces an identical `clay-slip-vX.Y.Z.zip` next to the repo — handy for smoke-testing the install flow before tagging.
 
 > **⚠️ Always use `npm run zip` (or `release:dry`) to package — never zip `dist/` from Finder / Explorer.**
-> Right-clicking the folder produces a zip with a `dist/` wrapper, which the Chrome Web Store rejects with _"No manifest found in package."_ Our script zips the **contents** of `dist/` (so `manifest.json` is at the root), strips source maps and macOS metadata, and verifies the zip layout before declaring success. Pass `INCLUDE_SOURCEMAPS=1` if you need maps for debugging a sideloaded build.
+> Right-clicking the folder produces a zip with a `dist/` wrapper, which means users would have to drill into a subfolder to find `manifest.json` when loading unpacked (and it's the layout Chrome Web Store rejects with _"No manifest found in package."_ if you ever do publish there). Our script zips the **contents** of `dist/` (so `manifest.json` is at the root), strips source maps and macOS metadata, and verifies the zip layout before declaring success. Pass `INCLUDE_SOURCEMAPS=1` if you need maps for debugging a sideloaded build.
 
 ## Migration notes (1.0 → 2.0)
 
@@ -201,13 +242,13 @@ This release is a full rewrite. There are no breaking _features_ — every capab
 - **Vanilla JS → TypeScript 6 + React 19**: the panel UI is React inside a Shadow DOM, with strict typing.
 - **Build system**: `npm` + **Vite 8** + `@crxjs/vite-plugin` for HMR-friendly extension development.
 - **State**: **Zustand 5** for the panel store.
-- **Testing**: **Vitest 4** + happy-dom 20; 84 tests.
+- **Testing**: **Vitest 4** + happy-dom 20; 162 tests.
 - **Lint / format**: ESLint 9 flat config + `typescript-eslint@8` + Prettier 3.
 - **CI**: GitHub Actions runs typecheck, lint, format check, tests, and a production build on every push and PR.
 
 ## Privacy
 
-Clay Slip runs entirely on your device, makes no telemetry calls, and ships no remote code. See [PRIVACY.md](PRIVACY.md) for the full disclosure that's also linked from the Chrome Web Store listing.
+Clay Slip runs entirely on your device, makes no telemetry calls, and ships no remote code. See [PRIVACY.md](PRIVACY.md) for the full disclosure.
 
 ## License
 

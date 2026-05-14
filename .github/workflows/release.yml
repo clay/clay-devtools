@@ -7,7 +7,10 @@ name: Release
 #   1. Verifies the tag matches `package.json`'s version (fails fast otherwise).
 #   2. Runs the full validation suite (typecheck / lint / format / test).
 #   3. Builds the extension into `dist/`.
-#   4. Zips `dist/` as `clay-slip-vX.Y.Z.zip` (Chrome Web Store-ready).
+#   4. Zips `dist/` as `clay-slip-vX.Y.Z.zip` with `manifest.json` at the
+#      root (so users can drop the unzipped folder straight into Chrome's
+#      "Load unpacked"; the same layout the Chrome Web Store would expect
+#      if we ever published there).
 #   5. Creates a *draft* GitHub release with the zip attached and auto-
 #      generated release notes. A human reviews and publishes it.
 

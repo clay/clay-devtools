@@ -1,19 +1,23 @@
 // Pack the built `dist/` directory into `clay-slip-vX.Y.Z.zip`, ready to
-// upload to the Chrome Web Store dashboard or to share for sideloading.
+// attach to a GitHub Release (the project's only distribution channel) or
+// to hand off for direct sideloading via "Load unpacked".
 //
 //   npm run zip                          (assumes `dist/` already exists)
 //   npm run release:dry                  (validate + build + zip in one shot)
 //   INCLUDE_SOURCEMAPS=1 npm run zip     (keep .map files; useful for debugging)
 //
 // Why this script exists instead of `cd dist && zip -r ../slip.zip .`:
-//   - The Chrome Web Store rejects uploads where `manifest.json` is not at
-//     the *root* of the zip. Right-clicking `dist/` in Finder → Compress
-//     produces a zip with a `dist/` folder wrapper, which fails validation
-//     with "No manifest found in package."
+//   - When users sideload the extension via "Load unpacked", they have to
+//     point Chrome at a folder containing `manifest.json` at the *top*
+//     level. Right-clicking `dist/` in Finder → Compress produces a zip
+//     with a `dist/` folder wrapper, which forces every user to drill in
+//     one extra level after unzipping (and is the same layout the Chrome
+//     Web Store rejects with "No manifest found in package." if we ever
+//     do publish there).
 //   - macOS adds `__MACOSX/` resource forks and `.DS_Store` files to zips
-//     made by Finder. Some Web Store checks choke on them.
-//   - Production uploads don't need source maps; stripping them halves the
-//     upload size and avoids leaking source.
+//     made by Finder. Both clutter the unzipped folder users see.
+//   - Sideloaded builds don't need source maps; stripping them halves the
+//     download size and avoids shipping source.
 //
 // This script:
 //   1. Wipes any stale zip with the same name.
@@ -87,10 +91,15 @@ child.on('exit', (code) => {
   console.log(`✓ wrote ${outName} (${sizeKb} KB${includeMaps ? ', with source maps' : ''})`);
   console.log('');
   console.log('Next steps:');
-  console.log('  1. Upload this file to the Chrome Web Store dashboard:');
-  console.log('     https://chrome.google.com/webstore/devconsole');
-  console.log('  2. Pick this extension → Package → Upload new package');
-  console.log(`  3. Choose: ${outName}`);
+  console.log('  Local smoke-test:');
+  console.log(`    1. Unzip ${outName} into a stable folder.`);
+  console.log('    2. Open chrome://extensions → enable Developer mode.');
+  console.log('    3. Click "Load unpacked" and select the unzipped folder.');
+  console.log('');
+  console.log('  Publishing:');
+  console.log('    Tag a release (`npm version` then `git push --follow-tags`)');
+  console.log('    and the GitHub Action attaches an identical zip to a draft');
+  console.log('    release. See README → "Releasing" for the full flow.');
 });
 
 /**
@@ -126,7 +135,9 @@ function verifyManifestAtRoot(zipPath) {
 
   console.error('');
   console.error(`✖ ${outName} does not contain manifest.json at the root.`);
-  console.error('  This zip would be rejected by the Chrome Web Store.');
+  console.error('  Users would need to drill into a subfolder after unzipping');
+  console.error('  before "Load unpacked" would accept the folder, and the');
+  console.error('  Chrome Web Store would reject this layout outright.');
   console.error('  Likely cause: the script ran outside dist/ or with a folder wrapper.');
   console.error('  Re-run `npm run build && npm run zip`.');
   process.exit(2);
