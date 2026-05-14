@@ -53,9 +53,22 @@ const DEFAULT_OPACITY = 0.85;
  */
 const ACCENT_RGB = '37, 99, 235'; // tailwind blue-600
 
-/** Element width/opacity tokens per state. Tweak these together. */
+/**
+ * Element width/opacity tokens per state. Tweak these together.
+ *
+ * - `hover` / `selected` / `match` use CSS `outline` for full-perimeter
+ *   prominence — these are *interaction* signals and need to read from
+ *   across the page.
+ * - `ambient.tick` is the length (CSS px) of each corner-accent arm
+ *   used by the ambient (mode='all' / 'editable') rendering. Short
+ *   enough to feel like a hint on large components, long enough to
+ *   register on small ones.
+ * - `ambient.alpha` is higher than the previous full-outline value
+ *   (was 0.18) because there are far fewer pixels carrying the signal
+ *   — four short L-shapes total, not a continuous border.
+ */
 const TOKENS = {
-  ambient: { width: 1, alpha: 0.18, offset: -1 },
+  ambient: { tick: 8, alpha: 0.55 },
   hover: { width: 2, alpha: 0.7, offset: -2 },
   selected: { width: 2, alpha: 1, offset: -2 },
   match: { width: 2, alpha: 0.95, offset: -2 },
@@ -82,15 +95,71 @@ function buildStyleSheet(): string {
   const o = (alpha: number) =>
     `rgba(${ACCENT_RGB}, calc(${alpha} * var(${OPACITY_VAR}, ${DEFAULT_OPACITY})))`;
 
+  // Ambient color (used inside the linear-gradient stops below).
+  const ambient = o(TOKENS.ambient.alpha);
+  const tick = `${TOKENS.ambient.tick}px`;
+
   return `
-    /* ── Ambient outlines: gated by html[data-clay-slip-mode] ────────────
-       Mode 'all'      → every [data-uri] gets a 1px ghost outline.
-       Mode 'editable' → only [data-editable] does.
-       Mode 'selection' or 'off' → no rule matches; nothing painted. */
-    html[${MODE_ATTR}="all"] [${HIGHLIGHT_ATTR}],
-    html[${MODE_ATTR}="editable"] [${HIGHLIGHT_ATTR}][data-editable] {
-      outline: ${TOKENS.ambient.width}px solid ${o(TOKENS.ambient.alpha)} !important;
-      outline-offset: ${TOKENS.ambient.offset}px !important;
+    /* ── Ambient corner ticks (mode='all' + mode='editable') ─────────────
+       Replaces the previous "1px outline at 18% on every edge" with four
+       short L-shaped accents at each corner. Trade-offs:
+       - Way less visual mass: nested components no longer create stacks
+         of parallel lines at shared edges.
+       - Reads as "this is a discrete thing" without drawing a box around
+         the content.
+       - Hover (2px @ 70%) and selection (2px @ 100%) stay visually
+         dominant by comparison — exactly what you want during inspection.
+
+       The :not() chain keeps the corner ticks from competing with the
+       richer hover/selected outlines: while you're inspecting, only the
+       inspected element's outline lights up.
+
+       Mode gating: 'all' → every component; 'editable' → only
+       [data-editable]; 'selection'/'off' → no rule matches, nothing
+       painted at all. */
+    html[${MODE_ATTR}="all"] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]),
+    html[${MODE_ATTR}="editable"] [${HIGHLIGHT_ATTR}][data-editable]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}]) {
+      /* Establish a positioning context for the ::before pseudo. We omit
+         !important so we never fight a host's own positioning rule — if
+         the host already has position: relative/absolute/fixed/sticky,
+         the pseudo positions against that, which is exactly right. The
+         only failure mode is: host uses position:static AND has an
+         absolute-positioned descendant currently positioning against a
+         farther ancestor (it would reparent to this component). 'all'
+         is opt-in, so the user can dial back to 'selection' if they
+         hit that edge case. */
+      position: relative;
+    }
+
+    html[${MODE_ATTR}="all"] [${HIGHLIGHT_ATTR}]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before,
+    html[${MODE_ATTR}="editable"] [${HIGHLIGHT_ATTR}][data-editable]:not([${HOVER_ATTR}]):not([${SELECTED_ATTR}])::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      /* One below the selection label badge (2147483646) so the badge
+         always wins when both might paint. */
+      z-index: 2147483645;
+      /* Eight tiny gradients, one per arm of each corner L. Each arm is
+         ${tick} long × 1px thick. background-size + background-position
+         keep them anchored at the four corners regardless of element size. */
+      background:
+        /* top-left horizontal */
+        linear-gradient(${ambient}, ${ambient}) 0 0 / ${tick} 1px no-repeat,
+        /* top-left vertical */
+        linear-gradient(${ambient}, ${ambient}) 0 0 / 1px ${tick} no-repeat,
+        /* top-right horizontal */
+        linear-gradient(${ambient}, ${ambient}) 100% 0 / ${tick} 1px no-repeat,
+        /* top-right vertical */
+        linear-gradient(${ambient}, ${ambient}) 100% 0 / 1px ${tick} no-repeat,
+        /* bottom-left horizontal */
+        linear-gradient(${ambient}, ${ambient}) 0 100% / ${tick} 1px no-repeat,
+        /* bottom-left vertical */
+        linear-gradient(${ambient}, ${ambient}) 0 100% / 1px ${tick} no-repeat,
+        /* bottom-right horizontal */
+        linear-gradient(${ambient}, ${ambient}) 100% 100% / ${tick} 1px no-repeat,
+        /* bottom-right vertical */
+        linear-gradient(${ambient}, ${ambient}) 100% 100% / 1px ${tick} no-repeat;
     }
 
     /* Hover and selection always render regardless of mode (otherwise
