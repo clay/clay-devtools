@@ -212,6 +212,58 @@ describe('setHighlightOpacity', () => {
   });
 });
 
+describe('ambient corner-tick stylesheet (mode=all / editable)', () => {
+  // The actual rendering is CSS-only, but the *contract* between the
+  // highlighter module and its stylesheet is testable:
+  //   1. The corner-tick rule must be gated by mode='all' or mode='editable'
+  //      so 'selection' and 'off' produce no ambient paint at all.
+  //   2. The rule must exclude :hover / :selected so the corner ticks don't
+  //      compete with the richer hover/selected outlines.
+  //   3. The pseudo-element must be ::before (the selection label badge
+  //      uses ::before too, but we exclude :selected from the corner-tick
+  //      rule so they never collide on the same element).
+  // If any of these invariants change without intent, the test fails and
+  // forces a deliberate update.
+  function getStylesheetText(): string {
+    installHighlightStyles();
+    return document.getElementById('clay-slip-highlight-styles')?.textContent ?? '';
+  }
+
+  it('gates the corner-tick rule on mode=all + mode=editable', () => {
+    const css = getStylesheetText();
+    expect(css).toMatch(/html\[data-clay-slip-mode="all"\][^{]*::before/);
+    expect(css).toMatch(/html\[data-clay-slip-mode="editable"\][^{]*::before/);
+    // No ambient rule should match selection or off mode.
+    expect(css).not.toMatch(/html\[data-clay-slip-mode="selection"\][^{]*::before/);
+    expect(css).not.toMatch(/html\[data-clay-slip-mode="off"\][^{]*::before/);
+  });
+
+  it('excludes hovered + selected elements from the corner-tick rule', () => {
+    const css = getStylesheetText();
+    // Each corner-tick selector must carry both :not() exclusions so the
+    // ambient ticks fade out when the user is actually inspecting an
+    // element. This is the visual handoff to the hover/selected outlines.
+    const cornerTickRules = css.match(
+      /html\[data-clay-slip-mode="(?:all|editable)"\][^{]+::before/g
+    );
+    expect(cornerTickRules?.length).toBeGreaterThan(0);
+    for (const rule of cornerTickRules ?? []) {
+      expect(rule).toContain(':not([data-clay-slip-hover])');
+      expect(rule).toContain(':not([data-clay-slip-selected])');
+    }
+  });
+
+  it('uses ::before so it does not collide with the annotation dot (::after)', () => {
+    const css = getStylesheetText();
+    // Annotation dot uses ::after; corner ticks must use ::before. Verifying
+    // the literal pseudo-element keeps the two independent in `all` mode
+    // where the same element could be both annotated and ambient.
+    expect(css).toContain('data-clay-slip-annotated]::after');
+    const cornerTickRule = css.match(/html\[data-clay-slip-mode="all"\][^{]+::before/);
+    expect(cornerTickRule).not.toBeNull();
+  });
+});
+
 describe('mode + editable interaction (CSS gating contract)', () => {
   // The actual visual gating happens in the stylesheet, but we can at least
   // verify the *contract* the CSS depends on:
