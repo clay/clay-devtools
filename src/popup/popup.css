@@ -47,9 +47,16 @@ body {
 .popup-link {
   display: inline-block;
   font-size: 12px;
-  color: #e22c2c;
+  /* Match the inspector accent everywhere else in the extension. */
+  color: #2563eb;
   text-decoration: none;
   font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  .popup-link {
+    color: #60a5fa;
+  }
 }
 
 .popup-link:hover {

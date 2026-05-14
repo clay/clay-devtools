@@ -26,8 +26,11 @@ export const lightTheme: ThemeTokens = {
   text: '#0f172a',
   textMuted: '#475569',
   textSubtle: '#94a3b8',
-  accent: '#e22c2c',
-  accentBg: 'rgba(226, 44, 44, 0.08)',
+  // Single inspector accent — matches `ACCENT_RGB` in `src/content/highlighter.ts`
+  // so the on-page selection outline and the in-panel selection chrome
+  // tell one consistent visual story. Tailwind blue-600.
+  accent: '#2563eb',
+  accentBg: 'rgba(37, 99, 235, 0.10)',
   success: '#16a34a',
   warning: '#d97706',
   danger: '#dc2626',
@@ -43,8 +46,10 @@ export const darkTheme: ThemeTokens = {
   text: '#e6e8ee',
   textMuted: '#9aa3b2',
   textSubtle: '#5f6776',
-  accent: '#ff5c5c',
-  accentBg: 'rgba(255, 92, 92, 0.12)',
+  // Lighter blue-400 in dark mode to keep WCAG AA contrast on dark backgrounds.
+  // Same hue family as light theme so the visual identity stays coherent.
+  accent: '#60a5fa',
+  accentBg: 'rgba(96, 165, 250, 0.16)',
   success: '#34d399',
   warning: '#fbbf24',
   danger: '#f87171',

@@ -1,6 +1,11 @@
 import type { CaptureResponse, RuntimeMessage } from '@/lib/types';
 
-const BADGE_BG = '#e22c2c';
+// Toolbar badge color — matches the unified inspector accent
+// (`--cs-accent` in the panel theme, `ACCENT_RGB` in the highlighter).
+// Chrome doesn't switch theme on the badge, so we pick the lighter
+// blue-400 variant which stays readable against either a light or dark
+// browser-toolbar background.
+const BADGE_BG = '#60a5fa';
 const POPUP_PATH = 'src/popup/index.html';
 
 chrome.runtime.onInstalled.addListener(() => {
