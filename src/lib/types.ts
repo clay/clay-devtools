@@ -1,11 +1,3 @@
-export type Environment = 'local' | 'dev' | 'staging' | 'prod';
-
-export interface EnvironmentConfig {
-  readonly id: Environment;
-  readonly label: string;
-  readonly host: string;
-}
-
 export interface ClayPageInfo {
   readonly pageUri: string;
   readonly layoutUri: string | null;
@@ -22,8 +14,6 @@ export interface ClayComponentInfo {
   readonly depth: number;
 }
 
-export type EnvironmentHosts = Readonly<Record<Environment, string>>;
-
 export type PanelPosition =
   | 'bottom-right'
   | 'bottom-left'
@@ -38,14 +28,15 @@ export type PanelPosition =
  * (otherwise click-to-inspect would be invisible).
  *
  * - `off`        – no ambient outlines at all. Hover + selection still highlight.
- * - `selection`  – ambient is off; only the hovered/selected element is outlined.
- *                  This is the default — feels closest to Chrome DevTools.
- * - `editable`   – ambient outlines on `[data-editable]` components only.
+ * - `selection`  – the daily-driver default: pristine page; hover and click
+ *                  still highlight individual components, **and holding ⌥
+ *                  (Alt/Option) reveals corner accents on every component**
+ *                  for a quick spatial overview. Closest to Chrome DevTools'
+ *                  inspector with a "show all" peek gesture layered on.
+ * - `editable`   – always-on corner accents on `[data-editable]` components.
  *                  Useful for editorial / PM workflows.
- * - `all`        – pristine page by default; **hold ⌥ (Alt/Option)** to reveal
- *                  every component's corner accents on demand. Hover and click
- *                  still work normally without the modifier. The "I want to
- *                  peek at the structure occasionally" mode.
+ * - `all`        – always-on corner accents on every Clay component. The
+ *                  "give me the bird's-eye view of structure" mode.
  */
 export type HighlightMode = 'off' | 'selection' | 'editable' | 'all';
 
@@ -58,16 +49,17 @@ export const HIGHLIGHT_MODE_ORDER: readonly HighlightMode[] = [
 
 export const HIGHLIGHT_MODE_LABELS: Readonly<Record<HighlightMode, string>> = {
   off: 'Off',
-  selection: 'Selection only',
+  selection: 'Selection',
   editable: 'Editable only',
-  all: 'All on ⌥',
+  all: 'All components',
 };
 
 export const HIGHLIGHT_MODE_DESCRIPTIONS: Readonly<Record<HighlightMode, string>> = {
   off: 'No outlines anywhere. The panel still works for inspection.',
-  selection: 'Only the component you hover or click gets an outline.',
+  selection:
+    'Hover or click to highlight a component. Hold ⌥ to reveal every component on the page.',
   editable: 'Subtle corner accents on every editable component.',
-  all: 'Pristine by default. Hold ⌥ (Alt/Option) to reveal every component.',
+  all: 'Subtle corner accents on every Clay component, all the time.',
 };
 
 export interface UserPreferences {
@@ -75,8 +67,6 @@ export interface UserPreferences {
   readonly panelPosition: PanelPosition;
   readonly panelWidth: number;
   readonly panelHeight: number;
-  readonly defaultEnvironment: Environment;
-  readonly environments: EnvironmentHosts;
   readonly highlightMode: HighlightMode;
   readonly highlightOpacity: number;
   readonly enableShortcuts: boolean;
@@ -85,9 +75,11 @@ export interface UserPreferences {
 }
 
 /**
- * Environments supported by the site-host mapping feature. Intentionally
- * narrower than {@link Environment} (no `local`/`dev`) — site-host mappings
- * are a per-brand lookup that only makes sense for stable shared envs.
+ * Environments supported by the site-host mapping feature. The mapping
+ * is the *only* place the extension learns about envs — there's no
+ * separate global env config. Local/dev are intentionally excluded:
+ * mappings are per-brand hostname lookups for stable shared envs, and
+ * "localhost" / single-developer hosts don't fit that shape.
  */
 export type SiteEnv = 'prod' | 'staging' | 'qa';
 
@@ -111,34 +103,16 @@ export interface SiteHostMapping {
   readonly hosts: Partial<Record<SiteEnv, string>>;
 }
 
-export const DEFAULT_ENVIRONMENT_HOSTS: EnvironmentHosts = {
-  local: 'http://localhost:3001',
-  dev: '',
-  staging: '',
-  prod: '',
-};
-
 export const DEFAULT_PREFERENCES: UserPreferences = {
   theme: 'auto',
   panelPosition: 'bottom-right',
   panelWidth: 380,
   panelHeight: 540,
-  defaultEnvironment: 'prod',
-  environments: DEFAULT_ENVIRONMENT_HOSTS,
   highlightMode: 'selection',
   highlightOpacity: 0.85,
   enableShortcuts: true,
   maxRecentComponents: 20,
   siteHosts: [],
-};
-
-export const ENVIRONMENT_ORDER: readonly Environment[] = ['local', 'dev', 'staging', 'prod'];
-
-export const ENVIRONMENT_LABELS: Readonly<Record<Environment, string>> = {
-  local: 'Local',
-  dev: 'Dev',
-  staging: 'Staging',
-  prod: 'Production',
 };
 
 /** Minimal serializable info we keep about a component for recents/annotations. */

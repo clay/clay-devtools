@@ -5,15 +5,11 @@ import { clearRecents } from '@/lib/recents';
 import { emptyMapping } from '@/lib/site-host';
 import {
   DEFAULT_PREFERENCES,
-  ENVIRONMENT_LABELS,
-  ENVIRONMENT_ORDER,
   HIGHLIGHT_MODE_DESCRIPTIONS,
   HIGHLIGHT_MODE_LABELS,
   HIGHLIGHT_MODE_ORDER,
   SITE_ENV_LABELS,
   SITE_ENV_ORDER,
-  type Environment,
-  type EnvironmentHosts,
   type HighlightMode,
   type PanelPosition,
   type SiteEnv,
@@ -53,11 +49,6 @@ export function Options() {
     setPrefs(next);
     void savePreferences({ [key]: value });
     flashSaved();
-  };
-
-  const updateEnvHost = (env: Environment, host: string) => {
-    const nextHosts: EnvironmentHosts = { ...prefs.environments, [env]: host };
-    update('environments', nextHosts);
   };
 
   const updateSiteHosts = (next: readonly SiteHostMapping[]) => update('siteHosts', next);
@@ -206,60 +197,16 @@ export function Options() {
       </section>
 
       <section className="options-section">
-        <h2>Environments</h2>
-        <p className="options-section-help">
-          Configure each environment&rsquo;s host (e.g. <code>https://prod.example.com</code>).
-          Leave blank to keep using the page&rsquo;s existing host. The env switcher pill in the
-          panel cycles through these, and the Diff tab can compare any two configured envs.
-        </p>
-
-        <label className="options-row">
-          <div className="options-label">
-            <span>Active environment</span>
-            <span className="options-help">
-              Which configured host to route links + fetches through.
-            </span>
-          </div>
-          <select
-            value={prefs.defaultEnvironment}
-            onChange={(e) =>
-              update('defaultEnvironment', e.target.value as UserPreferences['defaultEnvironment'])
-            }
-          >
-            {ENVIRONMENT_ORDER.map((env) => (
-              <option key={env} value={env}>
-                {ENVIRONMENT_LABELS[env]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {ENVIRONMENT_ORDER.map((env) => (
-          <label className="options-row" key={env}>
-            <div className="options-label">
-              <span>{ENVIRONMENT_LABELS[env]} host</span>
-              <span className="options-help">
-                Used when <code>env: {env}</code> is selected.
-              </span>
-            </div>
-            <input
-              type="text"
-              placeholder="https://"
-              value={prefs.environments[env] ?? ''}
-              onChange={(e) => updateEnvHost(env, e.target.value)}
-            />
-          </label>
-        ))}
-      </section>
-
-      <section className="options-section">
         <h2>Site host mappings</h2>
         <p className="options-section-help">
-          Per-brand hostnames for each environment. When configured, the panel shows a{' '}
-          <strong>View on…</strong> pill row on every Clay page so you can jump to the equivalent
-          URL on a different env in one click. Enter bare hostnames (e.g.{' '}
-          <code>www.thecut.com</code>, not <code>https://www.thecut.com</code>). Leave a cell blank
-          if the brand isn&rsquo;t deployed in that env.
+          Per-brand hostnames for each environment. This is the <strong>only</strong> place the
+          extension learns about your environments — there&rsquo;s no separate global env config.
+          When configured, the panel shows a <strong>View on…</strong> pill row on every Clay page
+          so you can jump to the equivalent URL on a different env in one click, and the{' '}
+          <strong>Diff</strong> tab uses the same mapping to fetch and compare a component&rsquo;s
+          data across envs. Enter bare hostnames (e.g. <code>www.thecut.com</code>, not{' '}
+          <code>https://www.thecut.com</code>). Leave a cell blank if the brand isn&rsquo;t deployed
+          in that env.
         </p>
 
         {prefs.siteHosts.length === 0 && (

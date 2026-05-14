@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { buildUrl, isPublished, unpublishedUri } from '@/lib/clay-uri';
-import { ENVIRONMENT_LABELS, ENVIRONMENT_ORDER, type Environment } from '@/lib/types';
-import { useEnvHost, useStore } from '../store';
+import { findMappingForHost } from '@/lib/site-host';
+import { SITE_ENV_LABELS, SITE_ENV_ORDER, type SiteEnv } from '@/lib/types';
+import { useStore } from '../store';
 
-type DiffMode = 'published-vs-draft' | `env:${Environment}`;
+type DiffMode = 'published-vs-draft' | `env:${SiteEnv}`;
 
 interface DualState {
   readonly status: 'idle' | 'loading' | 'success' | 'error';
@@ -42,13 +43,32 @@ function diffLines(
   return result;
 }
 
+/**
+ * Cross-environment diff viewer.
+ *
+ * The "compare against another env" options are derived from the site-host
+ * mapping that owns the *current* page's hostname:
+ *   1. Look up `location.hostname` in `preferences.siteHosts`.
+ *   2. Find every other env in that mapping that has a host configured.
+ *   3. Each is offered as `Compare: {currentEnv} vs. {otherEnv}` and the
+ *      right-side fetch uses the mapping's host for the chosen env.
+ *
+ * No global "default environment" config is involved — the only env
+ * knowledge the extension has comes from the per-brand mapping the user
+ * configured on the Options page. If the current host isn't in any
+ * mapping, only the same-env "Published vs. Draft" option is available.
+ */
 export function DiffView() {
   const selected = useStore((s) => s.selected);
   const page = useStore((s) => s.page);
-  const envHost = useEnvHost();
-  const env = useStore((s) => s.preferences.defaultEnvironment);
-  const envHosts = useStore((s) => s.preferences.environments);
+  const siteHosts = useStore((s) => s.preferences.siteHosts);
   const targetUri = selected?.uri ?? page?.pageUri ?? null;
+
+  // Match the page's hostname to one of the user's site-host mappings.
+  // `match` is non-null only when the user has configured a mapping that
+  // includes the current host on at least one env.
+  const currentHost = location.hostname;
+  const match = useMemo(() => findMappingForHost(currentHost, siteHosts), [currentHost, siteHosts]);
 
   const [mode, setMode] = useState<DiffMode>('published-vs-draft');
 
@@ -62,27 +82,34 @@ export function DiffView() {
         available: !!targetUri && isPublished(targetUri ?? ''),
       },
     ];
-    for (const e of ENVIRONMENT_ORDER) {
-      if (e === env) continue;
-      const host = envHosts[e];
+    if (!match) return list;
+    // Offer one cross-env option per OTHER env in the same mapping that
+    // has a host configured. Skipping the current env keeps the dropdown
+    // free of the trivially-equal "prod vs. prod" entry.
+    for (const otherEnv of SITE_ENV_ORDER) {
+      if (otherEnv === match.env) continue;
+      const otherHost = match.mapping.hosts[otherEnv];
+      if (!otherHost) continue;
       list.push({
-        id: `env:${e}`,
-        label: `${ENVIRONMENT_LABELS[env]} vs. ${ENVIRONMENT_LABELS[e]}`,
-        leftLabel: ENVIRONMENT_LABELS[env],
-        rightLabel: ENVIRONMENT_LABELS[e],
-        available: !!targetUri && Boolean(host?.trim()),
-        hostOverride: host,
+        id: `env:${otherEnv}`,
+        label: `${SITE_ENV_LABELS[match.env]} vs. ${SITE_ENV_LABELS[otherEnv]}`,
+        leftLabel: SITE_ENV_LABELS[match.env],
+        rightLabel: SITE_ENV_LABELS[otherEnv],
+        available: !!targetUri,
+        // buildUrl normalizeHost() expects a protocol-y string; the
+        // mapping stores bare hostnames so we prefix https:// here.
+        hostOverride: `https://${otherHost}`,
       });
     }
     return list;
-  }, [targetUri, env, envHosts]);
+  }, [targetUri, match]);
 
   const activeOption =
     options.find((o) => o.id === mode && o.available) ??
     options.find((o) => o.available) ??
     options[0]!;
 
-  const currentKey = `${activeOption.id}::${envHost}::${targetUri ?? ''}`;
+  const currentKey = `${activeOption.id}::${targetUri ?? ''}`;
   const initial: DualState =
     targetUri && activeOption.available ? { status: 'loading' } : { status: 'idle' };
   const [state, setState] = useState<DualState>(initial);
@@ -97,10 +124,14 @@ export function DiffView() {
     if (!targetUri || !activeOption.available) return;
     let cancelled = false;
 
-    const leftUrl = buildUrl(targetUri, '.json', envHost);
+    // Left side always fetches from the URI's embedded host (the page's
+    // current env). Right side either fetches the draft variant from
+    // the same host OR the same URI's path from the cross-env host
+    // pulled out of the site-host mapping.
+    const leftUrl = buildUrl(targetUri, '.json');
     const rightUrl =
       activeOption.id === 'published-vs-draft'
-        ? buildUrl(unpublishedUri(targetUri), '.json', envHost)
+        ? buildUrl(unpublishedUri(targetUri), '.json')
         : buildUrl(targetUri, '.json', activeOption.hostOverride ?? '');
 
     Promise.all([
@@ -122,7 +153,7 @@ export function DiffView() {
     return () => {
       cancelled = true;
     };
-  }, [targetUri, envHost, activeOption.id, activeOption.available, activeOption.hostOverride]);
+  }, [targetUri, activeOption.id, activeOption.available, activeOption.hostOverride]);
 
   if (!targetUri) {
     return <div className="cs-empty">Select a component to compare its versions.</div>;
@@ -142,13 +173,19 @@ export function DiffView() {
             ))}
           </select>
         </label>
+        {!match && (
+          <p className="cs-help">
+            Add this site&rsquo;s hostnames in <strong>Settings → Site host mappings</strong> to
+            unlock cross-env comparisons.
+          </p>
+        )}
       </div>
 
       {!activeOption.available && (
         <div className="cs-empty">
           {activeOption.id === 'published-vs-draft'
             ? 'Diff is only available for published items. The current selection is a draft.'
-            : `No host configured for ${activeOption.rightLabel}. Set one in Settings → Environments.`}
+            : `No host configured for ${activeOption.rightLabel}. Add it in Settings → Site host mappings.`}
         </div>
       )}
 

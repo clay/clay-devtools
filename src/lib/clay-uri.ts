@@ -21,6 +21,30 @@ export function isClayDocument(doc: Document = document): boolean {
   return Boolean(html?.getAttribute('data-uri'));
 }
 
+/**
+ * True when the current page is rendered in Clay's edit mode (URL carries
+ * `?edit=true`). The extension switches to a "passive" mode on these
+ * pages: the panel still mounts and every read-only feature stays
+ * available, but we skip installing the highlighter stylesheet, the
+ * host-page click/hover listeners, and the Alt-reveal listener — none of
+ * which should compete with Clay's own click-to-select, selection
+ * overlays, and editor toolbar.
+ *
+ * Implemented as a URL check rather than a DOM probe because Clay's
+ * editor UI mounts asynchronously and we need the answer at content-
+ * script bootstrap (before deciding whether to call
+ * `installHighlightStyles`).
+ *
+ * Defaults to {@link location.search}; takes a string for testability.
+ */
+export function isEditMode(search: string = location.search): boolean {
+  try {
+    return new URLSearchParams(search).get('edit') === 'true';
+  } catch {
+    return false;
+  }
+}
+
 export function getComponentName(uri: string | null | undefined): string | null {
   if (!uri) return null;
   const match = COMPONENT_RE.exec(uri);

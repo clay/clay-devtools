@@ -16,7 +16,6 @@ import { ComponentDetails } from './components/ComponentDetails';
 import { ComponentTree } from './components/ComponentTree';
 import { JsonPreview } from './components/JsonPreview';
 import { DiffView } from './components/DiffView';
-import { EnvironmentSwitcher } from './components/EnvironmentSwitcher';
 import { ShortcutOverlay } from './components/ShortcutOverlay';
 import { Toasts } from './components/Toasts';
 import { ResizeHandle } from './components/ResizeHandle';
@@ -114,9 +113,6 @@ export function App() {
             <PageInfo />
             <ComponentDetails />
             <RecentList />
-            <div style={{ marginTop: 12 }}>
-              <EnvironmentSwitcher />
-            </div>
           </>
         )}
         {activeTab === 'tree' && <ComponentTree />}

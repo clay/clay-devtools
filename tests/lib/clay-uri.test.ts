@@ -13,6 +13,7 @@ import {
   getInstance,
   getPageInstance,
   isClayDocument,
+  isEditMode,
   isPublished,
   normalizeHost,
   parseShareTarget,
@@ -349,5 +350,43 @@ describe('isClayDocument', () => {
   it('returns false when html lacks data-uri', () => {
     document.documentElement.removeAttribute('data-uri');
     expect(isClayDocument()).toBe(false);
+  });
+});
+
+describe('isEditMode', () => {
+  // Edit mode is the one signal that should disable the entire extension
+  // — Clay's own editor UI takes over and our outlines/click handlers
+  // would compete with it. Tested as a pure URL helper so the bootstrap
+  // can call it without DOM setup.
+
+  it('returns true for ?edit=true', () => {
+    expect(isEditMode('?edit=true')).toBe(true);
+  });
+
+  it('returns true when edit=true is mixed with other params', () => {
+    expect(isEditMode('?foo=bar&edit=true&baz=qux')).toBe(true);
+  });
+
+  it('returns false for ?edit=false / ?edit=1 / ?edit (no value)', () => {
+    // We deliberately match `true` exactly. Clay's edit flag is documented
+    // as `?edit=true`, so loosening this would silently disable the
+    // extension on URLs that happen to mention an `edit` param for
+    // unrelated reasons (CMS preview, draft toggles, etc.).
+    expect(isEditMode('?edit=false')).toBe(false);
+    expect(isEditMode('?edit=1')).toBe(false);
+    expect(isEditMode('?edit')).toBe(false);
+    expect(isEditMode('?edit=')).toBe(false);
+  });
+
+  it('returns false when no query string is present', () => {
+    expect(isEditMode('')).toBe(false);
+    expect(isEditMode('?')).toBe(false);
+  });
+
+  it('returns false when the query string is a hash, not a search', () => {
+    // Defensive: callers might accidentally pass location.hash. The
+    // helper is location.search only; URLSearchParams of a hash returns
+    // nothing useful, but we still want a deterministic false.
+    expect(isEditMode('#edit=true')).toBe(false);
   });
 });
