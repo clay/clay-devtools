@@ -23,7 +23,7 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 - **Recently viewed components** persisted across sessions, with one-click jump back
 - **Resizable + dockable panel** — drag the inner edges (or the inner-corner grabber) to resize width _and_ height; choose any of four corners or a full-height left/right side dock
 - **Refined highlight modes** — _Off_, _Selection_ (default; pristine page, hover and click highlight in blue, hold <kbd>⌥</kbd> Alt/Option to flash the rainbow over every component), _Editable only_ (always-on subtle corner accents on `[data-editable]`), or _All components_ (always-on rainbow over every component, like the original Clay devtools). Hover and selected always paint in a single blue accent — outline + inset tint — so the "you clicked it" feedback reads consistently across every mode, on top of either the rainbow or the corner-accent ambient layer. Top-left labelled badge follows your hover and selection. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
-- **Disabled in Clay edit mode** — when a page is loaded with `?edit=true`, the extension stays out of the way entirely so it doesn't compete with Clay's own in-page editor chrome.
+- **Passive in Clay edit mode** — on `?edit=true` pages, the panel still mounts and every read-only feature stays available (Tree, JSON, Diff, SEO, Notes, copy buttons, `View on…` pills, opening the Page/Edit/Metadata links) — but the extension stops painting outlines on the host page and stops listening for clicks/hovers there so it never competes with Clay&rsquo;s own in-page editor chrome. To inspect a component, pick it from the Tree tab.
 - **Auto / light / dark themes** that respond to OS theme changes live
 - **Keyboard shortcuts** with a <kbd>?</kbd> overlay listing every binding
 - **Options page** for theme, dock side + width, site host mappings, highlight mode + intensity, shortcut toggle, and recents history size
@@ -69,13 +69,13 @@ Open the extensions page → find Clay Slip → **Remove**. You can then delete 
 
 ### Troubleshooting
 
-| Symptom                                                  | Fix                                                                                                                                                                             |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| _"Manifest file is missing or unreadable"_               | The folder you picked doesn't contain `manifest.json` at its top level. Look one level deeper inside the unzipped folder (some unzippers wrap the contents in an extra folder). |
-| Extension disappeared after restart                      | The unzipped folder was moved or deleted. Re-unzip the release zip to the same path and click **Load unpacked** again, or pick the new path.                                    |
-| Toolbar icon greyed out on a page                        | That page isn't a Clay page (no `data-uri` attributes detected). The extension stays out of the way on non-Clay pages by design.                                                |
-| Floating Clay button doesn't appear on a known Clay page | The page has `?edit=true` in the URL — by design the extension hides itself in Clay edit mode. Remove the query param or visit the published version.                           |
-| Hot reload after update doesn't pick up new code         | Click **↻ Reload** on the extensions page _then_ refresh the tab. Service-worker-based extensions need both.                                                                    |
+| Symptom                                           | Fix                                                                                                                                                                                                    |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| _"Manifest file is missing or unreadable"_        | The folder you picked doesn't contain `manifest.json` at its top level. Look one level deeper inside the unzipped folder (some unzippers wrap the contents in an extra folder).                        |
+| Extension disappeared after restart               | The unzipped folder was moved or deleted. Re-unzip the release zip to the same path and click **Load unpacked** again, or pick the new path.                                                           |
+| Toolbar icon greyed out on a page                 | That page isn't a Clay page (no `data-uri` attributes detected). The extension stays out of the way on non-Clay pages by design.                                                                       |
+| Clicking on the page doesn't select any component | The page has `?edit=true` in the URL — by design the extension goes passive in Clay edit mode and doesn't capture page clicks. The panel is still available; pick the component from the **Tree** tab. |
+| Hot reload after update doesn't pick up new code  | Click **↻ Reload** on the extensions page _then_ refresh the tab. Service-worker-based extensions need both.                                                                                           |
 
 ## Usage
 

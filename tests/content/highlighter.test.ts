@@ -83,6 +83,13 @@ describe('installHighlightStyles', () => {
 });
 
 describe('applyHighlights', () => {
+  // Every element-writing helper is gated on the stylesheet being installed
+  // (see "passive mode" describe at the bottom of this file). Active-mode
+  // tests therefore install up front so the helpers actually paint.
+  beforeEach(() => {
+    installHighlightStyles();
+  });
+
   it('tags every element with the presence flag', () => {
     const a = makeComponent('a');
     const b = makeComponent('b');
@@ -134,6 +141,10 @@ describe('applyHighlights', () => {
 });
 
 describe('clearHighlights', () => {
+  beforeEach(() => {
+    installHighlightStyles();
+  });
+
   it('removes every highlight-related attribute', () => {
     const a = makeComponent('a');
     applyHighlights([a], ['Header']);
@@ -174,6 +185,10 @@ describe('setHighlightMode / getHighlightMode', () => {
 });
 
 describe('setSelected / setHovered', () => {
+  beforeEach(() => {
+    installHighlightStyles();
+  });
+
   it('moves the selected attribute from prev to next', () => {
     const a = makeComponent('a');
     const b = makeComponent('b');
@@ -202,6 +217,10 @@ describe('setSelected / setHovered', () => {
 });
 
 describe('setAnnotatedUris', () => {
+  beforeEach(() => {
+    installHighlightStyles();
+  });
+
   it('only flags elements whose URI is in the set', () => {
     const a = makeComponent('a');
     const b = makeComponent('b');
@@ -515,6 +534,10 @@ describe('mode + editable interaction (CSS gating contract)', () => {
   //     the data-editable attr (the CSS combines them)
   //   - 'selection'/'off' modes: the CSS doesn't match; we don't have to
   //     remove the presence flag.
+  beforeEach(() => {
+    installHighlightStyles();
+  });
+
   it('preserves data-editable attribute through apply + clear cycles', () => {
     const editable = makeComponent('e', { editable: true });
     const plain = makeComponent('p');
@@ -527,5 +550,71 @@ describe('mode + editable interaction (CSS gating contract)', () => {
     // attribute is part of the host page's data contract, not ours.
     expect(editable.hasAttribute('data-editable')).toBe(true);
     expect(plain.hasAttribute('data-editable')).toBe(false);
+  });
+});
+
+describe('passive mode (highlighter not installed)', () => {
+  // Passive mode is the contract `?edit=true` pages depend on: the panel
+  // mounts, components are detected, the user can browse the tree and
+  // copy URIs — but we never paint on the host page or write any
+  // `data-clay-slip-*` attribute to a host element. This is enforced by
+  // gating every element-writing helper on the stylesheet's presence
+  // (see `isHighlighterInstalled` in highlighter.ts).
+  //
+  // The global `beforeEach` already wipes the head, so the stylesheet
+  // is NOT installed for any test in this block. That's intentional:
+  // we want to assert "calling these helpers without installing first
+  // is a silent no-op", which is exactly the bootstrap path edit-mode
+  // pages take.
+
+  it('applyHighlights writes nothing when the stylesheet is not installed', () => {
+    const a = makeComponent('a');
+    const b = makeComponent('b');
+    applyHighlights([a, b], ['One', 'Two']);
+    expect(a.hasAttribute(HIGHLIGHT_ATTR)).toBe(false);
+    expect(a.hasAttribute(COLOR_IDX_ATTR)).toBe(false);
+    expect(a.hasAttribute(LABEL_ATTR)).toBe(false);
+    expect(b.hasAttribute(HIGHLIGHT_ATTR)).toBe(false);
+  });
+
+  it('setSelected and setHovered write nothing when the stylesheet is not installed', () => {
+    const a = makeComponent('a');
+    setSelected(null, a);
+    setHovered(null, a);
+    expect(a.hasAttribute(SELECTED_ATTR)).toBe(false);
+    expect(a.hasAttribute(HOVER_ATTR)).toBe(false);
+  });
+
+  it('setAnnotatedUris writes nothing when the stylesheet is not installed', () => {
+    const a = makeComponent('a');
+    setAnnotatedUris([a], new Set(['a']));
+    expect(a.hasAttribute(ANNOTATED_ATTR)).toBe(false);
+  });
+
+  it('clearHighlights is a safe no-op when the stylesheet is not installed', () => {
+    const a = makeComponent('a');
+    // Pre-set a stray attr the way a stale install might have left things;
+    // clearHighlights without install must not touch it (we don't own the
+    // host DOM in passive mode, even for cleanup).
+    a.setAttribute('data-some-host-attr', '');
+    expect(() => clearHighlights([a])).not.toThrow();
+    expect(a.hasAttribute('data-some-host-attr')).toBe(true);
+  });
+
+  it('installing then uninstalling (removing the style tag) flips writes back to no-op', () => {
+    // Mirrors what a future "unmount panel" path would do: install,
+    // paint, then yank the style element and assert the helpers stop
+    // writing. Currently nothing in production removes the stylesheet,
+    // but the contract is symmetrical and worth pinning down so we
+    // don't regress if/when we add hot-reload-style remounts.
+    const a = makeComponent('a');
+    installHighlightStyles();
+    applyHighlights([a]);
+    expect(a.hasAttribute(HIGHLIGHT_ATTR)).toBe(true);
+
+    document.getElementById('clay-slip-highlight-styles')?.remove();
+    const b = makeComponent('b');
+    applyHighlights([b]);
+    expect(b.hasAttribute(HIGHLIGHT_ATTR)).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { isEditMode } from '@/lib/clay-uri';
 import { setSelected, setHovered as setHoveredOutline } from '../../highlighter';
 import { useStore } from '../store';
 import type { ClayComponentInfo } from '@/lib/types';
@@ -27,11 +28,24 @@ function clickIsOnInteractive(target: EventTarget | null): boolean {
   return false;
 }
 
+/**
+ * Wires document-level click + mouseover listeners that turn host-page
+ * clicks into panel selections.
+ *
+ * **Skipped on `?edit=true` pages.** Clay's own editor chrome already
+ * owns click and hover semantics on those pages — it picks the component
+ * to edit, paints its own selection overlay, and would fight ours over
+ * `e.preventDefault()` / `e.stopPropagation()`. In passive mode the user
+ * picks components from the Tree tab in the panel instead, which goes
+ * directly through the store and doesn't need these listeners at all.
+ */
 export function useElementSelection(): void {
   const components = useStore((s) => s.components);
   const setSelectedStore = useStore((s) => s.setSelected);
 
   useEffect(() => {
+    if (isEditMode()) return;
+
     const byElement = new Map<HTMLElement, ClayComponentInfo>(
       components.map((c) => [c.element, c])
     );

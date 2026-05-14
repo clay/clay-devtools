@@ -5,6 +5,7 @@ import {
   copyAsCssSelector,
   copyAsFetchSnippet,
   ensureProtocol,
+  isEditMode,
   unpublishedUri,
 } from '@/lib/clay-uri';
 import { captureElementToClipboard } from '@/lib/screenshot';
@@ -27,9 +28,16 @@ export function ComponentDetails() {
   const { copy, copiedKey } = useCopyAction();
 
   if (!selected) {
+    // On edit-mode pages we don't install host-page click listeners (Clay's
+    // own editor owns clicks there), so the usual "click any component on
+    // the page" hint would be misleading. Point users at the Tree tab,
+    // which still works in passive mode.
+    const hint = isEditMode()
+      ? 'Page is in Clay edit mode — pick a component from the Tree tab to inspect it.'
+      : 'Click any component on the page to inspect it.';
     return (
       <section className="cs-section">
-        <div className="cs-empty">Click any component on the page to inspect it.</div>
+        <div className="cs-empty">{hint}</div>
       </section>
     );
   }

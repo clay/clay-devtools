@@ -135,6 +135,24 @@ export function installHighlightStyles(): void {
   }
 }
 
+/**
+ * Has {@link installHighlightStyles} been called for this document? The
+ * presence of the `<style id="clay-slip-highlight-styles">` element is the
+ * source of truth: removing the element (e.g. between tests, or when the
+ * panel unmounts in the future) flips this back to `false` automatically.
+ *
+ * Used as the gate for every element-writing helper in this module so that
+ * "passive mode" — bootstrap mounts the panel without installing the
+ * stylesheet (e.g. on `?edit=true` pages) — gets us a clean separation:
+ * the panel is fully usable, but the host page sees zero `data-clay-slip-*`
+ * attributes, zero outline rules, and zero mutated DOM. This is the only
+ * mechanism we need to "passive-ify" everything; we don't have to plumb
+ * an `editMode` flag into every call site.
+ */
+export function isHighlighterInstalled(): boolean {
+  return !!document.getElementById(STYLE_ID);
+}
+
 function buildStyleSheet(): string {
   // We use the var() for opacity so the user's "intensity" slider can scale
   // every outline at once without re-emitting the stylesheet.
@@ -333,6 +351,10 @@ export function applyHighlights(
   elements: readonly HTMLElement[],
   labels?: readonly string[]
 ): void {
+  // Passive mode: skip every host-element write when the stylesheet
+  // hasn't been installed (i.e. we're on an `?edit=true` page where the
+  // panel mounts but we never paint). See {@link isHighlighterInstalled}.
+  if (!isHighlighterInstalled()) return;
   for (let i = 0; i < elements.length; i++) {
     const el = elements[i];
     if (!el) continue;
@@ -344,6 +366,9 @@ export function applyHighlights(
 }
 
 export function clearHighlights(elements: readonly HTMLElement[]): void {
+  // No-op when nothing was ever painted. Cheap to skip the whole loop
+  // and means callers don't need to special-case passive mode.
+  if (!isHighlighterInstalled()) return;
   for (const el of elements) {
     el.removeAttribute(HIGHLIGHT_ATTR);
     el.removeAttribute(COLOR_IDX_ATTR);
@@ -357,11 +382,13 @@ export function clearHighlights(elements: readonly HTMLElement[]): void {
 }
 
 export function setSelected(prev: HTMLElement | null, next: HTMLElement | null): void {
+  if (!isHighlighterInstalled()) return;
   if (prev) prev.removeAttribute(SELECTED_ATTR);
   if (next) next.setAttribute(SELECTED_ATTR, '');
 }
 
 export function setHovered(prev: HTMLElement | null, next: HTMLElement | null): void {
+  if (!isHighlighterInstalled()) return;
   if (prev) prev.removeAttribute(HOVER_ATTR);
   if (next) next.setAttribute(HOVER_ATTR, '');
 }
@@ -397,6 +424,11 @@ export function setHighlightOpacity(opacity: number): void {
 }
 
 export function setAnnotatedUris(allElements: HTMLElement[], annotatedUris: Set<string>): void {
+  // Passive mode: skip — the annotation dot is a CSS pseudo-element
+  // gated on the [data-clay-slip-annotated] attribute, and we don't
+  // want to write that attr to host components in edit mode (no rule
+  // would render it without the stylesheet anyway).
+  if (!isHighlighterInstalled()) return;
   for (const el of allElements) {
     const uri = el.getAttribute('data-uri');
     if (uri && annotatedUris.has(uri)) el.setAttribute(ANNOTATED_ATTR, '');
@@ -502,6 +534,10 @@ export function setFindMatches(
   allElements: HTMLElement[],
   matchSet: Set<HTMLElement> | null
 ): void {
+  // Passive mode: the panel-side tree filter still narrows the list of
+  // visible items (that's a pure React render based on the search
+  // string), but we don't dim or mark host elements on the page.
+  if (!isHighlighterInstalled()) return;
   if (!matchSet || matchSet.size === 0) {
     document.documentElement.removeAttribute(FILTER_MODE_ATTR);
     for (const el of allElements) el.removeAttribute(MATCH_ATTR);

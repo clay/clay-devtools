@@ -23,14 +23,17 @@ export function isClayDocument(doc: Document = document): boolean {
 
 /**
  * True when the current page is rendered in Clay's edit mode (URL carries
- * `?edit=true`). The extension *intentionally disables itself* in edit mode
- * so its outlines, click handlers, and floating panel don't compete with
- * Clay's own in-page editing chrome (which has its own click-to-select,
- * highlight, and toolbar UI).
+ * `?edit=true`). The extension switches to a "passive" mode on these
+ * pages: the panel still mounts and every read-only feature stays
+ * available, but we skip installing the highlighter stylesheet, the
+ * host-page click/hover listeners, and the Alt-reveal listener — none of
+ * which should compete with Clay's own click-to-select, selection
+ * overlays, and editor toolbar.
  *
- * Implemented as a URL check rather than a DOM probe because the edit-mode
- * UI mounts asynchronously and we need to bail out at content-script
- * bootstrap, before any of our own DOM mutations happen.
+ * Implemented as a URL check rather than a DOM probe because Clay's
+ * editor UI mounts asynchronously and we need the answer at content-
+ * script bootstrap (before deciding whether to call
+ * `installHighlightStyles`).
  *
  * Defaults to {@link location.search}; takes a string for testability.
  */
