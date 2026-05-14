@@ -5,7 +5,8 @@
   --text: #0f172a;
   --text-muted: #475569;
   --border: #e5e7eb;
-  --accent: #e22c2c;
+  /* Unified inspector accent — see src/content/panel/theme.ts. */
+  --accent: #2563eb;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -15,7 +16,7 @@
     --text: #e6e8ee;
     --text-muted: #9aa3b2;
     --border: #252a36;
-    --accent: #ff5c5c;
+    --accent: #60a5fa;
   }
 }
 
