@@ -244,6 +244,7 @@ src/
 | `npm run zip:firefox`         | Pack `dist-firefox/` into `clay-slip-vX.Y.Z-firefox.zip`                                                                    |
 | `npm run release:dry`         | Validate + Chromium build + zip (mirrors the Chromium half of CI)                                                           |
 | `npm run release:dry:firefox` | Validate + Firefox build + zip (mirrors the Firefox half of CI)                                                             |
+| `npm run release:dry:both`    | Validate **once** + both builds + both zips (mirrors the full release workflow; preferred before tagging a release)         |
 
 ## Releasing
 
@@ -271,10 +272,9 @@ The flow is:
 
 You can also kick off the workflow manually from the Actions tab against an existing tag (useful if a release run fails midway). To package locally without going through CI:
 
-- `npm run release:dry` → produces `clay-slip-vX.Y.Z.zip` (Chromium).
-- `npm run release:dry:firefox` → produces `clay-slip-vX.Y.Z-firefox.zip` (Firefox).
-
-Run both before tagging if you want to smoke-test in both browsers before users see them.
+- `npm run release:dry:both` → validates once + builds + zips **both** targets, producing `clay-slip-vX.Y.Z.zip` and `clay-slip-vX.Y.Z-firefox.zip`. Best smoke-test before tagging.
+- `npm run release:dry` → just the Chromium half. Faster when you only care about that target.
+- `npm run release:dry:firefox` → just the Firefox half.
 
 > **⚠️ Always use the project's zip scripts — never zip `dist/` (or `dist-firefox/`) from Finder / Explorer.**
 > Right-clicking the folder produces a zip with a `dist/` wrapper, which means users would have to drill into a subfolder to find `manifest.json` when sideloading (and it's the layout both stores reject with _"No manifest found in package."_ if we ever publish there). Our script zips the **contents** of the build folder (so `manifest.json` is at the root), strips source maps and macOS metadata, and verifies the zip layout before declaring success. Pass `INCLUDE_SOURCEMAPS=1` if you need maps for debugging a sideloaded build.

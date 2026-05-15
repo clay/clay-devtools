@@ -27,7 +27,8 @@
     "zip": "node scripts/zip-extension.mjs",
     "zip:firefox": "TARGET=firefox node scripts/zip-extension.mjs",
     "release:dry": "npm run validate && npm run build && npm run zip",
-    "release:dry:firefox": "npm run validate && npm run build:firefox && npm run zip:firefox"
+    "release:dry:firefox": "npm run validate && npm run build:firefox && npm run zip:firefox",
+    "release:dry:both": "npm run validate && npm run build && npm run zip && npm run build:firefox && npm run zip:firefox"
   },
   "dependencies": {
     "react": "^19.2.6",
