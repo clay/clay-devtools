@@ -1,21 +1,42 @@
 import { defineManifest } from '@crxjs/vite-plugin';
 import pkg from '../package.json' with { type: 'json' };
 
-// Chrome Web Store rejects uploads with `manifest.description` > 132 chars.
-// Catch the regression at build time, where it's easy to fix, instead of at
-// upload time, where it bricks a release.
+// 132-char ceiling on `manifest.description` is enforced by both Chrome
+// Web Store *and* AMO. We don't currently publish on either store
+// (releases ship as zips on GitHub), but keeping the field within the
+// stricter store limit means we'd never have to truncate at submit time
+// if that ever changes — and 132 is plenty for an honest one-liner.
 const MAX_DESCRIPTION_CHARS = 132;
 if (pkg.description.length > MAX_DESCRIPTION_CHARS) {
   throw new Error(
-    `package.json "description" is ${pkg.description.length} chars; Chrome Web Store limit is ${MAX_DESCRIPTION_CHARS}.`
+    `package.json "description" is ${pkg.description.length} chars; the manifest "description" field is capped at ${MAX_DESCRIPTION_CHARS} (Chrome Web Store + AMO).`
   );
 }
 
+// We build the same source twice: once for Chromium-family browsers
+// (default) and once for Firefox (`TARGET=firefox`). The differences are
+// confined to `firefoxExtras` below + a tiny postbuild step in
+// `scripts/firefox-postbuild.mjs` that rewrites a couple of MV3 fields
+// crxjs emits in the Chromium-only shape.
 const isFirefox = process.env.TARGET === 'firefox';
 
-// Firefox needs a gecko block for installable signing. Service worker
-// background scripts require Firefox 121+; below that, MV3 extensions
-// must use `background.scripts` instead, which crxjs doesn't emit.
+// Firefox-specific manifest fields:
+//   - `browser_specific_settings.gecko.id` is required for any extension
+//     that wants to install (signed or temporary) on Firefox; no default
+//     synthesis like Chromium has.
+//   - `strict_min_version: 121.0` is the floor we test against. Firefox
+//     shipped MV3 in 121 (Dec 2023), and that's also the first stable
+//     release where ES-module background scripts (`background.scripts`
+//     with `type: 'module'`) work — the form we rewrite to in the
+//     postbuild step. Older Firefox would silently fail to load the
+//     background.
+//   - `data_collection_permissions.required: ['none']` is Firefox's
+//     newer disclosure mechanism (AMO uses it for the listing labels);
+//     we collect nothing, so this is the only honest value.
+//
+// Chromium gets `minimum_chrome_version: 116` for the same reason —
+// MV3 + the storage/clipboard/scripting features we depend on are all
+// stable from there.
 const firefoxExtras = isFirefox
   ? {
       browser_specific_settings: {
