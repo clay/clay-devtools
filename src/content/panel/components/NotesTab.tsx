@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import type { RuntimeMessage } from '@/lib/types';
 import { deleteAnnotation } from '@/lib/annotations';
 import { useStore } from '../store';
@@ -20,7 +21,7 @@ export function NotesTab() {
   }
 
   const open = (url: string) => {
-    chrome.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
+    browser.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
   };
 
   return (

@@ -36,9 +36,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const distDir = join(root, 'dist');
+const isFirefox = process.env.TARGET === 'firefox';
+const distDir = join(root, isFirefox ? 'dist-firefox' : 'dist');
 const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
-const outName = `clay-slip-v${pkg.version}.zip`;
+const outName = `clay-slip-v${pkg.version}${isFirefox ? '-firefox' : ''}.zip`;
 const outPath = join(root, outName);
 const includeMaps = process.env.INCLUDE_SOURCEMAPS === '1';
 
@@ -149,8 +150,9 @@ function buildPowerShellCommand(zipName, keepMaps) {
   const filters = ["$_.Name -ne '.DS_Store'", "$_.FullName -notmatch '__MACOSX'"];
   if (!keepMaps) filters.push("$_.Name -notlike '*.map'");
   const where = filters.join(' -and ');
+  const srcDir = isFirefox ? 'dist-firefox' : 'dist';
   return `
-    $items = Get-ChildItem -Path 'dist' -Recurse -File | Where-Object { ${where} };
+    $items = Get-ChildItem -Path '${srcDir}' -Recurse -File | Where-Object { ${where} };
     Compress-Archive -Path $items.FullName -DestinationPath '${zipName}' -Force
   `.trim();
 }

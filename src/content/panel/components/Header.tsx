@@ -1,4 +1,5 @@
 import type { Ref } from 'react';
+import browser from 'webextension-polyfill';
 import clayIconUrl from '@/assets/clay-icon.png?inline';
 import type { RuntimeMessage } from '@/lib/types';
 import { Icon } from './Icon';
@@ -16,7 +17,7 @@ export function Header({ ref }: HeaderProps) {
   const componentCount = useStore((s) => s.components.length);
 
   const openOptions = () => {
-    chrome.runtime
+    browser.runtime
       .sendMessage({ type: 'OPEN_OPTIONS' } satisfies RuntimeMessage)
       .catch(() => undefined);
   };

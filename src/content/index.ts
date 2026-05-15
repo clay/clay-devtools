@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { isClayDocument, isEditMode, parseShareTarget } from '@/lib/clay-uri';
 import type { RuntimeMessage } from '@/lib/types';
 import {
@@ -12,7 +13,7 @@ import { isPanelMounted, mountPanel, unmountPanel } from './shadow-host';
 import { useStore } from './panel/store';
 
 function send(message: RuntimeMessage): void {
-  chrome.runtime.sendMessage(message).catch(() => undefined);
+  browser.runtime.sendMessage(message).catch(() => undefined);
 }
 
 /**
@@ -125,7 +126,8 @@ function bootstrap(): void {
   }
 }
 
-chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
+browser.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
+  const message = rawMessage as RuntimeMessage;
   if (message.type === 'PANEL_TOGGLE') {
     if (!isClayDocument()) {
       sendResponse({ ok: false, reason: 'not-clay' });

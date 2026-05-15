@@ -11,13 +11,30 @@ if (pkg.description.length > MAX_DESCRIPTION_CHARS) {
   );
 }
 
+const isFirefox = process.env.TARGET === 'firefox';
+
+// Firefox needs a gecko block for installable signing. Service worker
+// background scripts require Firefox 121+; below that, MV3 extensions
+// must use `background.scripts` instead, which crxjs doesn't emit.
+const firefoxExtras = isFirefox
+  ? {
+      browser_specific_settings: {
+        gecko: {
+          id: 'clay-slip@slate.com',
+          strict_min_version: '121.0',
+          data_collection_permissions: { required: ['none' as const] },
+        },
+      },
+    }
+  : { minimum_chrome_version: '116' };
+
 export default defineManifest({
   manifest_version: 3,
   name: 'Clay Slip',
   short_name: 'Slip',
   version: pkg.version,
   description: pkg.description,
-  minimum_chrome_version: '116',
+  ...firefoxExtras,
 
   icons: {
     16: 'icons/icon-16.png',

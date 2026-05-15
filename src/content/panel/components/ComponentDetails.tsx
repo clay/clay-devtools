@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import {
   buildCurlCommand,
   buildSchemaUrl,
@@ -43,7 +44,7 @@ export function ComponentDetails() {
   }
 
   const open = (url: string) => {
-    chrome.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
+    browser.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
   };
 
   const screenshot = async () => {

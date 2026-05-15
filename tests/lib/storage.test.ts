@@ -19,7 +19,7 @@ interface MockChrome {
 }
 
 function getMockChrome(): MockChrome {
-  return globalThis.chrome as unknown as MockChrome;
+  return (globalThis as { chrome?: unknown }).chrome as MockChrome;
 }
 
 beforeEach(() => {

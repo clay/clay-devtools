@@ -1,3 +1,4 @@
+import browser, { type Storage } from 'webextension-polyfill';
 import type { Annotation } from './types';
 
 const STORAGE_KEY = 'annotations';
@@ -5,12 +6,12 @@ const STORAGE_KEY = 'annotations';
 type AnnotationMap = Record<string, Annotation>;
 
 async function loadMap(): Promise<AnnotationMap> {
-  const stored = await chrome.storage.local.get(STORAGE_KEY);
+  const stored = await browser.storage.local.get(STORAGE_KEY);
   return (stored[STORAGE_KEY] as AnnotationMap | undefined) ?? {};
 }
 
 async function saveMap(map: AnnotationMap): Promise<void> {
-  await chrome.storage.local.set({ [STORAGE_KEY]: map });
+  await browser.storage.local.set({ [STORAGE_KEY]: map });
 }
 
 export async function listAnnotations(): Promise<Annotation[]> {
@@ -48,15 +49,12 @@ export async function deleteAnnotation(uri: string): Promise<void> {
  * etc.). Listener fires with the current full list.
  */
 export function onAnnotationsChanged(listener: (next: Annotation[]) => void): () => void {
-  const handler = (
-    changes: { [key: string]: chrome.storage.StorageChange },
-    areaName: chrome.storage.AreaName
-  ) => {
+  const handler = (changes: Record<string, Storage.StorageChange>, areaName: string) => {
     if (areaName !== 'local') return;
     if (!(STORAGE_KEY in changes)) return;
     const next = (changes[STORAGE_KEY]?.newValue as AnnotationMap | undefined) ?? {};
     listener(Object.values(next).sort((a, b) => b.updatedAt - a.updatedAt));
   };
-  chrome.storage.onChanged.addListener(handler);
-  return () => chrome.storage.onChanged.removeListener(handler);
+  browser.storage.onChanged.addListener(handler);
+  return () => browser.storage.onChanged.removeListener(handler);
 }

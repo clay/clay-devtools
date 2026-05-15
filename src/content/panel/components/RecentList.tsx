@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import type { RuntimeMessage } from '@/lib/types';
 import { useStore } from '../store';
 import { setSelected } from '../../highlighter';
@@ -21,7 +22,7 @@ export function RecentList() {
   if (recents.length === 0) return null;
 
   const open = (url: string) => {
-    chrome.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
+    browser.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
   };
 
   const visible = recents.slice(0, MAX_VISIBLE);

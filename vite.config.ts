@@ -14,6 +14,7 @@ export default defineConfig({
   build: {
     target: 'esnext',
     sourcemap: true,
+    outDir: process.env.TARGET === 'firefox' ? 'dist-firefox' : 'dist',
     rollupOptions: {
       input: {
         popup: 'src/popup/index.html',
