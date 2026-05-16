@@ -1,6 +1,6 @@
 {
   "name": "clay-slip",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "Modern devtools for Clay CMS pages: visualize component boundaries, inspect data, and navigate the page/layout hierarchy.",
   "private": true,
   "type": "module",
