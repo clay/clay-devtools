@@ -6,12 +6,14 @@ name: Release
 # What it does:
 #   1. Verifies the tag matches `package.json`'s version (fails fast otherwise).
 #   2. Runs the full validation suite (typecheck / lint / format / test).
-#   3. Builds the extension into `dist/`.
-#   4. Zips `dist/` as `clay-slip-vX.Y.Z.zip` with `manifest.json` at the
-#      root (so users can drop the unzipped folder straight into Chrome's
-#      "Load unpacked"; the same layout the Chrome Web Store would expect
-#      if we ever published there).
-#   5. Creates a *draft* GitHub release with the zip attached and auto-
+#   3. Builds the extension twice — once for Chromium-family browsers
+#      (Chrome / Edge / Brave / Arc / Vivaldi / Opera) into `dist/`, and
+#      once for Firefox into `dist-firefox/` — and zips each as
+#      `clay-slip-vX.Y.Z.zip` (Chromium) and
+#      `clay-slip-vX.Y.Z-firefox.zip` with `manifest.json` at the root
+#      so users can sideload directly ("Load unpacked" on Chromium,
+#      "Load Temporary Add-on" on Firefox).
+#   4. Creates a *draft* GitHub release with both zips attached and auto-
 #      generated release notes. A human reviews and publishes it.
 
 on:
@@ -58,10 +60,12 @@ jobs:
             echo "::error title=Version mismatch::Tag $TAG does not match package.json version $PKG_VERSION. Bump package.json and re-tag."
             exit 1
           fi
-          ZIP="clay-slip-${TAG}.zip"
-          echo "tag=$TAG"          >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION"  >> "$GITHUB_OUTPUT"
-          echo "zip=$ZIP"          >> "$GITHUB_OUTPUT"
+          ZIP_CHROMIUM="clay-slip-${TAG}.zip"
+          ZIP_FIREFOX="clay-slip-${TAG}-firefox.zip"
+          echo "tag=$TAG"                      >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"              >> "$GITHUB_OUTPUT"
+          echo "zip_chromium=$ZIP_CHROMIUM"    >> "$GITHUB_OUTPUT"
+          echo "zip_firefox=$ZIP_FIREFOX"      >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
         run: npm ci
@@ -69,21 +73,33 @@ jobs:
       - name: Validate (typecheck / lint / format / test)
         run: npm run validate
 
-      - name: Build
+      # We use the project's own zip script for both targets so the
+      # manifest-at-root check + sourcemap stripping run in CI exactly
+      # as they do locally with `npm run release:dry[:firefox]`.
+      - name: Build Chromium extension
         run: npm run build
 
-      - name: Package extension
-        run: |
-          cd dist
-          zip -r "../${{ steps.meta.outputs.zip }}" .
-          cd ..
-          ls -lh "${{ steps.meta.outputs.zip }}"
+      - name: Package Chromium extension
+        run: npm run zip
 
-      - name: Upload zip as workflow artifact
+      - name: Build Firefox extension
+        run: npm run build:firefox
+
+      - name: Package Firefox extension
+        run: npm run zip:firefox
+
+      - name: Upload Chromium zip as workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.meta.outputs.zip }}
-          path: ${{ steps.meta.outputs.zip }}
+          name: ${{ steps.meta.outputs.zip_chromium }}
+          path: ${{ steps.meta.outputs.zip_chromium }}
+          retention-days: 30
+
+      - name: Upload Firefox zip as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.zip_firefox }}
+          path: ${{ steps.meta.outputs.zip_firefox }}
           retention-days: 30
 
       - name: Create draft GitHub release
@@ -91,7 +107,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "${{ steps.meta.outputs.tag }}" \
-            "${{ steps.meta.outputs.zip }}" \
+            "${{ steps.meta.outputs.zip_chromium }}" \
+            "${{ steps.meta.outputs.zip_firefox }}" \
             --draft \
             --generate-notes \
             --title "Clay Slip ${{ steps.meta.outputs.tag }}"

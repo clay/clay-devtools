@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import browser from 'webextension-polyfill';
 import { copyToClipboard } from '@/lib/clipboard';
 import { buildUrl, ensureProtocol } from '@/lib/clay-uri';
 import type { RuntimeMessage } from '@/lib/types';
@@ -90,14 +91,14 @@ export function useKeyboardShortcuts(): void {
           // No host override: buildUrl uses the URI's embedded host, which
           // is the page's actual host. Cross-env nav is handled by the
           // "View on…" pills (siteHosts) and the Diff tab.
-          chrome.runtime.sendMessage({
+          browser.runtime.sendMessage({
             type: 'OPEN_TAB',
             url: buildUrl(page.pageUri, ''),
           } satisfies RuntimeMessage);
         } else if (combo === 'oc' && (selected || page)) {
           const uri = selected?.uri ?? page?.pageUri;
           if (uri) {
-            chrome.runtime.sendMessage({
+            browser.runtime.sendMessage({
               type: 'OPEN_TAB',
               url: buildUrl(uri, ''),
             } satisfies RuntimeMessage);

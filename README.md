@@ -1,14 +1,19 @@
 # Clay Slip
 
-> A modern Chrome extension for exploring [Clay](https://github.com/clay) CMS pages.
+> A modern Chromium + Firefox extension for exploring [Clay](https://github.com/clay) CMS pages.
 
 Clay annotates rendered HTML with `data-uri` attributes on every component, page, and layout. Clay Slip reads those attributes and gives you a powerful developer overlay — visualize component boundaries, inspect data, jump between published and draft versions, and copy URIs without ever opening DevTools.
+
+The same source builds for both browser families:
+
+- **Chromium-family** (Chrome, Edge, Brave, Arc, Vivaldi, Opera, …)
+- **Firefox** 121+ (uses the [`webextension-polyfill`](https://github.com/mozilla/webextension-polyfill) at runtime; manifest is post-processed to swap in the `background.scripts` form Firefox MV3 expects)
 
 ![Clay Slip panel inspecting a page](docs/screenshots/inspect.png)
 
 ## Highlights
 
-- **Manifest V3** Chrome extension built with TypeScript, React, Vite, and `@crxjs/vite-plugin`
+- **Manifest V3** extension built with TypeScript, React, Vite, and `@crxjs/vite-plugin` — single source, dual build for Chromium and Firefox
 - **Shadow-DOM panel** that never collides with host page styles
 - **Component tree + find-on-page** — live filter dims non-matches on the page, <kbd>Enter</kbd> cycles through them, <kbd>Esc</kbd> clears
 - **Inline JSON preview** so you don't need to open a new tab to read component data
@@ -36,11 +41,18 @@ Clay annotates rendered HTML with `data-uri` attributes on every component, page
 
 ## Install
 
-Clay Slip is distributed as a Chromium extension `.zip` attached to every release on this repo. There is **no Chrome Web Store listing** — installation is sideloaded ("Load unpacked"), which works the same way in every Chromium-based browser: Chrome, Edge, Brave, Arc, Vivaldi, Opera.
+Clay Slip is distributed as `.zip` files attached to every release on this repo. There is **no Chrome Web Store or AMO listing** — installation is sideloaded. Each release ships two zips:
 
-### First-time install
+- `clay-slip-vX.Y.Z.zip` — for Chrome, Edge, Brave, Arc, Vivaldi, Opera, and any other Chromium-based browser.
+- `clay-slip-vX.Y.Z-firefox.zip` — for Firefox 121+.
 
-1. Open the [latest release](https://github.com/clay/clay-devtools/releases/latest) and download the `clay-slip-vX.Y.Z.zip` asset (under **Assets**, near the bottom of the release notes).
+Pick the matching zip for your browser from the [latest release](https://github.com/clay/clay-devtools/releases/latest), then follow the section below for that browser family.
+
+### Chromium browsers (Chrome / Edge / Brave / Arc / Vivaldi / Opera)
+
+#### First-time install
+
+1. Download `clay-slip-vX.Y.Z.zip` from the [latest release](https://github.com/clay/clay-devtools/releases/latest) (under **Assets**, near the bottom of the release notes).
 2. **Unzip it** to a stable folder on your machine — e.g. `~/Applications/clay-slip/`, `~/Documents/clay-slip/`, or wherever you like to keep developer tooling. **Don't move or delete this folder later.** Chrome reads the extension from it on every browser start; if the folder disappears, the extension stops working until you reinstall.
 3. Open the extensions page in your browser:
    - Chrome → `chrome://extensions`
@@ -55,27 +67,53 @@ That's it — visit any Clay-rendered page and the floating Clay button appears 
 
 > **About the "Developer mode" warning.** Chrome shows a yellow banner reminding you that extensions are loaded in developer mode. This is normal for any sideloaded (non–Web-Store) extension and can be ignored. It does **not** mean the extension is unsafe; it's the same code attached to the GitHub release. Closing the warning popup that appears on each Chrome startup keeps the extension active.
 
-### Updating to a new version
+#### Updating to a new version
 
 1. Download the new `clay-slip-vX.Y.Z.zip` from the [Releases page](https://github.com/clay/clay-devtools/releases).
 2. Unzip it **over the existing folder** (replace the old contents) so the path Chrome remembers is still valid.
 3. Open the extensions page, find Clay Slip, and click the circular **↻ Reload** icon. Or restart the browser — same effect.
 
-Your settings, notes, and "recently viewed" history are preserved across updates; they live in `chrome.storage`, not in the extension folder.
+Your settings, notes, and "recently viewed" history are preserved across updates; they live in browser storage, not in the extension folder.
+
+### Firefox 121+
+
+Firefox doesn't allow permanently installing unsigned extensions on the standard release / ESR channels — you have to either load it as a temporary add-on (which lives until you restart Firefox), or use Firefox Developer Edition / Nightly with signature checks disabled. Both flows are documented below.
+
+#### Option A — temporary add-on (any Firefox 121+, but resets on restart)
+
+1. Download `clay-slip-vX.Y.Z-firefox.zip` from the [latest release](https://github.com/clay/clay-devtools/releases/latest) and **unzip it** to a stable folder.
+2. Open `about:debugging#/runtime/this-firefox` in a new tab.
+3. Click **Load Temporary Add-on…** and select the `manifest.json` file inside the unzipped folder.
+4. The Clay icon now appears next to your other extension icons. Visit any Clay-rendered page and the floating Clay button appears in the corner.
+
+> Firefox **unloads temporary add-ons on browser restart** — you'll need to repeat steps 2–3 each time you launch Firefox. For a persistent install, use Option B.
+
+#### Option B — persistent install on Developer Edition / Nightly
+
+1. Install [Firefox Developer Edition](https://www.mozilla.org/firefox/developer/) or [Firefox Nightly](https://www.mozilla.org/firefox/channel/desktop/#nightly) — both let you turn off signature checks. (The standard Firefox release does not.)
+2. Open `about:config` and set `xpinstall.signatures.required` to `false`.
+3. Download `clay-slip-vX.Y.Z-firefox.zip`, **rename the file extension** from `.zip` to `.xpi` (Firefox installs XPI bundles, which are the same zip format with a different extension).
+4. Drag the `.xpi` onto a Firefox window, or open it via **About Firefox → Add-ons → Install Add-on From File…**, and confirm the install.
+
+Updates: download the new `-firefox.zip`, rename to `.xpi`, and re-install — Firefox prompts to upgrade in place. Settings, notes, and recents persist across updates because they live in `browser.storage`, not in the add-on bundle.
 
 ### Removing the extension
 
-Open the extensions page → find Clay Slip → **Remove**. You can then delete the unzipped folder. Stored preferences/notes can also be cleared from the Options page (**Clear recents**) or via your browser's _Manage extensions_ → _Site access / storage_ controls.
+- **Chromium**: open the extensions page → find Clay Slip → **Remove**, then delete the unzipped folder.
+- **Firefox**: `about:addons` → Clay Slip → **Remove**.
+
+Stored preferences/notes can also be cleared from the Options page (**Clear recents**) or via your browser's _Manage extensions_ → _Site access / storage_ controls.
 
 ### Troubleshooting
 
-| Symptom                                           | Fix                                                                                                                                                                                                    |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| _"Manifest file is missing or unreadable"_        | The folder you picked doesn't contain `manifest.json` at its top level. Look one level deeper inside the unzipped folder (some unzippers wrap the contents in an extra folder).                        |
-| Extension disappeared after restart               | The unzipped folder was moved or deleted. Re-unzip the release zip to the same path and click **Load unpacked** again, or pick the new path.                                                           |
-| Toolbar icon greyed out on a page                 | That page isn't a Clay page (no `data-uri` attributes detected). The extension stays out of the way on non-Clay pages by design.                                                                       |
-| Clicking on the page doesn't select any component | The page has `?edit=true` in the URL — by design the extension goes passive in Clay edit mode and doesn't capture page clicks. The panel is still available; pick the component from the **Tree** tab. |
-| Hot reload after update doesn't pick up new code  | Click **↻ Reload** on the extensions page _then_ refresh the tab. Service-worker-based extensions need both.                                                                                           |
+| Symptom                                                                           | Fix                                                                                                                                                                                                                                                      |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| _"Manifest file is missing or unreadable"_                                        | The folder you picked doesn't contain `manifest.json` at its top level. Look one level deeper inside the unzipped folder (some unzippers wrap the contents in an extra folder).                                                                          |
+| Extension disappeared after restart                                               | **Chromium**: the unzipped folder was moved or deleted — re-unzip the release zip to the same path and **Load unpacked** again. **Firefox**: temporary add-ons unload on restart by design (see Option A above) — use Option B for a persistent install. |
+| Toolbar icon greyed out on a page                                                 | That page isn't a Clay page (no `data-uri` attributes detected). The extension stays out of the way on non-Clay pages by design.                                                                                                                         |
+| Clicking on the page doesn't select any component                                 | The page has `?edit=true` in the URL — by design the extension goes passive in Clay edit mode and doesn't capture page clicks. The panel is still available; pick the component from the **Tree** tab.                                                   |
+| Hot reload after update doesn't pick up new code                                  | Click **↻ Reload** on the extensions page _then_ refresh the tab. Service-worker-based extensions need both.                                                                                                                                             |
+| _"This add-on could not be installed because it appears to be corrupt"_ (Firefox) | Firefox's signature check rejected the unsigned XPI. Either use Option A (temporary add-on, no signing required) or follow Option B exactly — make sure `xpinstall.signatures.required = false` is set **and** you're on Developer Edition / Nightly.    |
 
 ## Usage
 
@@ -155,7 +193,7 @@ When switching between `dev` and `build` outputs, click the **↻ Reload** icon 
 
 ```
 src/
-├── manifest.ts             # MV3 manifest defined in TypeScript
+├── manifest.ts             # MV3 manifest in TypeScript; branches on TARGET=firefox to add gecko block
 ├── background/
 │   └── service-worker.ts   # MV3 service worker (open tabs, badge counts)
 ├── content/
@@ -188,25 +226,29 @@ src/
 
 ## Scripts
 
-| Command                 | What it does                             |
-| ----------------------- | ---------------------------------------- |
-| `npm run dev`           | Vite dev server with HMR                 |
-| `npm run build`         | Typecheck + production build → `dist/`   |
-| `npm run lint`          | ESLint with zero-warning policy          |
-| `npm run lint:fix`      | ESLint auto-fix                          |
-| `npm run format`        | Prettier write                           |
-| `npm run format:check`  | Prettier check (used in CI)              |
-| `npm run test`          | Run Vitest                               |
-| `npm run test:watch`    | Vitest in watch mode                     |
-| `npm run test:coverage` | Vitest with coverage                     |
-| `npm run typecheck`     | `tsc --noEmit`                           |
-| `npm run validate`      | Typecheck + lint + format check + tests  |
-| `npm run zip`           | Pack `dist/` into `clay-slip-vX.Y.Z.zip` |
-| `npm run release:dry`   | Validate + build + zip (mirrors CI)      |
+| Command                       | What it does                                                                                                                |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                 | Vite dev server with HMR                                                                                                    |
+| `npm run build`               | Typecheck + Chromium production build → `dist/`                                                                             |
+| `npm run build:firefox`       | Typecheck + Firefox production build → `dist-firefox/` (runs `scripts/firefox-postbuild.mjs` to rewrite the MV3 background) |
+| `npm run lint`                | ESLint with zero-warning policy                                                                                             |
+| `npm run lint:fix`            | ESLint auto-fix                                                                                                             |
+| `npm run format`              | Prettier write                                                                                                              |
+| `npm run format:check`        | Prettier check (used in CI)                                                                                                 |
+| `npm run test`                | Run Vitest                                                                                                                  |
+| `npm run test:watch`          | Vitest in watch mode                                                                                                        |
+| `npm run test:coverage`       | Vitest with coverage                                                                                                        |
+| `npm run typecheck`           | `tsc --noEmit`                                                                                                              |
+| `npm run validate`            | Typecheck + lint + format check + tests                                                                                     |
+| `npm run zip`                 | Pack `dist/` into `clay-slip-vX.Y.Z.zip` (Chromium)                                                                         |
+| `npm run zip:firefox`         | Pack `dist-firefox/` into `clay-slip-vX.Y.Z-firefox.zip`                                                                    |
+| `npm run release:dry`         | Validate + Chromium build + zip (mirrors the Chromium half of CI)                                                           |
+| `npm run release:dry:firefox` | Validate + Firefox build + zip (mirrors the Firefox half of CI)                                                             |
+| `npm run release:dry:both`    | Validate **once** + both builds + both zips (mirrors the full release workflow; preferred before tagging a release)         |
 
 ## Releasing
 
-Releases are automated by `.github/workflows/release.yml`. The published GitHub Release is the **only** distribution channel — there is no Chrome Web Store listing. Users follow the [Install](#install) section above to grab and load the zip.
+Releases are automated by `.github/workflows/release.yml`. The published GitHub Release is the **only** distribution channel — there is no Chrome Web Store or AMO listing. Users follow the [Install](#install) section above to grab the matching zip for their browser family.
 
 The flow is:
 
@@ -222,16 +264,20 @@ The flow is:
 2. The push of the tag triggers the **Release** workflow, which:
    - Verifies the tag matches `package.json` (fails fast on mismatch).
    - Runs the full validation suite (typecheck / lint / format / test).
-   - Builds the extension.
-   - Zips `dist/` as `clay-slip-vX.Y.Z.zip`.
-   - Creates a **draft** GitHub release with the zip attached and auto-generated release notes.
+   - Builds the extension twice — once for Chromium (`npm run build`), once for Firefox (`npm run build:firefox`).
+   - Zips each build using the same script as locally: `clay-slip-vX.Y.Z.zip` and `clay-slip-vX.Y.Z-firefox.zip`.
+   - Creates a **draft** GitHub release with **both** zips attached and auto-generated release notes.
 
-3. Open the draft release on GitHub, polish the notes (call out the highlights, breaking changes, install/update instructions if anything changed in those flows), and click **Publish**. The zip becomes available under **Assets** for users to download.
+3. Open the draft release on GitHub, polish the notes (call out the highlights, breaking changes, install/update instructions if anything changed in those flows), and click **Publish**. Both zips become available under **Assets** for users to download.
 
-You can also kick off the workflow manually from the Actions tab against an existing tag (useful if a release run fails midway). To package locally without going through CI, `npm run release:dry` produces an identical `clay-slip-vX.Y.Z.zip` next to the repo — handy for smoke-testing the install flow before tagging.
+You can also kick off the workflow manually from the Actions tab against an existing tag (useful if a release run fails midway). To package locally without going through CI:
 
-> **⚠️ Always use `npm run zip` (or `release:dry`) to package — never zip `dist/` from Finder / Explorer.**
-> Right-clicking the folder produces a zip with a `dist/` wrapper, which means users would have to drill into a subfolder to find `manifest.json` when loading unpacked (and it's the layout Chrome Web Store rejects with _"No manifest found in package."_ if you ever do publish there). Our script zips the **contents** of `dist/` (so `manifest.json` is at the root), strips source maps and macOS metadata, and verifies the zip layout before declaring success. Pass `INCLUDE_SOURCEMAPS=1` if you need maps for debugging a sideloaded build.
+- `npm run release:dry:both` → validates once + builds + zips **both** targets, producing `clay-slip-vX.Y.Z.zip` and `clay-slip-vX.Y.Z-firefox.zip`. Best smoke-test before tagging.
+- `npm run release:dry` → just the Chromium half. Faster when you only care about that target.
+- `npm run release:dry:firefox` → just the Firefox half.
+
+> **⚠️ Always use the project's zip scripts — never zip `dist/` (or `dist-firefox/`) from Finder / Explorer.**
+> Right-clicking the folder produces a zip with a `dist/` wrapper, which means users would have to drill into a subfolder to find `manifest.json` when sideloading (and it's the layout both stores reject with _"No manifest found in package."_ if we ever publish there). Our script zips the **contents** of the build folder (so `manifest.json` is at the root), strips source maps and macOS metadata, and verifies the zip layout before declaring success. Pass `INCLUDE_SOURCEMAPS=1` if you need maps for debugging a sideloaded build.
 
 ## Migration notes (1.0 → 2.0)
 

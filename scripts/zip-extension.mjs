@@ -1,19 +1,21 @@
-// Pack the built `dist/` directory into `clay-slip-vX.Y.Z.zip`, ready to
-// attach to a GitHub Release (the project's only distribution channel) or
-// to hand off for direct sideloading via "Load unpacked".
+// Pack a built extension directory into `clay-slip-vX.Y.Z[-firefox].zip`,
+// ready to attach to a GitHub Release (the project's only distribution
+// channel) or to hand off for direct sideloading.
 //
-//   npm run zip                          (assumes `dist/` already exists)
-//   npm run release:dry                  (validate + build + zip in one shot)
+//   npm run zip                          (Chromium build → dist/)
+//   npm run zip:firefox                  (Firefox build → dist-firefox/)
+//   npm run release:dry                  (validate + Chrome build + zip)
+//   npm run release:dry:firefox          (validate + Firefox build + zip)
 //   INCLUDE_SOURCEMAPS=1 npm run zip     (keep .map files; useful for debugging)
 //
 // Why this script exists instead of `cd dist && zip -r ../slip.zip .`:
-//   - When users sideload the extension via "Load unpacked", they have to
-//     point Chrome at a folder containing `manifest.json` at the *top*
-//     level. Right-clicking `dist/` in Finder → Compress produces a zip
-//     with a `dist/` folder wrapper, which forces every user to drill in
-//     one extra level after unzipping (and is the same layout the Chrome
-//     Web Store rejects with "No manifest found in package." if we ever
-//     do publish there).
+//   - When users sideload the extension ("Load unpacked" in Chromium,
+//     "Load Temporary Add-on" in Firefox), they have to point the browser
+//     at a `manifest.json` at the *top* level of the unzipped folder.
+//     Right-clicking `dist/` in Finder → Compress produces a zip with a
+//     `dist/` folder wrapper, which forces every user to drill in one
+//     extra level after unzipping (and is the layout both stores reject
+//     with "No manifest found in package." if we ever publish there).
 //   - macOS adds `__MACOSX/` resource forks and `.DS_Store` files to zips
 //     made by Finder. Both clutter the unzipped folder users see.
 //   - Sideloaded builds don't need source maps; stripping them halves the
@@ -36,9 +38,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const distDir = join(root, 'dist');
+const isFirefox = process.env.TARGET === 'firefox';
+const distDir = join(root, isFirefox ? 'dist-firefox' : 'dist');
 const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
-const outName = `clay-slip-v${pkg.version}.zip`;
+const outName = `clay-slip-v${pkg.version}${isFirefox ? '-firefox' : ''}.zip`;
 const outPath = join(root, outName);
 const includeMaps = process.env.INCLUDE_SOURCEMAPS === '1';
 
@@ -93,8 +96,26 @@ child.on('exit', (code) => {
   console.log('Next steps:');
   console.log('  Local smoke-test:');
   console.log(`    1. Unzip ${outName} into a stable folder.`);
-  console.log('    2. Open chrome://extensions → enable Developer mode.');
-  console.log('    3. Click "Load unpacked" and select the unzipped folder.');
+  if (isFirefox) {
+    // Firefox sideload: the only built-in install path is "Load Temporary
+    // Add-on" via about:debugging, which lives until the next browser
+    // restart. There's no permanent unsigned-extension install on
+    // standard Firefox; for that the user needs Firefox Developer
+    // Edition / Nightly with `xpinstall.signatures.required = false`,
+    // or an AMO-signed XPI. We point at the temporary path because it
+    // covers the smoke-test workflow.
+    console.log('    2. Open about:debugging#/runtime/this-firefox.');
+    console.log('    3. Click "Load Temporary Add-on…" and pick manifest.json');
+    console.log('       inside the unzipped folder.');
+    console.log('    Note: Firefox unloads temporary add-ons when you restart');
+    console.log('    the browser. For a persistent install, use Firefox Developer');
+    console.log('    Edition / Nightly with xpinstall.signatures.required=false,');
+    console.log('    or an AMO-signed XPI.');
+  } else {
+    console.log('    2. Open chrome://extensions (or edge://, brave://, …)');
+    console.log('       and enable Developer mode.');
+    console.log('    3. Click "Load unpacked" and select the unzipped folder.');
+  }
   console.log('');
   console.log('  Publishing:');
   console.log('    Tag a release (`npm version` then `git push --follow-tags`)');
@@ -136,10 +157,14 @@ function verifyManifestAtRoot(zipPath) {
   console.error('');
   console.error(`✖ ${outName} does not contain manifest.json at the root.`);
   console.error('  Users would need to drill into a subfolder after unzipping');
-  console.error('  before "Load unpacked" would accept the folder, and the');
-  console.error('  Chrome Web Store would reject this layout outright.');
+  console.error('  before "Load unpacked" / "Load Temporary Add-on" would accept');
+  console.error('  the folder, and both the Chrome Web Store and AMO would reject');
+  console.error('  this layout outright.');
   console.error('  Likely cause: the script ran outside dist/ or with a folder wrapper.');
-  console.error('  Re-run `npm run build && npm run zip`.');
+  const buildCmd = isFirefox
+    ? 'npm run build:firefox && npm run zip:firefox'
+    : 'npm run build && npm run zip';
+  console.error(`  Re-run \`${buildCmd}\`.`);
   process.exit(2);
 }
 
@@ -149,8 +174,9 @@ function buildPowerShellCommand(zipName, keepMaps) {
   const filters = ["$_.Name -ne '.DS_Store'", "$_.FullName -notmatch '__MACOSX'"];
   if (!keepMaps) filters.push("$_.Name -notlike '*.map'");
   const where = filters.join(' -and ');
+  const srcDir = isFirefox ? 'dist-firefox' : 'dist';
   return `
-    $items = Get-ChildItem -Path 'dist' -Recurse -File | Where-Object { ${where} };
+    $items = Get-ChildItem -Path '${srcDir}' -Recurse -File | Where-Object { ${where} };
     Compress-Archive -Path $items.FullName -DestinationPath '${zipName}' -Force
   `.trim();
 }

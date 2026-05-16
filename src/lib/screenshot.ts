@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import type { CaptureResponse, RuntimeMessage } from './types';
 
 /**
@@ -23,7 +24,7 @@ export async function captureElementToClipboard(
   await new Promise((r) => requestAnimationFrame(r));
 
   try {
-    const response = (await chrome.runtime.sendMessage({
+    const response = (await browser.runtime.sendMessage({
       type: 'CAPTURE_TAB',
     } satisfies RuntimeMessage)) as CaptureResponse;
 

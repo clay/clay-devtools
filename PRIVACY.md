@@ -14,20 +14,20 @@ This document is the canonical privacy disclosure for the extension. It's distri
 - **No remote code.** All JavaScript is bundled at build time. The extension never loads scripts from the network.
 - **No accounts.** The extension does not have any concept of "user" or "session"; nothing is signed in.
 - **No third-party endpoints.** The only network calls the extension makes are to the same Clay site you are already viewing.
-- **No data leaves your device.** Preferences and notes are stored using `chrome.storage`, which keeps them on your machine (or, for `sync` storage, in your own Google account). The Clay Slip developers never see them.
+- **No data leaves your device.** Preferences and notes are stored using the standard WebExtension `storage` APIs — `chrome.storage` on Chromium, `browser.storage` on Firefox — which keep them on your machine (or, for `sync` storage on Chrome, in your own Google account; on Firefox, in your own Mozilla account if Sync is enabled). The Clay Slip developers never see them.
 
 ---
 
 ## What the extension stores locally
 
-Clay Slip uses the standard Chrome storage APIs. Stored data never leaves the user's device or Google account.
+Clay Slip uses the standard WebExtension storage APIs (`chrome.storage` on Chromium, `browser.storage` on Firefox — same shape, same data, same guarantees). Stored data never leaves the user's device or browser-vendor account.
 
-| Storage area           | Contents                                                                                                      | Why                                                                                                   |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `chrome.storage.sync`  | UI preferences (theme, panel position/size, site host mappings, highlight mode + intensity, shortcut toggle)  | Carries your settings across browsers when you're signed in to Chrome.                                |
-| `chrome.storage.local` | Sticky-note annotations pinned to component URIs; "recently viewed components" history (capped, configurable) | Keeps notes and history available offline; not synced because they may include page-specific context. |
+| Storage area    | Contents                                                                                                      | Why                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `storage.sync`  | UI preferences (theme, panel position/size, site host mappings, highlight mode + intensity, shortcut toggle)  | Carries your settings across browsers when you're signed in to Chrome / Firefox Sync.                 |
+| `storage.local` | Sticky-note annotations pinned to component URIs; "recently viewed components" history (capped, configurable) | Keeps notes and history available offline; not synced because they may include page-specific context. |
 
-You can clear everything from the extension's **Options** page (Reset preferences, Clear history) or via Chrome → _Manage extensions_ → _Site access / storage_.
+You can clear everything from the extension's **Options** page (Reset preferences, Clear history) or via your browser's _Manage extensions_ → _Site access / storage_ controls (Chromium) or `about:addons` → Clay Slip → _Remove_ (Firefox).
 
 ---
 
@@ -59,12 +59,12 @@ All of these requests target the Clay site you are already browsing (or another 
 
 ## Permissions and why each is requested
 
-| Permission       | Why it's requested                                                                                                                                                                                                                                                       |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `activeTab`      | Used by the Screenshot feature: when you click _Screenshot_ on a selected component, the service worker calls `chrome.tabs.captureVisibleTab` and crops the result to the component's bounding box. The PNG is written to your clipboard and discarded — never uploaded. |
-| `storage`        | Persists the user-controlled state described in the table above. Local-only.                                                                                                                                                                                             |
-| `clipboardWrite` | Implements the panel's _Copy URI_, _Copy as cURL/fetch()/CSS_, _Share_, _Export_, and _Screenshot_ actions. Each clipboard write is initiated by an explicit user click.                                                                                                 |
-| `<all_urls>`     | The content script must run on every page so it can detect Clay-rendered pages by reading the `data-uri` attribute on `<html>`. On non-Clay pages the extension exits immediately without reading or modifying anything else.                                            |
+| Permission       | Why it's requested                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `activeTab`      | Used by the Screenshot feature: when you click _Screenshot_ on a selected component, the service worker calls `tabs.captureVisibleTab` (the cross-browser equivalent — `chrome.tabs.captureVisibleTab` on Chromium, `browser.tabs.captureVisibleTab` on Firefox) and crops the result to the component's bounding box. The PNG is written to your clipboard and discarded — never uploaded. |
+| `storage`        | Persists the user-controlled state described in the table above. Local-only.                                                                                                                                                                                                                                                                                                                |
+| `clipboardWrite` | Implements the panel's _Copy URI_, _Copy as cURL/fetch()/CSS_, _Share_, _Export_, and _Screenshot_ actions. Each clipboard write is initiated by an explicit user click.                                                                                                                                                                                                                    |
+| `<all_urls>`     | The content script must run on every page so it can detect Clay-rendered pages by reading the `data-uri` attribute on `<html>`. On non-Clay pages the extension exits immediately without reading or modifying anything else.                                                                                                                                                               |
 
 The extension does **not** request `cookies`, `webRequest`, `webNavigation`, `history`, `bookmarks`, `identity`, `notifications`, `geolocation`, or any other sensitive permission.
 
@@ -74,7 +74,7 @@ The extension does **not** request `cookies`, `webRequest`, `webNavigation`, `hi
 
 Clay Slip does **not** execute remote code.
 
-- All JavaScript ships in the `.zip` attached to each [GitHub Release](https://github.com/clay/clay-devtools/releases), bundled at build time by Vite/Rollup. Anyone can verify by checking out the matching `vX.Y.Z` tag and rebuilding with `npm install && npm run build`.
+- All JavaScript ships in the `.zip` files attached to each [GitHub Release](https://github.com/clay/clay-devtools/releases) — one for Chromium browsers, one for Firefox — bundled at build time by Vite/Rollup. Anyone can verify by checking out the matching `vX.Y.Z` tag and rebuilding with `npm install && npm run build` (Chromium) or `npm run build:firefox` (Firefox).
 - The extension contains no `eval()` or `new Function(string)` calls of remote payloads.
 - The extension does not load scripts from any CDN or remote host at runtime.
 

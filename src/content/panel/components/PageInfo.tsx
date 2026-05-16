@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { buildEditorUrl, buildUrl, unpublishedUri } from '@/lib/clay-uri';
 import { findMappingForHost, rewriteUrlToEnv } from '@/lib/site-host';
 import { SITE_ENV_LABELS, SITE_ENV_ORDER, type RuntimeMessage } from '@/lib/types';
@@ -12,7 +13,7 @@ export function PageInfo() {
   if (!page) return null;
 
   const open = (url: string) => {
-    chrome.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
+    browser.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
   };
 
   // No envHost override: the helpers use the URI's embedded host, which
