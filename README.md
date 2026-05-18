@@ -27,7 +27,12 @@ The same source builds for both browser families:
 - **SEO tab** — title / meta / og / twitter / JSON-LD with a Twitter + Facebook card preview and lints (length, missing image, duplicate `<h1>`, etc.)
 - **Recently viewed components** persisted across sessions, with one-click jump back
 - **Resizable + dockable panel** — drag the inner edges (or the inner-corner grabber) to resize width _and_ height; choose any of four corners or a full-height left/right side dock
-- **Refined highlight modes** — _Off_, _Selection_ (default; pristine page, hover and click highlight in blue, hold <kbd>⌃</kbd> Control to flash the rainbow over every component), _Editable only_ (always-on subtle corner accents on `[data-editable]`), or _All components_ (always-on rainbow over every component, like the original Clay devtools). Hover and selected always paint in a single blue accent — outline + inset tint — so the "you clicked it" feedback reads consistently across every mode, on top of either the rainbow or the corner-accent ambient layer. Top-left labelled badge follows your hover and selection. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
+- **Refined highlight modes** — the mode owns _every_ paint on the host page (ambient + hover + selection), so each option is visually distinct:
+  - _Off_ — fully silent on the page. No ambient, no blue hover, no selection outline, no name badge. The panel still works; pick components from the Tree tab.
+  - _Selection_ (default) — pristine page; hover and click paint blue; hold <kbd>⌃</kbd> Control to flash the rainbow over every component.
+  - _Editable only_ — always-on subtle corner accents on `[data-editable]`, plus blue hover + click highlights on top.
+  - _All components_ — always-on rainbow over every component, plus blue hover + click highlights on top.
+  - Hover and selected paint in a single blue accent (outline + inset tint) so the "you clicked it" feedback reads consistently across every active mode. Top-left labelled badge follows your hover and selection. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
 - **Passive in Clay edit mode** — on `?edit=true` pages, the panel still mounts and every read-only feature stays available (Tree, JSON, Diff, SEO, Notes, copy buttons, `View on…` pills, opening the Page/Edit/Metadata links) — but the extension stops painting outlines on the host page and stops listening for clicks/hovers there so it never competes with Clay&rsquo;s own in-page editor chrome. To inspect a component, pick it from the Tree tab.
 - **Auto / light / dark themes** that respond to OS theme changes live
 - **Keyboard shortcuts** with a <kbd>?</kbd> overlay listing every binding

@@ -23,20 +23,37 @@ export type PanelPosition =
   | 'right-side';
 
 /**
- * Controls *which* components show an ambient outline on the page.
- * Hover and selection always render their own highlight regardless of mode
- * (otherwise click-to-inspect would be invisible).
+ * Controls every visual signal Clay Slip paints on the host page.
  *
- * - `off`        – no ambient outlines at all. Hover + selection still highlight.
- * - `selection`  – the daily-driver default: pristine page; hover and click
- *                  still highlight individual components, **and holding ⌃
- *                  (Control) reveals the rainbow over every component**
- *                  for a quick spatial overview. Closest to Chrome DevTools'
- *                  inspector with a "show all" peek gesture layered on.
- * - `editable`   – always-on corner accents on `[data-editable]` components.
+ * The mode owns BOTH the ambient layer (which/whether components carry
+ * an always-on outline) AND the interaction layer (whether hover and
+ * click paint a blue selection outline). That coupling exists so the
+ * four modes are visually distinct in practice — earlier iterations
+ * only mode-gated the ambient layer, which meant hover always flashed
+ * blue and users reported that the mode dropdown felt inert ("the
+ * options to edit the highlight mode don't seem to do anything — I'm
+ * seeing the same blue outline on hover regardless of which I select").
+ *
+ * - `off`        – **fully silent on the page.** No ambient outlines,
+ *                  no hover highlight, no selection highlight, no
+ *                  component name badge. The panel still works in full
+ *                  — pick components from the Tree tab — but the host
+ *                  page is pristine. This is the "I want the extension
+ *                  to leave my page alone but still be available" mode.
+ *                  (For "stop running entirely until I say so", see
+ *                  {@link UserPreferences.enabled}.)
+ * - `selection`  – the daily-driver default: pristine page; hover and
+ *                  click paint blue so click-to-inspect feels obvious,
+ *                  **and holding ⌃ (Control) reveals the rainbow over
+ *                  every component** for a quick spatial overview.
+ *                  Closest to Chrome DevTools' inspector with a "show
+ *                  all" peek gesture layered on.
+ * - `editable`   – always-on corner accents on `[data-editable]`
+ *                  components; hover + click still paint blue on top.
  *                  Useful for editorial / PM workflows.
- * - `all`        – always-on corner accents on every Clay component. The
- *                  "give me the bird's-eye view of structure" mode.
+ * - `all`        – always-on rainbow over every Clay component; hover
+ *                  + click still paint blue on top. The "give me the
+ *                  bird's-eye view of structure" mode.
  */
 export type HighlightMode = 'off' | 'selection' | 'editable' | 'all';
 
@@ -55,11 +72,11 @@ export const HIGHLIGHT_MODE_LABELS: Readonly<Record<HighlightMode, string>> = {
 };
 
 export const HIGHLIGHT_MODE_DESCRIPTIONS: Readonly<Record<HighlightMode, string>> = {
-  off: 'No outlines anywhere. The panel still works for inspection.',
+  off: 'Pristine page — no outlines on hover, click, or anywhere else. The panel still works; pick components from the Tree tab.',
   selection:
-    'Hover or click to highlight a component. Hold ⌃ Control to reveal every component on the page.',
-  editable: 'Subtle corner accents on every editable component.',
-  all: 'Subtle corner accents on every Clay component, all the time.',
+    'Hover or click to highlight a component in blue. Hold ⌃ Control to reveal every component on the page.',
+  editable: 'Subtle corner accents on editable components, plus blue hover + click highlights.',
+  all: 'Rainbow outlines on every Clay component, plus blue hover + click highlights.',
 };
 
 export interface UserPreferences {
