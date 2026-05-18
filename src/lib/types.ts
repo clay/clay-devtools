@@ -80,6 +80,32 @@ export const HIGHLIGHT_MODE_DESCRIPTIONS: Readonly<Record<HighlightMode, string>
 };
 
 export interface UserPreferences {
+  /**
+   * Master kill-switch for the entire extension. When `false`, the content
+   * script detects this at bootstrap and **never** mounts the panel, never
+   * installs the highlighter stylesheet, never touches the host DOM.
+   * The toolbar popup is force-shown so the user can flip it back to
+   * `true` from any tab (the popup's enable/disable toggle writes to the
+   * same `chrome.storage.sync` key, which propagates to every tab via
+   * the `onPreferencesChanged` listener and lazy-mounts the panel on the
+   * next render).
+   *
+   * Distinct from {@link HighlightMode}'s `'off'`: `enabled: false` is
+   * "the extension is dormant, full stop"; `highlightMode: 'off'` is
+   * "the extension is running and the panel is available, but don't
+   * paint anything on the host page". Both options exist because users
+   * asked for both:
+   *   > a way to turn it off entirely and persist the change until they
+   *   > turn it back on
+   * which is this flag, vs.
+   *   > i'd rather it not automatically highlight each component on hover
+   * which is `highlightMode: 'off'`.
+   *
+   * Stored in `chrome.storage.sync`, so the choice follows the user
+   * across browser profiles signed into the same account on both
+   * Chromium and Firefox.
+   */
+  readonly enabled: boolean;
   readonly theme: 'auto' | 'light' | 'dark';
   readonly panelPosition: PanelPosition;
   readonly panelWidth: number;
@@ -121,6 +147,11 @@ export interface SiteHostMapping {
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
+  // Default to ON: the extension is sideloaded by users who deliberately
+  // installed it, so the first-run experience should be "it just works".
+  // The persistent kill-switch is opt-in for users who want a quiet
+  // browser by default.
+  enabled: true,
   theme: 'auto',
   panelPosition: 'bottom-right',
   panelWidth: 380,
@@ -159,7 +190,17 @@ export type RuntimeMessage =
   | { type: 'UPDATE_BADGE'; count: number; tabId?: number }
   | { type: 'CLAY_DETECTED' }
   | { type: 'PANEL_TOGGLE' }
-  | { type: 'CAPTURE_TAB' };
+  | { type: 'CAPTURE_TAB' }
+  /**
+   * Sent by the content script when the extension flips between the
+   * `enabled: true` and `enabled: false` states (see
+   * {@link UserPreferences.enabled}). The service worker uses this to
+   * force the toolbar popup on every tab when the extension is
+   * disabled — without it the per-tab popup overrides that disable the
+   * popup on Clay pages would leave the user with no way to flip the
+   * extension back on from a Clay page.
+   */
+  | { type: 'EXTENSION_ENABLED_CHANGED'; enabled: boolean };
 
 export interface CaptureResponse {
   readonly ok: boolean;

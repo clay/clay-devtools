@@ -1,5 +1,6 @@
 import browser from 'webextension-polyfill';
 import { isClayDocument, isEditMode, parseShareTarget } from '@/lib/clay-uri';
+import { loadPreferences, onPreferencesChanged } from '@/lib/storage';
 import type { RuntimeMessage } from '@/lib/types';
 import {
   applyHighlights,
@@ -14,6 +15,18 @@ import { useStore } from './panel/store';
 
 function send(message: RuntimeMessage): void {
   browser.runtime.sendMessage(message).catch(() => undefined);
+}
+
+/**
+ * Tears the highlighter + panel back down. Used when the user flips the
+ * persistent `enabled` preference to `false` from another tab (or this
+ * one's options page / popup) — we want the host page to return to its
+ * pre-mount state without forcing a reload.
+ */
+function teardown(): void {
+  const components = useStore.getState().components.map((c) => c.element);
+  clearHighlights(components);
+  if (isPanelMounted()) unmountPanel();
 }
 
 /**
@@ -62,9 +75,26 @@ function handleDeepLink(): void {
   match.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-function bootstrap(): void {
+async function bootstrap(): Promise<void> {
   if (!isClayDocument()) {
     send({ type: 'UPDATE_BADGE', count: 0 });
+    // Even on non-Clay pages we need to start watching the prefs change
+    // listener so that flipping `enabled` from another tab doesn't
+    // require a reload. Cheap (one storage subscription) and avoids
+    // surprising behavior where a re-enable doesn't take effect until
+    // the user navigates.
+    watchEnabledPref();
+    return;
+  }
+
+  // Persistent kill-switch: if the user has disabled the extension we
+  // still announce the Clay page (so the popup shows the toggle UI on
+  // it) and listen for re-enable, but we never paint or mount anything.
+  const prefs = await loadPreferences();
+  if (!prefs.enabled) {
+    send({ type: 'CLAY_DETECTED' });
+    send({ type: 'UPDATE_BADGE', count: 0 });
+    watchEnabledPref();
     return;
   }
   // Send CLAY_DETECTED on EVERY Clay page (including edit-mode ones), so
@@ -124,6 +154,49 @@ function bootstrap(): void {
     useStore.getState().toggleCollapsed();
     setTimeout(handleDeepLink, 50);
   }
+
+  // Watch the persistent kill-switch so a flip from another tab tears
+  // this tab down (or brings it back up) without a reload.
+  watchEnabledPref();
+}
+
+/**
+ * Subscribe to preference changes and react to flips of the persistent
+ * `enabled` flag. Mounted exactly once per content-script lifetime via
+ * the guard below — multiple bootstrap call sites share a single
+ * subscription.
+ *
+ * When the user disables: tear down the panel + highlighter so the host
+ * page returns to its pristine state. When they re-enable: re-run the
+ * paint/mount path (or the passive-mode path on edit pages) so the
+ * panel reappears in the same tab without a reload.
+ */
+let enabledWatcherInstalled = false;
+function watchEnabledPref(): void {
+  if (enabledWatcherInstalled) return;
+  enabledWatcherInstalled = true;
+  onPreferencesChanged((prefs) => {
+    if (!isClayDocument()) return;
+    if (!prefs.enabled) {
+      teardown();
+      send({ type: 'UPDATE_BADGE', count: 0 });
+      return;
+    }
+    // Re-enable path: only re-mount if we previously tore down. The
+    // `isPanelMounted` check is the cheapest way to detect that
+    // without tracking a parallel boolean.
+    if (isPanelMounted()) return;
+    if (isEditMode()) {
+      const count = syncComponents();
+      send({ type: 'UPDATE_BADGE', count });
+      mountPanel();
+    } else {
+      const count = paintAndSync();
+      send({ type: 'UPDATE_BADGE', count });
+      installRevealKeyListener();
+      mountPanel();
+    }
+  });
 }
 
 browser.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
@@ -133,6 +206,10 @@ browser.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
       sendResponse({ ok: false, reason: 'not-clay' });
       return true;
     }
+    // No `enabled` re-check here: when the extension is disabled, the
+    // service worker force-mounts the popup on every tab, so the
+    // toolbar icon opens the popup instead of dispatching this
+    // message. The flow is owned at the service-worker layer.
     if (isPanelMounted()) {
       // `clearHighlights` is a no-op in passive mode (no stylesheet → no
       // attrs were ever written), so we can run it unconditionally.
@@ -154,7 +231,9 @@ browser.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
 });
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', bootstrap);
+  document.addEventListener('DOMContentLoaded', () => {
+    void bootstrap();
+  });
 } else {
-  bootstrap();
+  void bootstrap();
 }
