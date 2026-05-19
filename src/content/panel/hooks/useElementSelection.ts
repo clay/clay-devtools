@@ -38,13 +38,21 @@ function clickIsOnInteractive(target: EventTarget | null): boolean {
  * `e.preventDefault()` / `e.stopPropagation()`. In passive mode the user
  * picks components from the Tree tab in the panel instead, which goes
  * directly through the store and doesn't need these listeners at all.
+ *
+ * **Skipped while the panel is collapsed (FAB-only state).** When the
+ * panel is closed the user expects the page to behave normally — but
+ * the click handler swallows clicks inside any `[data-uri]` element via
+ * `preventDefault()` + `stopPropagation()`. Without this gate, collapsing
+ * the panel still breaks clicks on Clay-managed regions of the page.
  */
 export function useElementSelection(): void {
   const components = useStore((s) => s.components);
   const setSelectedStore = useStore((s) => s.setSelected);
+  const collapsed = useStore((s) => s.collapsed);
 
   useEffect(() => {
     if (isEditMode()) return;
+    if (collapsed) return;
 
     const byElement = new Map<HTMLElement, ClayComponentInfo>(
       components.map((c) => [c.element, c])
@@ -84,5 +92,5 @@ export function useElementSelection(): void {
       document.removeEventListener('mouseover', onMouseOver, true);
       setHoveredOutline(hovered, null);
     };
-  }, [components, setSelectedStore]);
+  }, [components, setSelectedStore, collapsed]);
 }
