@@ -377,7 +377,7 @@ describe('hover + selected stylesheet contract', () => {
     // selector list. Without the hover half, hovering a non-selected
     // component shows no name — regression we explicitly want to prevent.
     const labelRule = css.match(
-      /\[data-clay-slip-(?:hover|selected)\]\[data-clay-slip-label\]::before[^{]*,\s*\[data-clay-slip-(?:hover|selected)\]\[data-clay-slip-label\]::before/
+      /\[data-clay-slip-(?:hover|selected)\]\[data-clay-slip-label\]::before[^{]*,\s*[^{]*\[data-clay-slip-(?:hover|selected)\]\[data-clay-slip-label\]::before/
     );
     expect(labelRule).not.toBeNull();
   });
@@ -410,6 +410,31 @@ describe('hover + selected stylesheet contract', () => {
     // now that the label badge follows hover.
     const hoverRule = css.match(/\[data-clay-slip-hover\]\s*\{[^}]+\}/);
     expect(hoverRule?.[0]).toContain('position: relative');
+  });
+
+  it("gates hover/selected/label on :not([mode='off']) so 'Off' produces a pristine page", () => {
+    // This is the contract that makes the 'Off' mode actually off.
+    // Earlier iterations only gated the ambient layer, which left
+    // hover and click still flashing blue — and users (correctly)
+    // reported the mode dropdown felt inert. Lock the gate in so a
+    // future edit can't silently regress.
+    const css = getStylesheetText();
+    const rules = [
+      // Hover rule (the one that paints the blue outline).
+      css.match(/[^\n}]*\[data-clay-slip-hover\]\s*\{/),
+      // Selected rule (paints outline + inset fill).
+      css.match(/[^\n}]*\[data-clay-slip-selected\]\s*\{/),
+      // Label badge rule (the component-name pill on hover/selected).
+      css.match(/[^\n}]*\[data-clay-slip-label\]::before/),
+      // Find-on-page match rule (the green outline on Tree-tab matches).
+      css.match(/[^\n}]*\[data-clay-slip-match\]\s*\{/),
+      // Find-on-page dim rule.
+      css.match(/[^\n}]*\[data-clay-slip-filtering\][^{]*\{/),
+    ];
+    for (const rule of rules) {
+      expect(rule).not.toBeNull();
+      expect(rule?.[0]).toContain(':not([data-clay-slip-mode="off"])');
+    }
   });
 });
 

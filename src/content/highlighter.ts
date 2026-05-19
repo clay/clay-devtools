@@ -17,11 +17,18 @@
  *      selected   – "this is what the panel is currently inspecting"
  *    State is encoded with width + opacity of a single accent, not with hue.
  *
- * 3. **Mode-gated ambient.** The "every component outlined all the time"
- *    look turns the page into caution-tape soup on busy layouts. We default
- *    to `selection` mode, where ambient outlines are off entirely. The user
- *    opts up to `editable` (only `[data-editable]`) or `all` (every
- *    component) when they want the bird's-eye view.
+ * 3. **Mode owns every paint, ambient AND interaction.** The "every
+ *    component outlined all the time" look turns the page into
+ *    caution-tape soup on busy layouts. We default to `selection`
+ *    mode, where ambient outlines are off entirely. The user opts up
+ *    to `editable` (only `[data-editable]`) or `all` (every component)
+ *    when they want the bird's-eye view. Crucially, the mode also
+ *    gates the hover/click outlines themselves — `off` mode produces
+ *    a truly pristine page (no blue flash on hover, no selection
+ *    outline) so a user who picks "Off" gets what the label promises.
+ *    The CSS rules for hover/selected/label/match all carry a
+ *    `:not([mode="off"])` join key on `<html>` so they simply don't
+ *    match in off mode and nothing paints.
  *
  * 4. **Z-order budget.** All highlight effects live near the top of the
  *    z-axis (just below the panel itself). We use 2147483645/6 — one short
@@ -239,10 +246,18 @@ function buildStyleSheet(): string {
         linear-gradient(${ambient}, ${ambient}) 100% 100% / 1px ${tick} no-repeat;
     }
 
-    /* Hover and selection always render regardless of mode (otherwise
-       click-to-inspect would be invisible in 'off'). Both also need
-       position: relative so the label-badge ::before can anchor. */
-    [${HOVER_ATTR}] {
+    /* Hover and selection render in every mode EXCEPT 'off'. The
+       :not([mode="off"]) gate on <html> is the single switch we flip
+       to make "Off" actually off — without it the blue hover flash
+       would persist regardless of mode and the mode dropdown would
+       feel inert. (Earlier iterations made that mistake; users
+       reported "the options to edit the highlight mode don't seem
+       to do anything — I'm seeing the same blue outline on hover".)
+       Both states need position: relative so the label-badge ::before
+       can anchor; we keep that on the same gated selector so it goes
+       away too in off mode (we never touched the host element's
+       position in the first place there). */
+    html:not([${MODE_ATTR}="off"]) [${HOVER_ATTR}] {
       outline: ${TOKENS.hover.width}px solid ${o(TOKENS.hover.alpha)} !important;
       outline-offset: ${TOKENS.hover.offset}px !important;
       position: relative;
@@ -258,8 +273,11 @@ function buildStyleSheet(): string {
        the annotation dot). 8% opacity is heavy enough to clearly read
        as "this is the active item" the way macOS Finder + GitHub file
        browser highlight rows, light enough that text/imagery underneath
-       stays fully legible. */
-    [${SELECTED_ATTR}] {
+       stays fully legible.
+
+       Same :not([mode="off"]) gate as hover so "Off" mode is fully
+       silent on the page. */
+    html:not([${MODE_ATTR}="off"]) [${SELECTED_ATTR}] {
       outline: ${TOKENS.selected.width}px solid ${o(TOKENS.selected.alpha)} !important;
       outline-offset: ${TOKENS.selected.offset}px !important;
       position: relative;
@@ -276,9 +294,12 @@ function buildStyleSheet(): string {
        Sits *outside* the box when there's room above it, otherwise tucks
        inside via translateY(0). The negative-then-clamp trick keeps the
        label visible at the very top of the page where translateY(-100%)
-       would scroll out of view. */
-    [${HOVER_ATTR}][${LABEL_ATTR}]::before,
-    [${SELECTED_ATTR}][${LABEL_ATTR}]::before {
+       would scroll out of view.
+
+       Gated on :not([mode="off"]) (matching the hover/select rules
+       above) so "Off" mode doesn't render the label pill either. */
+    html:not([${MODE_ATTR}="off"]) [${HOVER_ATTR}][${LABEL_ATTR}]::before,
+    html:not([${MODE_ATTR}="off"]) [${SELECTED_ATTR}][${LABEL_ATTR}]::before {
       content: attr(${LABEL_ATTR});
       position: absolute;
       top: 0;
@@ -317,12 +338,15 @@ function buildStyleSheet(): string {
 
     /* Find-on-page filter mode: dim non-matches, highlight matches. Match
        outline uses an emerald green so it reads as a *different signal*
-       than the regular accent. */
-    html[${FILTER_MODE_ATTR}] [data-uri]:not([${MATCH_ATTR}]) {
+       than the regular accent. Gated on :not([mode="off"]) so an "Off"
+       user still gets the textual filter inside the panel without the
+       page-wide dim and green outlines fighting that "pristine page"
+       contract. */
+    html:not([${MODE_ATTR}="off"])[${FILTER_MODE_ATTR}] [data-uri]:not([${MATCH_ATTR}]) {
       opacity: 0.25 !important;
       transition: opacity 0.12s;
     }
-    [${MATCH_ATTR}] {
+    html:not([${MODE_ATTR}="off"]) [${MATCH_ATTR}] {
       outline: ${TOKENS.match.width}px solid
         rgba(34, 197, 94, calc(${TOKENS.match.alpha} * var(${OPACITY_VAR}, ${DEFAULT_OPACITY}))) !important;
       outline-offset: ${TOKENS.match.offset}px !important;

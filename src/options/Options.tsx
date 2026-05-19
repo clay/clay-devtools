@@ -85,6 +85,27 @@ export function Options() {
       </header>
 
       <section className="options-section">
+        <h2>Extension</h2>
+
+        <label className="options-row">
+          <div className="options-label">
+            <span>Enable Clay Slip</span>
+            <span className="options-help">
+              Master switch. When off, Clay Slip is fully dormant on every page — no panel, no
+              highlights, nothing on the host DOM — until you turn it back on here or from the
+              toolbar popup. The setting persists across browser restarts and syncs across the same
+              browser profile.
+            </span>
+          </div>
+          <input
+            type="checkbox"
+            checked={prefs.enabled}
+            onChange={(e) => update('enabled', e.target.checked)}
+          />
+        </label>
+      </section>
+
+      <section className="options-section">
         <h2>Appearance</h2>
 
         <label className="options-row">
