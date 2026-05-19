@@ -57,8 +57,7 @@ function GlobalRow({
   const { copy, copiedKey } = useCopyAction();
   const copied = copiedKey === 'default';
 
-  const parsed: ParsedSuccess | null =
-    result && result.ok ? parseJson(result.json) : null;
+  const parsed: ParsedSuccess | null = result && result.ok ? parseJson(result.json) : null;
 
   // Mini-summary on the collapsed header so the user gets some signal
   // without having to expand. For success: "object · 14 keys" / "array
@@ -205,36 +204,33 @@ export function GlobalsTab() {
   // preference save elsewhere in the panel).
   const fetchedKeysRef = useRef<Set<string>>(new Set());
 
-  const fetchKeys = useCallback(
-    async (keys: readonly string[]) => {
-      if (keys.length === 0) return;
-      // Seed loading state for the keys we're about to fetch — keeps
-      // siblings' cached values intact.
-      setResults((prev) => {
-        const next = { ...prev };
-        for (const k of keys) next[k] = null;
-        return next;
-      });
+  const fetchKeys = useCallback(async (keys: readonly string[]) => {
+    if (keys.length === 0) return;
+    // Seed loading state for the keys we're about to fetch — keeps
+    // siblings' cached values intact.
+    setResults((prev) => {
+      const next = { ...prev };
+      for (const k of keys) next[k] = null;
+      return next;
+    });
 
-      const r = await readGlobals(keys);
-      setResults((prev) => ({ ...prev, ...r }));
-      for (const k of keys) fetchedKeysRef.current.add(k);
-    },
-    []
-  );
+    const r = await readGlobals(keys);
+    setResults((prev) => ({ ...prev, ...r }));
+    for (const k of keys) fetchedKeysRef.current.add(k);
+  }, []);
 
   // Configured-keys lifecycle. Effects fire on every `configured`
   // identity change; we de-dupe via fetchedKeysRef so unchanged keys
   // don't refetch.
+  //
+  // We deliberately do NOT prune `results` when a key is removed — the
+  // rendered list iterates over `configured`, so removed entries are
+  // simply not displayed. The few orphaned bytes in the results map
+  // are cheaper than the cascading-render the React-19 rule warns
+  // about when calling setState from an effect.
   useEffect(() => {
-    // Drop cached results for keys the user removed in Options.
-    setResults((prev) => {
-      const next: Record<string, ReadResult | null> = {};
-      for (const k of configured) if (k in prev) next[k] = prev[k] as ReadResult | null;
-      return next;
-    });
-    // Clean the seen-set too so a remove-then-readd refetches the
-    // value (the user may have refreshed the page in between).
+    // Clean the seen-set so a remove-then-readd refetches the value
+    // (the user may have refreshed the page between configurations).
     const surviving = new Set<string>();
     for (const k of configured) if (fetchedKeysRef.current.has(k)) surviving.add(k);
     fetchedKeysRef.current = surviving;
@@ -264,8 +260,8 @@ export function GlobalsTab() {
       <div className="cs-empty">
         No window globals configured yet.
         <br />
-        Open the extension <strong>Options</strong> page and add a key (e.g.{' '}
-        <code>nymGtmPage</code>) to see its value here.
+        Open the extension <strong>Options</strong> page and add a key (e.g. <code>nymGtmPage</code>
+        ) to see its value here.
       </div>
     );
   }

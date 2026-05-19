@@ -25,6 +25,7 @@ The same source builds for both browser families:
 - **Shareable selection links** — copy a `?clay-slip-select=…` URL that auto-opens the panel and selects the same component on someone else's machine
 - **Component screenshot to clipboard** — one-click PNG of any selected component, panel auto-hides during capture
 - **SEO tab** — title / meta / og / twitter / JSON-LD with a Twitter + Facebook card preview and lints (length, missing image, duplicate `<h1>`, etc.)
+- **Window globals tab** — surface any top-level `window.*` value your page sets at boot (e.g. `nymGtmPage`, `dataLayer`, custom analytics payloads) as syntax-highlighted JSON. Configurable list per install; arrays and objects render identically; per-row and tab-level refresh, no ambient polling
 - **Recently viewed components** persisted across sessions, with one-click jump back
 - **Resizable + dockable panel** — drag the inner edges (or the inner-corner grabber) to resize width _and_ height; choose any of four corners or a full-height left/right side dock
 - **Refined highlight modes** — _Off_, _Selection_ (default; pristine page, hover and click highlight in blue, hold <kbd>⌃</kbd> Control to flash the rainbow over every component), _Editable only_ (always-on subtle corner accents on `[data-editable]`), or _All components_ (always-on rainbow over every component, like the original Clay devtools). Hover and selected always paint in a single blue accent — outline + inset tint — so the "you clicked it" feedback reads consistently across every mode, on top of either the rainbow or the corner-accent ambient layer. Top-left labelled badge follows your hover and selection. Switch modes from the panel header dropdown or with the <kbd>h</kbd> shortcut.
@@ -140,6 +141,7 @@ Stored preferences/notes can also be cleared from the Options page (**Clear rece
 | Show shortcut overlay    | Press <kbd>?</kbd>                                                                                |
 | Toggle FAB ↔ panel       | Press <kbd>[</kbd> or click the collapse button / the FAB                                         |
 | Switch tabs              | Press <kbd>i</kbd> (Inspect) or <kbd>t</kbd> (Tree)                                               |
+| Read a window global     | **Globals** tab → expand the row for the configured global; **↻** re-reads from the current page  |
 | Open settings            | Click the gear icon in the panel header                                                           |
 
 ## Screenshots
@@ -169,6 +171,24 @@ Example for a Vox-Media-style multi-brand setup:
 | Curbed  | www.curbed.com  | stg.curbed.com  | qa.curbed.com |
 
 Hostnames are matched **exactly** (case-insensitive) — no prefix stripping or wildcards — so the mapping does what you wrote and nothing more. There&rsquo;s no separate global env config; if a host isn&rsquo;t in any mapping, the extension falls back to whatever host the Clay component URI itself encodes, which is also the page&rsquo;s host.
+
+### Window globals
+
+The **Window globals** section on the options page lists the top-level `window.*` keys you want to inspect on every Clay page. Each configured global gets its own collapsible card in the **Globals** panel tab.
+
+- Enter the name as either `nymGtmPage` or `window.nymGtmPage` — the extension strips the prefix and normalizes the rest. Whitespace around the value is trimmed.
+- Both **objects** and **arrays** render identically — the panel just shows their `JSON.stringify` output with syntax highlighting.
+- Reads happen on initial tab open and on explicit **Refresh** clicks (per-row or tab-level **Refresh all**). There is no background polling — the page only does work when you ask it to, so this tab has no measurable runtime cost.
+
+Limitations and edge cases (surfaced inline in the tab):
+
+- **Top-level only.** Nested paths (`foo.bar.baz`) and array indices (`dataLayer[0]`) aren&rsquo;t supported yet. Add the top-level global; expand the row to drill into the structure.
+- **`(not defined on this page)`** — the global isn&rsquo;t set on the current page. Most often a navigation timing issue: try Refresh after the page has finished loading.
+- **`(value is not JSON-serializable)`** — the global is a function or `Symbol`. `JSON.stringify` can&rsquo;t round-trip those; nothing the extension can do beyond surfacing the fact.
+- **`(could not serialize: …)`** — the value contains a circular reference. The underlying JS error is embedded in the message.
+- **`(could not read from this page)`** — a strict Content Security Policy or Trusted Types policy blocked the page-bridge injection. Refresh the page and try again; if it persists, the host page&rsquo;s CSP is the cause.
+
+Internally this works by injecting a tiny one-time script into the page&rsquo;s main world that listens for postMessages and replies with the JSON-stringified value. The script never reads anything you didn&rsquo;t configure on the options page. Full design write-up: [`docs/specs/2026-05-19-window-globals-tab.md`](docs/specs/2026-05-19-window-globals-tab.md).
 
 ## Build from source
 

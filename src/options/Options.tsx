@@ -102,8 +102,13 @@ export function Options() {
 
   useEffect(() => {
     if (!prefsLoaded) return;
+    // Genuine async hydration from chrome.storage.sync — there's no
+    // way to derive this synchronously during render. The React 19
+    // `set-state-in-effect` rule's preferred "derive during render"
+    // pattern doesn't apply when the source is asynchronous.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional async hydration; see comment above.
     setGlobalsDrafts(prefs.windowGlobals.length > 0 ? [...prefs.windowGlobals] : ['']);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional single-shot on first load; see comment above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional single-shot on `prefsLoaded` transition; later prefs changes are user edits we mustn't clobber.
   }, [prefsLoaded]);
 
   const persistGlobals = (drafts: readonly string[]) => {

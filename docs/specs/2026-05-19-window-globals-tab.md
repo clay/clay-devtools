@@ -60,18 +60,18 @@ This is the lowest-permission, most-portable approach — works identically on C
 
 ### Files
 
-| File | Purpose |
-| --- | --- |
-| `src/lib/window-globals.ts` (new) | Pure: `parseWindowGlobal(input: string) → { ok: true, key } \| { ok: false, reason }`. Strips an optional leading `window.`, validates the remainder matches `/^[$_a-zA-Z][$_a-zA-Z0-9]*$/`, rejects dots / brackets / whitespace / empty strings. |
-| `src/page-bridge/read-globals.ts` (new) | The script injected into the page's main world. ~30 lines. Listens for a single namespaced postMessage, reads keys, stringifies, responds, removes itself. |
-| `src/content/window-globals-bridge.ts` (new) | Content-script side. Exposes `readGlobals(paths: string[]): Promise<Record<path, ReadResult>>`. Manages correlation IDs and one Promise per in-flight read. Auto-injects the page script on first use; idempotent. |
-| `src/content/panel/components/GlobalsTab.tsx` (new) | The tab. Renders sections, owns per-path read state in component-local state (`Map<path, ReadResult \| 'loading'>`). |
-| `src/content/panel/store.ts` (edit) | Extend `PanelTab` union with `'globals'`. |
-| `src/content/panel/components/Tabs.tsx` (edit) | Add the new tab button last in the rendered list. |
-| `src/options/Options.tsx` (edit) | Add the "Window globals" section. |
-| `src/lib/types.ts` (edit) | Extend `UserPreferences` with `windowGlobals: string[]`, default to `[]`. |
-| `src/manifest.ts` (edit) | Add the page-bridge script to `web_accessible_resources`. crxjs handles the build-time path resolution. |
-| `README.md` (edit) | One bullet in **Highlights**; one row in the **Usage** table. |
+| File                                                | Purpose                                                                                                                                                                                                                                            |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/window-globals.ts` (new)                   | Pure: `parseWindowGlobal(input: string) → { ok: true, key } \| { ok: false, reason }`. Strips an optional leading `window.`, validates the remainder matches `/^[$_a-zA-Z][$_a-zA-Z0-9]*$/`, rejects dots / brackets / whitespace / empty strings. |
+| `src/page-bridge/read-globals.ts` (new)             | The script injected into the page's main world. ~30 lines. Listens for a single namespaced postMessage, reads keys, stringifies, responds, removes itself.                                                                                         |
+| `src/content/window-globals-bridge.ts` (new)        | Content-script side. Exposes `readGlobals(paths: string[]): Promise<Record<path, ReadResult>>`. Manages correlation IDs and one Promise per in-flight read. Auto-injects the page script on first use; idempotent.                                 |
+| `src/content/panel/components/GlobalsTab.tsx` (new) | The tab. Renders sections, owns per-path read state in component-local state (`Map<path, ReadResult \| 'loading'>`).                                                                                                                               |
+| `src/content/panel/store.ts` (edit)                 | Extend `PanelTab` union with `'globals'`.                                                                                                                                                                                                          |
+| `src/content/panel/components/Tabs.tsx` (edit)      | Add the new tab button last in the rendered list.                                                                                                                                                                                                  |
+| `src/options/Options.tsx` (edit)                    | Add the "Window globals" section.                                                                                                                                                                                                                  |
+| `src/lib/types.ts` (edit)                           | Extend `UserPreferences` with `windowGlobals: string[]`, default to `[]`.                                                                                                                                                                          |
+| `src/manifest.ts` (edit)                            | Add the page-bridge script to `web_accessible_resources`. crxjs handles the build-time path resolution.                                                                                                                                            |
+| `README.md` (edit)                                  | One bullet in **Highlights**; one row in the **Usage** table.                                                                                                                                                                                      |
 
 ### Data flow (one Refresh click)
 
@@ -106,18 +106,18 @@ Plus the correlation-ID check. We never trust the page to inject phantom results
 
 ## Edge cases & error handling
 
-| Case | Behavior |
-| --- | --- |
-| Path is empty after stripping `window.` | Options page shows inline validation error; never reaches preferences. |
-| Path has dots, brackets, or whitespace | Same — caught in the parser, surfaced in Options. |
-| `window[key]` is `undefined` | Section renders "(not defined on this page)". |
-| `JSON.stringify` throws (circular ref, throwing getter) | Section renders "(could not serialize: <message>)". |
-| `window[key]` is a primitive (string, number, boolean, null) | Renders as JSON. `null` shows literally; strings get quoted. |
-| `window[key]` contains functions or `Symbol`s | Silently dropped by `JSON.stringify`. The Options help text mentions this. |
+| Case                                                                 | Behavior                                                                                                                |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Path is empty after stripping `window.`                              | Options page shows inline validation error; never reaches preferences.                                                  |
+| Path has dots, brackets, or whitespace                               | Same — caught in the parser, surfaced in Options.                                                                       |
+| `window[key]` is `undefined`                                         | Section renders "(not defined on this page)".                                                                           |
+| `JSON.stringify` throws (circular ref, throwing getter)              | Section renders "(could not serialize: <message>)".                                                                     |
+| `window[key]` is a primitive (string, number, boolean, null)         | Renders as JSON. `null` shows literally; strings get quoted.                                                            |
+| `window[key]` contains functions or `Symbol`s                        | Silently dropped by `JSON.stringify`. The Options help text mentions this.                                              |
 | Page-bridge script fails to load (e.g. CSP blocks inline script tag) | Promise rejects with a clear error. Section renders "(could not read: page blocked the bridge — see DevTools console)". |
-| Same path configured twice in Options | Parser dedups on save; second entry is silently dropped. |
-| Passive (`?edit=true`) mode | Globals tab works normally. It's read-only and doesn't touch the host DOM beyond a transient `<script>` injection. |
-| User removes a path from Options while the tab is open | Section disappears on next render (driven off the store). |
+| Same path configured twice in Options                                | Parser dedups on save; second entry is silently dropped.                                                                |
+| Passive (`?edit=true`) mode                                          | Globals tab works normally. It's read-only and doesn't touch the host DOM beyond a transient `<script>` injection.      |
+| User removes a path from Options while the tab is open               | Section disappears on next render (driven off the store).                                                               |
 
 ## Cross-browser
 
@@ -130,13 +130,13 @@ Plus the correlation-ID check. We never trust the page to inject phantom results
 
 New tests target the pure logic + the wiring. Browser-runtime behavior (actual postMessage round-trip in a real page) is verified manually as part of the sideload smoke test.
 
-| File | Tests |
-| --- | --- |
-| `tests/lib/window-globals.test.ts` (new) | `parseWindowGlobal`: accepts `foo`, `window.foo`, `$foo`, `_foo`; rejects empty / whitespace-only / `foo.bar` / `foo[0]` / `123foo` / `foo bar`; strips a single leading `window.` (not multiple); preserves identifiers that legitimately start with `_` or `$`. |
-| `tests/content/window-globals-bridge.test.ts` (new) | `readGlobals` round-trip via mocked `postMessage`: resolves with results keyed by path; correlation IDs prevent cross-talk between concurrent calls; stale messages (unknown correlation ID) are ignored; missing paths come back as `{ ok: false, reason: 'undefined' }`. |
-| `tests/content/panel/components/GlobalsTab.test.tsx` (new) | Empty state when `windowGlobals` is empty; one `<details>` per configured path; clicking Refresh on a section triggers the bridge for just that path; "Refresh all" triggers all paths; unresolved values render the "(not defined on this page)" placeholder. |
-| `tests/options/Options.test.tsx` (extend if exists, else new minimal coverage) | Add row → input validates against parser → save persists to storage; remove row removes it. |
-| `tests/lib/storage.test.ts` (extend) | `loadPreferences` defaults `windowGlobals` to `[]` when absent; `savePreferences` round-trips the new field. |
+| File                                                                           | Tests                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/lib/window-globals.test.ts` (new)                                       | `parseWindowGlobal`: accepts `foo`, `window.foo`, `$foo`, `_foo`; rejects empty / whitespace-only / `foo.bar` / `foo[0]` / `123foo` / `foo bar`; strips a single leading `window.` (not multiple); preserves identifiers that legitimately start with `_` or `$`.          |
+| `tests/content/window-globals-bridge.test.ts` (new)                            | `readGlobals` round-trip via mocked `postMessage`: resolves with results keyed by path; correlation IDs prevent cross-talk between concurrent calls; stale messages (unknown correlation ID) are ignored; missing paths come back as `{ ok: false, reason: 'undefined' }`. |
+| `tests/content/panel/components/GlobalsTab.test.tsx` (new)                     | Empty state when `windowGlobals` is empty; one `<details>` per configured path; clicking Refresh on a section triggers the bridge for just that path; "Refresh all" triggers all paths; unresolved values render the "(not defined on this page)" placeholder.             |
+| `tests/options/Options.test.tsx` (extend if exists, else new minimal coverage) | Add row → input validates against parser → save persists to storage; remove row removes it.                                                                                                                                                                                |
+| `tests/lib/storage.test.ts` (extend)                                           | `loadPreferences` defaults `windowGlobals` to `[]` when absent; `savePreferences` round-trips the new field.                                                                                                                                                               |
 
 Goal: existing 176 tests + ~12–15 new = ~190 total. All must pass on the polyfill mock in `tests/setup.ts` (Firefox-compatible by construction).
 
@@ -177,8 +177,8 @@ Manual smoke test (load `dist/` unpacked, browse to a Clay page with `window.dat
 
 ## Risks
 
-| Risk | Mitigation |
-| --- | --- |
+| Risk                                                                          | Mitigation                                                                                                   |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Strict-CSP pages may block the injected `<script>` (e.g. `script-src 'self'`) | Catch the load error, render the per-section "(could not read)" message. Document in README troubleshooting. |
-| Pages using a Trusted Types policy may reject `<script>.src` assignment | Same — clear error in the UI. |
-| Future support for nested paths would require parser + bridge changes | Designed so the parser is a single pure function; expanding it is a contained change. |
+| Pages using a Trusted Types policy may reject `<script>.src` assignment       | Same — clear error in the UI.                                                                                |
+| Future support for nested paths would require parser + bridge changes         | Designed so the parser is a single pure function; expanding it is a contained change.                        |

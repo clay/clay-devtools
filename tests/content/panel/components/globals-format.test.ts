@@ -7,10 +7,7 @@
  * already-tested page-bridge.
  */
 import { describe, expect, it } from 'vitest';
-import {
-  failureMessage,
-  summarizeValue,
-} from '@/content/panel/components/globals-format';
+import { failureMessage, summarizeValue } from '@/content/panel/components/globals-format';
 
 describe('failureMessage', () => {
   // Each reason gets a distinct message: regressions that quietly

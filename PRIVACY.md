@@ -1,6 +1,6 @@
 # Privacy policy — Clay Slip
 
-_Last updated: 2026-05-13_
+_Last updated: 2026-05-19_
 
 Clay Slip is a developer tool. It runs entirely on your device, in your browser. **It does not collect, transmit, sell, or share any personal data.**
 
@@ -22,10 +22,10 @@ This document is the canonical privacy disclosure for the extension. It's distri
 
 Clay Slip uses the standard WebExtension storage APIs (`chrome.storage` on Chromium, `browser.storage` on Firefox — same shape, same data, same guarantees). Stored data never leaves the user's device or browser-vendor account.
 
-| Storage area    | Contents                                                                                                      | Why                                                                                                   |
-| --------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `storage.sync`  | UI preferences (theme, panel position/size, site host mappings, highlight mode + intensity, shortcut toggle)  | Carries your settings across browsers when you're signed in to Chrome / Firefox Sync.                 |
-| `storage.local` | Sticky-note annotations pinned to component URIs; "recently viewed components" history (capped, configurable) | Keeps notes and history available offline; not synced because they may include page-specific context. |
+| Storage area    | Contents                                                                                                                          | Why                                                                                                   |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `storage.sync`  | UI preferences (theme, panel position/size, site host mappings, window globals list, highlight mode + intensity, shortcut toggle) | Carries your settings across browsers when you're signed in to Chrome / Firefox Sync.                 |
+| `storage.local` | Sticky-note annotations pinned to component URIs; "recently viewed components" history (capped, configurable)                     | Keeps notes and history available offline; not synced because they may include page-specific context. |
 
 You can clear everything from the extension's **Options** page (Reset preferences, Clear history) or via your browser's _Manage extensions_ → _Site access / storage_ controls (Chromium) or `about:addons` → Clay Slip → _Remove_ (Firefox).
 
@@ -38,6 +38,7 @@ To do its job, the content script reads:
 - The `data-uri` and `data-editable` attributes that Clay sites set on rendered components.
 - Standard `<head>` metadata (`<title>`, `<meta>` tags, `<link rel="canonical">`, JSON-LD) for the SEO tab.
 - The text/HTML of components you explicitly select for the JSON tab and Diff tab.
+- **Only the top-level `window.*` globals you explicitly list on the Options page (Window globals)**, and only when you open the **Globals** tab or click **Refresh**. The extension injects a tiny one-time bridge script into the page's main world, which reads `window[key]` for each configured key, `JSON.stringify`s it, and posts the result back to the panel. The script never reads any global you didn't configure, and never reads anything until you ask the Globals tab for data.
 
 This data is **only ever displayed inside the panel on your machine.** It is never sent anywhere except, when you explicitly ask, to the same Clay host the page came from (see "Outbound network requests" below).
 
