@@ -123,30 +123,32 @@ Stored preferences/notes can also be cleared from the Options page (**Clear rece
 
 ## Usage
 
-| Action                   | Shortcut / Click                                                                                  |
-| ------------------------ | ------------------------------------------------------------------------------------------------- |
-| Open the panel           | Click the floating **Clay** button (FAB) anchored at your preferred corner                        |
-| Collapse to FAB          | Click the collapse button in the panel header (or press <kbd>[</kbd>)                             |
-| Hide the extension       | Click the toolbar icon (toggles mount on/off for the current tab)                                 |
-| Select a component       | Click any outlined element on the page                                                            |
-| Open in Clay editor      | **Edit** button on a page or component — opens the page with `?edit=true`                         |
-| Open component JSON      | Use the **Data** / **.json** / **.html** buttons in the panel                                     |
-| Cross-env diff           | **Diff** tab → `Compare:` select → pick another configured env                                    |
-| View page on another env | **View on:** pill row in PageInfo (one pill per env configured for this site)                     |
-| Annotate a component     | **Inspect** tab, scroll to **Note**, type and Save — orange dot appears on the page               |
-| Share a selection        | **Share** button copies for the current env; click **▾** to share for prod / staging / qa instead |
-| Screenshot a component   | **Screenshot** button — PNG copied to clipboard                                                   |
-| Export page manifest     | **Export ▾** button on the Inspect tab — copies JSON / CSV / Markdown to your clipboard           |
-| Find on page             | **Tree** tab search box → matches dim non-matches; <kbd>Enter</kbd> cycles, <kbd>Esc</kbd> clears |
-| Resize the panel         | Drag the inner vertical / horizontal edge — or the inner-corner grabber for both at once          |
-| Copy URI                 | Press <kbd>y</kbd> then <kbd>c</kbd> (component) or <kbd>p</kbd> (page)                           |
-| Open URI in new tab      | Press <kbd>o</kbd> then <kbd>c</kbd> or <kbd>p</kbd>                                              |
-| Cycle highlight mode     | Press <kbd>h</kbd> (off → selection → editable → all) or pick from the eye-icon dropdown          |
-| Peek at every component  | In _Selection_ mode, hold <kbd>⌃</kbd> Control to reveal the rainbow over every component         |
-| Show shortcut overlay    | Press <kbd>?</kbd>                                                                                |
-| Toggle FAB ↔ panel       | Press <kbd>[</kbd> or click the collapse button / the FAB                                         |
-| Switch tabs              | Press <kbd>i</kbd> (Inspect) or <kbd>t</kbd> (Tree)                                               |
-| Open settings            | Click the gear icon in the panel header                                                           |
+| Action                     | Shortcut / Click                                                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Open the panel             | Click the floating **Clay** button (FAB) anchored at your preferred corner                                                                  |
+| Collapse to FAB            | Click the collapse button in the panel header (or press <kbd>[</kbd>)                                                                       |
+| Hide the extension         | Click the toolbar icon (toggles mount on/off for the current tab)                                                                           |
+| Select a component         | Click any outlined element on the page                                                                                                      |
+| Open in Clay editor        | **Edit** button on a page or component — opens the page with `?edit=true`                                                                   |
+| Open component JSON        | Use the **Data** / **.json** / **.html** buttons in the panel                                                                               |
+| Cross-env diff             | **Diff** tab → `Compare:` select → pick another configured env                                                                              |
+| View page on another env   | **View on:** pill row in PageInfo (one pill per env configured for this site)                                                               |
+| Annotate a component       | **Inspect** tab, scroll to **Note**, type and Save — orange dot appears on the page                                                         |
+| Share a selection          | **Share** button copies for the current env; click **▾** to share for prod / staging / qa instead                                           |
+| Screenshot a component     | **Screenshot** button — PNG copied to clipboard                                                                                             |
+| Export page manifest       | **Export ▾** button on the Inspect tab — copies JSON / CSV / Markdown to your clipboard                                                     |
+| Find on page               | **Tree** tab search box → matches dim non-matches; <kbd>Enter</kbd> cycles, <kbd>Esc</kbd> clears                                           |
+| Resize the panel           | Drag the inner vertical / horizontal edge — or the inner-corner grabber for both at once                                                    |
+| Copy URI                   | Press <kbd>y</kbd> then <kbd>c</kbd> (component) or <kbd>p</kbd> (page)                                                                     |
+| Open URI in new tab        | Press <kbd>o</kbd> then <kbd>c</kbd> or <kbd>p</kbd>                                                                                        |
+| Cycle highlight mode       | Press <kbd>h</kbd> (off → selection → editable → all) or pick from the eye-icon dropdown                                                    |
+| Peek at every component    | In _Selection_ mode, hold <kbd>⌃</kbd> Control to reveal the rainbow over every component                                                   |
+| Show shortcut overlay      | Press <kbd>?</kbd>                                                                                                                          |
+| Toggle FAB ↔ panel         | Press <kbd>[</kbd> or click the collapse button / the FAB                                                                                   |
+| Switch tabs                | Press <kbd>i</kbd> (Inspect) or <kbd>t</kbd> (Tree)                                                                                         |
+| Disable Clay Slip entirely | Click the toolbar icon → uncheck **Enable Clay Slip**. The choice persists across browser restarts and follows your browser-account sync.   |
+| Re-enable from any tab     | Click the toolbar icon (the popup stays reachable on every tab while disabled) → tick **Enable Clay Slip**. The panel re-mounts, no reload. |
+| Open settings              | Click the gear icon in the panel header                                                                                                     |
 
 ## Screenshots
 
@@ -155,6 +157,20 @@ Stored preferences/notes can also be cleared from the Options page (**Clear rece
 | ![Inspect](docs/screenshots/inspect.png) | ![Tree](docs/screenshots/tree.png) | ![Options](docs/screenshots/options.png) |
 
 ## Configuration
+
+### Extension on/off
+
+A single checkbox in the toolbar popup (and in the **Extension** section of the Options page) fully disables Clay Slip on every page until you turn it back on.
+
+- When **disabled**, the content script never paints outlines, never mounts the panel, and never touches the host page's DOM. The toolbar badge clears to zero. The extension is effectively dormant.
+- When **disabled**, the toolbar popup stays reachable on _every_ tab — including Clay pages, where it's normally suppressed in favor of the in-page FAB — so re-enabling is always one click away no matter which tab you're looking at.
+- A flip from any tab propagates to every other tab without a reload via `storage.onChanged`.
+- The choice is stored in `chrome.storage.sync` (same surface on Chromium and Firefox), so it persists across browser restarts and follows you to any browser profile signed into the same account.
+
+This is distinct from the **Highlight mode → Off** setting:
+
+- _Highlight mode → Off_ means "the extension is running and the panel works, but don't paint anything on the host page". Use this when you want to keep the panel handy without any visual chrome on the page.
+- _Enable Clay Slip → off_ means "the extension is dormant, full stop, until I say otherwise". Use this when you don't want the extension touching pages at all (e.g. while debugging an unrelated Clay-rendered analytics issue).
 
 ### Site host mappings
 

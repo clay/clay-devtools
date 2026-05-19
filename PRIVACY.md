@@ -1,6 +1,6 @@
 # Privacy policy — Clay Slip
 
-_Last updated: 2026-05-13_
+_Last updated: 2026-05-19_
 
 Clay Slip is a developer tool. It runs entirely on your device, in your browser. **It does not collect, transmit, sell, or share any personal data.**
 
@@ -22,10 +22,10 @@ This document is the canonical privacy disclosure for the extension. It's distri
 
 Clay Slip uses the standard WebExtension storage APIs (`chrome.storage` on Chromium, `browser.storage` on Firefox — same shape, same data, same guarantees). Stored data never leaves the user's device or browser-vendor account.
 
-| Storage area    | Contents                                                                                                      | Why                                                                                                   |
-| --------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `storage.sync`  | UI preferences (theme, panel position/size, site host mappings, highlight mode + intensity, shortcut toggle)  | Carries your settings across browsers when you're signed in to Chrome / Firefox Sync.                 |
-| `storage.local` | Sticky-note annotations pinned to component URIs; "recently viewed components" history (capped, configurable) | Keeps notes and history available offline; not synced because they may include page-specific context. |
+| Storage area    | Contents                                                                                                                                       | Why                                                                                                   |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `storage.sync`  | UI preferences (theme, panel position/size, site host mappings, highlight mode + intensity, shortcut toggle, **master enable/disable toggle**) | Carries your settings across browsers when you're signed in to Chrome / Firefox Sync.                 |
+| `storage.local` | Sticky-note annotations pinned to component URIs; "recently viewed components" history (capped, configurable)                                  | Keeps notes and history available offline; not synced because they may include page-specific context. |
 
 You can clear everything from the extension's **Options** page (Reset preferences, Clear history) or via your browser's _Manage extensions_ → _Site access / storage_ controls (Chromium) or `about:addons` → Clay Slip → _Remove_ (Firefox).
 
