@@ -9,3 +9,4 @@ coverage
 .env.local
 .eslintcache
 clay-slip-v*.zip
+.claude
