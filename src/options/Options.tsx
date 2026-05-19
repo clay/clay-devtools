@@ -16,6 +16,7 @@ import {
   type SiteHostMapping,
   type UserPreferences,
 } from '@/lib/types';
+import { parseResultMessage, parseWindowGlobal } from '@/lib/window-globals';
 
 const PANEL_POSITIONS: Array<{ value: PanelPosition; label: string }> = [
   { value: 'bottom-right', label: 'Bottom right (corner)' },
@@ -28,11 +29,15 @@ const PANEL_POSITIONS: Array<{ value: PanelPosition; label: string }> = [
 
 export function Options() {
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [saved, setSaved] = useState(false);
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    loadPreferences().then(setPrefs);
+    loadPreferences().then((p) => {
+      setPrefs(p);
+      setPrefsLoaded(true);
+    });
     return () => {
       if (savedTimer.current) clearTimeout(savedTimer.current);
     };
@@ -75,6 +80,65 @@ export function Options() {
         return { ...m, hosts: nextHosts };
       })
     );
+
+  // Window globals editor state. We keep the raw string the user is
+  // typing (`globalsDrafts`) separate from the persisted normalized
+  // list so the input doesn't fight the user mid-keystroke and so
+  // the inline validation message can update on every change without
+  // a debounce.
+  //
+  // The persisted list (`prefs.windowGlobals`) only ever contains
+  // normalized identifiers — never `window.foo` or whitespace. Invalid
+  // drafts hold their editor slot but contribute nothing to storage,
+  // so the user can fix a typo without re-typing siblings.
+  //
+  // Hydration is deliberately *single-shot* on the first `prefsLoaded`
+  // transition — re-hydrating on every `prefs` change would clobber
+  // the row the user is currently typing (each keystroke persists,
+  // which mutates `prefs`, which would re-fire the effect). Cross-
+  // window sync isn't wired in this Options page, so single-shot is
+  // the right contract here.
+  const [globalsDrafts, setGlobalsDrafts] = useState<string[]>(['']);
+
+  useEffect(() => {
+    if (!prefsLoaded) return;
+    setGlobalsDrafts(prefs.windowGlobals.length > 0 ? [...prefs.windowGlobals] : ['']);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional single-shot on first load; see comment above.
+  }, [prefsLoaded]);
+
+  const persistGlobals = (drafts: readonly string[]) => {
+    // Persist only the valid, deduped, normalized keys. The editor
+    // can hold invalid rows indefinitely without polluting storage.
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const d of drafts) {
+      const parsed = parseWindowGlobal(d);
+      if (!parsed.ok) continue;
+      if (seen.has(parsed.key)) continue;
+      seen.add(parsed.key);
+      out.push(parsed.key);
+    }
+    update('windowGlobals', out);
+  };
+
+  const editGlobalDraft = (index: number, value: string) => {
+    const next = [...globalsDrafts];
+    next[index] = value;
+    setGlobalsDrafts(next);
+    persistGlobals(next);
+  };
+
+  const removeGlobalDraft = (index: number) => {
+    const next = globalsDrafts.filter((_, i) => i !== index);
+    // Always keep at least one row in the editor so the "+ Add" button
+    // isn't the only way back to data entry on a fresh wipe.
+    setGlobalsDrafts(next.length > 0 ? next : ['']);
+    persistGlobals(next);
+  };
+
+  const addGlobalDraft = () => {
+    setGlobalsDrafts([...globalsDrafts, '']);
+  };
 
   return (
     <div className="options">
@@ -260,6 +324,66 @@ export function Options() {
             <span className="options-help">Create a new brand row.</span>
           </div>
           <button className="options-secondary" onClick={addSiteMapping}>
+            + Add
+          </button>
+        </div>
+      </section>
+
+      <section className="options-section">
+        <h2>Window globals</h2>
+        <p className="options-section-help">
+          Top-level <code>window.*</code> values you want to inspect on every Clay page. Each entry
+          gets its own collapsible card in the <strong>Globals</strong> panel tab, rendered as
+          syntax-highlighted JSON. Useful for analytics payloads (e.g. <code>nymGtmPage</code>,{' '}
+          <code>dataLayer</code>) or any object/array your site sets on <code>window</code> at boot.
+          You can type either form &mdash; <code>nymGtmPage</code> or <code>window.nymGtmPage</code>{' '}
+          &mdash; the extension normalizes them. Nested paths (<code>foo.bar</code>) and array
+          indices (<code>dataLayer[0]</code>) aren&rsquo;t supported yet; only top-level globals.
+          Functions and symbol values can&rsquo;t be JSON-serialized, so they show as{' '}
+          <em>&ldquo;not serializable&rdquo;</em>.
+        </p>
+
+        <div className="options-globals">
+          {globalsDrafts.map((draft, index) => {
+            const parsed = parseWindowGlobal(draft);
+            // Only show validation noise once the user has typed
+            // something. An empty row should look "ready" not
+            // "broken" — the placeholder already invites a value.
+            const showError = !parsed.ok && draft.trim().length > 0;
+            const errorMessage = showError ? parseResultMessage(parsed) : null;
+            return (
+              <div key={index} className="options-globals-entry">
+                <div className="options-globals-row">
+                  <input
+                    type="text"
+                    placeholder="nymGtmPage  or  window.dataLayer"
+                    value={draft}
+                    aria-invalid={showError || undefined}
+                    onChange={(e) => editGlobalDraft(index, e.target.value)}
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
+                  <button
+                    className="options-remove"
+                    title="Remove global"
+                    aria-label={`Remove global ${draft || index + 1}`}
+                    onClick={() => removeGlobalDraft(index)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                {errorMessage && <p className="options-row-error">{errorMessage}</p>}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="options-row">
+          <div className="options-label">
+            <span>Add global</span>
+            <span className="options-help">Append a new row to the editor.</span>
+          </div>
+          <button className="options-secondary" onClick={addGlobalDraft}>
             + Add
           </button>
         </div>

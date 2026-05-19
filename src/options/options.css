@@ -256,3 +256,55 @@ kbd {
   color: var(--accent);
   border-color: var(--border);
 }
+
+/* Window globals editor — simpler 2-col layout than site-host mappings
+   (one identifier per row, no env columns). Inline validation error
+   sits directly under the offending row so the user sees the fix-up
+   hint without scanning a separate validation summary. */
+.options-globals {
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.options-globals-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.options-globals-row {
+  display: grid;
+  grid-template-columns: 1fr 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+.options-globals-row input[type='text'] {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  width: 100%;
+  font-family: inherit;
+}
+
+.options-globals-row input[type='text']:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* aria-invalid pulls double duty as a visual cue too. */
+.options-globals-row input[aria-invalid='true'] {
+  border-color: var(--danger, #d33);
+}
+
+.options-row-error {
+  margin: 0 32px 0 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--danger, #d33);
+}
