@@ -72,6 +72,16 @@ export interface UserPreferences {
   readonly enableShortcuts: boolean;
   readonly maxRecentComponents: number;
   readonly siteHosts: readonly SiteHostMapping[];
+  /**
+   * User-configured top-level `window.*` global names to surface in the
+   * Globals panel tab. Stored in their normalized form (no `window.`
+   * prefix, validated as JS identifiers). Empty by default — users
+   * opt-in per global on the Options page.
+   *
+   * See {@link parseWindowGlobal} / {@link normalizeWindowGlobals} in
+   * `src/lib/window-globals.ts` for the input contract.
+   */
+  readonly windowGlobals: readonly string[];
 }
 
 /**
@@ -113,6 +123,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   enableShortcuts: true,
   maxRecentComponents: 20,
   siteHosts: [],
+  windowGlobals: [],
 };
 
 /** Minimal serializable info we keep about a component for recents/annotations. */

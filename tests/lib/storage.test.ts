@@ -66,3 +66,29 @@ describe('savePreferences', () => {
     });
   });
 });
+
+describe('windowGlobals round-trip', () => {
+  // Lock in that the new field behaves like every other preference:
+  // missing → default ([]), present → persisted as-is, partial
+  // updates don't clobber sibling fields. Catches the most common
+  // regression after extending UserPreferences (forgetting to add
+  // the field to DEFAULT_PREFERENCES).
+  it('defaults windowGlobals to [] when nothing is stored', async () => {
+    const prefs = await loadPreferences();
+    expect(prefs.windowGlobals).toEqual([]);
+  });
+
+  it('round-trips an explicit windowGlobals list', async () => {
+    await savePreferences({ windowGlobals: ['nymGtmPage', 'dataLayer'] });
+    const prefs = await loadPreferences();
+    expect(prefs.windowGlobals).toEqual(['nymGtmPage', 'dataLayer']);
+  });
+
+  it('preserves other fields when only windowGlobals is updated', async () => {
+    await savePreferences({ theme: 'dark' });
+    await savePreferences({ windowGlobals: ['nymGtmPage'] });
+    const prefs = await loadPreferences();
+    expect(prefs.theme).toBe('dark');
+    expect(prefs.windowGlobals).toEqual(['nymGtmPage']);
+  });
+});
