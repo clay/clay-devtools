@@ -169,6 +169,28 @@ const ICONS = {
       strokeLinejoin="round"
     />
   ),
+  // Circular-arrow refresh glyph. Used by the Globals tab on the
+  // per-row "Re-read" button and the tab-level "Refresh all" button.
+  // Single arc + arrowhead keeps the icon legible at 14px.
+  refresh: (
+    <>
+      <path
+        d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M13 2.5V5h-2.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </>
+  ),
 } as const;
 
 export type IconName = keyof typeof ICONS;

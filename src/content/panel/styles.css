@@ -339,6 +339,21 @@
   margin: 0 0 6px;
 }
 
+/* Section title + trailing action row (e.g. Globals tab's "Refresh
+   all" button). Inline-flex so the title still wraps naturally if
+   the panel is narrow, with the action pinned right. */
+.cs-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.cs-section-header .cs-section-title {
+  margin: 0;
+}
+
 .cs-name {
   font-size: 14px;
   font-weight: 600;

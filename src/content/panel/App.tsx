@@ -22,6 +22,7 @@ import { ResizeHandle } from './components/ResizeHandle';
 import { RecentList } from './components/RecentList';
 import { NotesTab } from './components/NotesTab';
 import { SeoTab } from './components/SeoTab';
+import { GlobalsTab } from './components/GlobalsTab';
 
 export function App() {
   const headerRef = useRef<HTMLDivElement>(null);
@@ -120,6 +121,7 @@ export function App() {
         {activeTab === 'diff' && <DiffView />}
         {activeTab === 'seo' && <SeoTab />}
         {activeTab === 'notes' && <NotesTab />}
+        {activeTab === 'globals' && <GlobalsTab />}
       </div>
       <ResizeHandle mode="width" />
       {!isSideDock && <ResizeHandle mode="height" />}

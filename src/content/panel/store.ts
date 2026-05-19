@@ -11,7 +11,7 @@ import { DEFAULT_PREFERENCES, HIGHLIGHT_MODE_ORDER } from '@/lib/types';
 import { savePreferences } from '@/lib/storage';
 import { readPageInfo } from '../page-info';
 
-export type PanelTab = 'inspect' | 'tree' | 'json' | 'diff' | 'seo' | 'notes';
+export type PanelTab = 'inspect' | 'tree' | 'json' | 'diff' | 'seo' | 'notes' | 'globals';
 
 interface ToastMessage {
   readonly id: number;
