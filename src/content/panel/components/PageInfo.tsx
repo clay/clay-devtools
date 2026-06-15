@@ -1,7 +1,9 @@
 import browser from 'webextension-polyfill';
 import { buildEditorUrl, buildUrl, unpublishedUri } from '@/lib/clay-uri';
+import { buildPushLinkForUri } from '@/lib/push-link';
 import { findMappingForHost, rewriteUrlToEnv } from '@/lib/site-host';
 import { SITE_ENV_LABELS, SITE_ENV_ORDER, type RuntimeMessage } from '@/lib/types';
+import { useCopyAction } from '../hooks/useCopyAction';
 import { useStore } from '../store';
 import { CopyableUri } from './CopyableUri';
 import { Icon } from './Icon';
@@ -10,11 +12,16 @@ import { ExportMenu } from './ExportMenu';
 export function PageInfo() {
   const page = useStore((s) => s.page);
   const siteHosts = useStore((s) => s.preferences.siteHosts);
+  const { copy, copiedKey } = useCopyAction();
   if (!page) return null;
 
   const open = (url: string) => {
     browser.runtime.sendMessage({ type: 'OPEN_TAB', url } satisfies RuntimeMessage);
   };
+
+  // NYMag-only: a `nymag://<host>/_pages/<id>.html` deep link for the native
+  // apps' push notifications. Null (button hidden) on any non-NYMag domain.
+  const pushLink = buildPushLinkForUri(page.pageUri);
 
   // No envHost override: the helpers use the URI's embedded host, which
   // is the page's actual host. For cross-env links the user goes through
@@ -44,6 +51,21 @@ export function PageInfo() {
         >
           <Icon name="external" size={11} /> Page
         </button>
+        {pushLink && (
+          <button
+            type="button"
+            className={`cs-link ${copiedKey === 'push' ? 'cs-link-copied' : ''}`}
+            onClick={() => copy(pushLink, 'Push link', 'push')}
+            title={
+              copiedKey === 'push'
+                ? 'Copied!'
+                : `Copy the mobile app push-notification deep link\n${pushLink}`
+            }
+          >
+            <Icon name={copiedKey === 'push' ? 'check' : 'copy'} size={11} />{' '}
+            {copiedKey === 'push' ? 'Copied' : 'Push link'}
+          </button>
+        )}
         <button
           className="cs-link cs-link-edit"
           onClick={() => open(buildEditorUrl(page.pageUri))}

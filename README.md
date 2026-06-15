@@ -23,6 +23,7 @@ The same source builds for both browser families:
 - **Sticky-note annotations** pinned to component URIs, surfaced as a dot on the page and a dedicated Notes tab — leave async review notes for teammates
 - **Page audit export** to clipboard as JSON, CSV, or Markdown — every component on the page, ready to paste into a ticket or QA checklist
 - **Shareable selection links** — copy a `?clay-slip-select=…` URL that auto-opens the panel and selects the same component on someone else's machine
+- **Copy mobile push deep link** _(NYMag domains only)_ — a one-click **Push link** button on the Page section copies the page as a `nymag://{host}/_pages/{id}.html` deep link for the native iOS / Android apps' push notifications. Only appears on NYMag-owned domains (`nymag.com`, `vulture.com`, `thecut.com`, `grubstreet.com`, `curbed.com` — Intelligencer and The Strategist are covered by `nymag.com`); strips `@published` so the bare `.html` path resolves the published article in the app
 - **Component screenshot to clipboard** — one-click PNG of any selected component, panel auto-hides during capture
 - **SEO tab** — title / meta / og / twitter / JSON-LD with a Twitter + Facebook card preview and lints (length, missing image, duplicate `<h1>`, etc.)
 - **Recently viewed components** persisted across sessions, with one-click jump back
@@ -133,6 +134,7 @@ Stored preferences/notes can also be cleared from the Options page (**Clear rece
 | Open component JSON        | Use the **Data** / **.json** / **.html** buttons in the panel                                                                               |
 | Cross-env diff             | **Diff** tab → `Compare:` select → pick another configured env                                                                              |
 | View page on another env   | **View on:** pill row in PageInfo (one pill per env configured for this site)                                                               |
+| Copy mobile push deep link | **Push link** button on the Page section (NYMag domains only) — copies `nymag://{host}/_pages/{id}.html`                                    |
 | Annotate a component       | **Inspect** tab, scroll to **Note**, type and Save — orange dot appears on the page                                                         |
 | Share a selection          | **Share** button copies for the current env; click **▾** to share for prod / staging / qa instead                                           |
 | Screenshot a component     | **Screenshot** button — PNG copied to clipboard                                                                                             |
